@@ -1,0 +1,95 @@
+// The main screen for an open world: top bar, management tabs, content area
+// and the right-hand detail panel.
+import { h } from './dom.js';
+import { canUndo, canRedo, undo, redo, getSaveStatus } from '../data/store.js';
+import { renderSettingsTab } from './settingsTab.js';
+import { renderLogTab } from './logTab.js';
+
+const TABS = [
+  { id: 'world', label: 'World Map', stage: 1 },
+  { id: 'region', label: 'Region Map', stage: 2 },
+  { id: 'local', label: 'Local Map', stage: 2 },
+  { id: 'followers', label: 'Followers', stage: 4 },
+  { id: 'projects', label: 'Projects', stage: 5 },
+  { id: 'resources', label: 'Resources', stage: null }, // after the MVP
+  { id: 'log', label: 'Log', render: renderLogTab },
+  { id: 'settings', label: 'Settings', render: renderSettingsTab },
+];
+
+// Remembered between re-renders so the tab doesn't reset after every change.
+let activeTab = 'world';
+
+const SAVE_TEXT = { saved: 'Saved', saving: 'Saving...', error: 'Save failed!' };
+
+export function renderWorldScreen(root, world, { onBack }) {
+  const tab = TABS.find((t) => t.id === activeTab);
+
+  const topBar = h(
+    'header',
+    { class: 'top-bar' },
+    h('button', { class: 'btn small', onclick: onBack }, '< Worlds'),
+    h('span', { class: 'label-tag' }, world.meta.name),
+    h('span', { class: 'day-badge' }, `Day ${world.meta.currentDay}`),
+    h('div', { class: 'spacer' }),
+    h('button', { class: 'btn small', disabled: !canUndo(), onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'),
+    h('button', { class: 'btn small', disabled: !canRedo(), onclick: redo, title: 'Redo (Ctrl+Y)' }, 'Redo'),
+    h('span', { class: 'save-status' }),
+  );
+  updateSaveStatus(topBar);
+
+  const tabBar = h(
+    'nav',
+    { class: 'tab-bar' },
+    TABS.map((t) =>
+      h(
+        'button',
+        {
+          class: t.id === activeTab ? 'tab active' : 'tab',
+          onclick: () => {
+            activeTab = t.id;
+            renderWorldScreen(root, world, { onBack });
+          },
+        },
+        t.label,
+      ),
+    ),
+  );
+
+  const content = tab.render ? tab.render(world) : placeholder(tab);
+
+  const detailPanel = h(
+    'aside',
+    { class: 'detail-panel frame' },
+    h('h2', {}, 'Details'),
+    h('p', { class: 'muted' }, 'Select something on a map to see it here.'),
+  );
+
+  root.replaceChildren(
+    h(
+      'div',
+      { class: 'world-screen' },
+      topBar,
+      tabBar,
+      h('div', { class: 'main-area' }, h('main', { class: 'content' }, content), detailPanel),
+    ),
+  );
+}
+
+// Refreshes only the save label, without redrawing the rest of the screen.
+export function updateSaveStatus(scope = document) {
+  const label = scope.querySelector('.save-status');
+  if (!label) return;
+  const status = getSaveStatus();
+  label.className = `save-status ${status}`;
+  label.textContent = SAVE_TEXT[status];
+}
+
+function placeholder(tab) {
+  const when = tab.stage ? `Coming in Stage ${tab.stage}.` : 'Comes after the MVP.';
+  return h(
+    'div',
+    { class: 'placeholder' },
+    h('span', { class: 'label-tag' }, tab.label),
+    h('p', { class: 'muted' }, when),
+  );
+}
