@@ -6,6 +6,8 @@ This file is the project brief. Read it at the start of every session before wri
 
 A private, local tool for the Arbiter (Game Master) of King's Game, a custom tabletop-style ruleset. It is a visual world map plus a kingdom, follower and project manager. It is NOT a video game: no victory conditions, no campaign, no forced progression.
 
+This is a helper for playing King's Game, not a full game. It records, organizes and assists; the Arbiter plays the game.
+
 Three purposes, in priority order:
 
 1. Mapping and worldbuilding.
@@ -25,6 +27,18 @@ These override convenience. If a task seems to require breaking one, stop and as
 **2. The Arbiter has absolute authority.** Every important value is a stored, editable field, never a value that only exists as a calculation. The rules engine PROPOSES results (dice rolls, progress, yields); the Arbiter can accept, edit, reroll or discard before anything is committed. The Arbiter must be able to set any number to anything (1,000 of a resource, finish a Project instantly, change any Speed).
 
 **3. Everything is undoable.** Every change to world data goes through a command that records how to reverse it. No code may mutate world state directly.
+
+## Extensibility (required)
+
+- New game systems will be added often. Each system (Harvesting, Crafting, Morale, Notes, etc.) is a self-contained module in `/src/systems/<name>/` with its own data slice, commands, rules tables, tab and panels. It registers itself in one central registry file. Adding a system should not require editing other systems.
+
+- Every record (follower, region, sub-area, building, project, item) has a `customFields` object. The Arbiter can add, rename and remove custom fields and stats in the app with no code, so a new rule can be tracked before it is ever automated.
+
+- Every schema change increments `schemaVersion` and adds a migration in `src/data/migrations.js`, so old saves always load after an update.
+
+- Rules values live in JSON tables, never hard-coded.
+
+- Do not refactor Stage 0 code now unless it blocks this. Apply these rules from Stage 1 onward.
 
 ## Tech stack
 
@@ -54,6 +68,9 @@ Ask before adding any other dependency.
   /rules             pure functions implementing RULES.md, plus rules tables as JSON
   /map               camera, sparse grid, rendering, tools (paint, place, select, move)
   /ui                tabs, side panels, detail panels, dialogs
+  /systems           one self-contained folder per game system (see Extensibility)
+    registry.js      the one central list every system registers itself in
+    /<name>          that system's data slice, commands, rules tables, tab and panels
   /assets            sprites (optional; app must work with none)
 /tests               Vitest tests for /rules
 RULES.md             the King's Game rules, written by the Arbiter
@@ -89,6 +106,8 @@ Navigation: double-click (or an Enter button) on a Region or Sub-Area opens the 
 ## Data model
 
 One world (campaign) is one JSON document with a `schemaVersion`. Every record has a unique `id`. Definitions (types) are separate from instances (things in the world) and are editable in the app.
+
+Every instance record (containers, buildings, followers, projects, and items when they are added) also has a `customFields` object: Arbiter-made fields and stats, added, renamed and removed in the app. Each field stores its name, value type and value. These are not repeated in the field lists below.
 
 **meta:** name, currentDay, schemaVersion, created and modified dates.
 
@@ -164,6 +183,8 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 7. **Persistence and sharing polish.** Multiple worlds, Player View screenshot mode.
 
+8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
+
 After the MVP (do not start without being asked): Harvesting tab, resources and stockpiles UI, Crafting, Training, building connections and automation (always pausable and overridable), Morale and Prosperity, population groups, Units, Armies.
 
 ## Seed data
@@ -192,6 +213,7 @@ The first test world should recreate the current campaign so the app is tested a
 - [ ] Stage 5
 - [ ] Stage 6
 - [ ] Stage 7
+- [ ] Stage 8
 
 ## Open Rules (ask the Arbiter, do not invent)
 
