@@ -191,6 +191,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
    - An Asset Library tab to upload, preview, rename, tag and delete PNG doodle assets. Assets are stored with the world in IndexedDB; default assets can also live in /src/assets/doodles.
    - Tags come from the file name: every word is a tag, numbers are ignored, plurals become singular. "grassland tree 01.png" = tags [grassland, tree]. "any" means it fits every biome. Tags can be edited in the app afterward.
    - Sheet importer: upload a sprite sheet on a plain background. The app auto-detects each separate object, removes the background, trims it, lets the Arbiter name and tag each piece, then saves each as its own asset.
+   - Source sprite sheets are stored in references/asset-sheets/ and are imported through the sheet importer, never loaded directly by the app.
 
    How assets are chosen
    - Tile, region, sub-area and building types each list the asset needs they draw from, as tag sets with a density, e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate. Buildings list one tag set per construction stage, e.g. [construction, site], [construction, scaffold], [house].
