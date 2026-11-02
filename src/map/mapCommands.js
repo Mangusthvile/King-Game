@@ -2,7 +2,9 @@
 // placing, removing and moving objects. Every payload stores copies of the
 // old and new data, so undo works even after reloading the world.
 import { registerCommand, createCommand } from '../commands/registry.js';
+import { getCollection } from '../commands/recordCommands.js';
 import { collectInside } from './containerTree.js';
+import { objectKind } from './objectKinds.js';
 
 // ---- Paint / erase tiles ----
 // One command per brush stroke, so a whole drag undoes in one step.
@@ -50,6 +52,9 @@ export function paintTiles(world, containerId, stroke, tileName = '') {
 //   inner:  { containers, objects } everything inside the record (the
 //           Biomes of a Region and every object on their maps), so
 //           removing a Region removes, and undo restores, all of it
+//   linked: [{ path, record }] records outside the containers that belong
+//           to the object or to the inner objects (a building's record,
+//           see objectKinds.js). Older log entries have none.
 
 function addPlaced(world, p) {
   world.placedObjects[p.object.id] = structuredClone(p.object);
@@ -57,6 +62,7 @@ function addPlaced(world, p) {
   if (p.record) world.containers[p.record.id] = structuredClone(p.record);
   for (const c of p.inner?.containers ?? []) world.containers[c.id] = structuredClone(c);
   for (const o of p.inner?.objects ?? []) world.placedObjects[o.id] = structuredClone(o);
+  for (const l of p.linked ?? []) getCollection(world, l.path)[l.record.id] = structuredClone(l.record);
 }
 
 function deletePlaced(world, p) {
@@ -67,9 +73,10 @@ function deletePlaced(world, p) {
   if (p.record) delete world.containers[p.record.id];
   for (const c of p.inner?.containers ?? []) delete world.containers[c.id];
   for (const o of p.inner?.objects ?? []) delete world.placedObjects[o.id];
+  for (const l of p.linked ?? []) delete getCollection(world, l.path)[l.record.id];
 }
 
-const nameOf = (p) => p.record?.name || p.object.label || p.object.kind;
+const nameOf = (p) => p.record?.name || p.linked?.[0]?.record.name || p.object.label || p.object.kind;
 
 registerCommand('placeObject', {
   label: (p) => `Placed ${p.object.kind} "${nameOf(p)}" at ${p.object.x}, ${p.object.y}`,
@@ -83,23 +90,31 @@ registerCommand('removeObject', {
   undoFn: addPlaced,
 });
 
-export function placeObject(world, object, record = null) {
+// linked: [{ path, record }] records that come with the object (a building's record).
+export function placeObject(world, object, record = null, linked = []) {
   const index = world.containers[object.containerId].placedObjectIds.length;
   return createCommand('placeObject', {
     object: structuredClone(object),
     record: record && structuredClone(record),
     index,
+    linked: structuredClone(linked),
   });
 }
 
 export function removeObject(world, objectId) {
   const object = world.placedObjects[objectId];
   const record = object.refId ? world.containers[object.refId] ?? null : null;
+  const inner = record ? collectInside(world, record.id) : null;
+  // The object's own linked record plus those of every object inside it
+  // (removing a Biome also removes the buildings on its map).
+  const linkedOf = (o) => objectKind(o.kind)?.linkedRecords?.(world, o) ?? [];
+  const linked = [object, ...(inner?.objects ?? [])].flatMap(linkedOf);
   return createCommand('removeObject', {
     object: structuredClone(object),
     record: record && structuredClone(record),
     index: world.containers[object.containerId].placedObjectIds.indexOf(objectId),
-    inner: record ? structuredClone(collectInside(world, record.id)) : null,
+    inner: inner && structuredClone(inner),
+    linked: structuredClone(linked),
   });
 }
 
@@ -114,4 +129,19 @@ registerCommand('moveObject', {
 export function moveObject(world, id, x, y, name = '') {
   const obj = world.placedObjects[id];
   return createCommand('moveObject', { id, from: { x: obj.x, y: obj.y }, to: { x, y }, name });
+}
+
+// ---- Footprint (rotate) ----
+// Changes position and size together, for example rotating a 3x2 into a 2x3.
+
+registerCommand('setFootprint', {
+  label: (p) => `${p.verb} "${p.name}" to ${p.to.w}x${p.to.h} at ${p.to.x}, ${p.to.y}`,
+  doFn: (world, p) => Object.assign(world.placedObjects[p.id], p.to),
+  undoFn: (world, p) => Object.assign(world.placedObjects[p.id], p.from),
+});
+
+// rect: { x, y, w, h }. verb is only used for the Log text.
+export function setFootprint(world, id, rect, name = '', verb = 'Resized') {
+  const { x, y, w, h } = world.placedObjects[id];
+  return createCommand('setFootprint', { id, from: { x, y, w, h }, to: { ...rect }, name, verb });
 }

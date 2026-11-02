@@ -1,6 +1,6 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultTileTypes, defaultRegionTypes, defaultAreaTypes } from './schema.js';
+import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
 
 // migrations[n] turns a version n world into a version n + 1 world.
@@ -85,6 +85,17 @@ const migrations = {
   4: (world) => {
     for (const c of Object.values(world.containers)) c.mapScale ??= DEFAULT_MAP_SCALE;
     world.schemaVersion = 5;
+    return world;
+  },
+
+  // 5 -> 6 (Stage 3): buildings. Earlier versions had no way to make building
+  // types or buildings, so only the starter building categories are new.
+  5: (world) => {
+    const defs = world.definitions;
+    defs.buildingTypes ??= {};
+    if (Object.keys(defs.buildingCategories ?? {}).length === 0) defs.buildingCategories = defaultBuildingCategories();
+    world.buildings ??= {};
+    world.schemaVersion = 6;
     return world;
   },
 };

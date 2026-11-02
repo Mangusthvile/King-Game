@@ -1,0 +1,7 @@
+[
+  { "id": "buildingcat_shelter", "name": "Shelter", "color": "#c98a4a" },
+  { "id": "buildingcat_production", "name": "Production", "color": "#d9b33a" },
+  { "id": "buildingcat_storage", "name": "Storage", "color": "#8f6b4a" },
+  { "id": "buildingcat_defense", "name": "Defense", "color": "#8a93a6" },
+  { "id": "buildingcat_other", "name": "Other", "color": "#9a7fb0" }
+]

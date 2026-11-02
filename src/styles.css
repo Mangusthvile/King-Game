@@ -702,3 +702,82 @@ details > summary {
     width: auto;
   }
 }
+
+/* ---- Stage 3: buildings ---- */
+.map-status.notice {
+  color: var(--danger-light);
+}
+
+.kv-list {
+  margin-bottom: 4px;
+}
+
+.kv-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 0 4px;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.kv-row input {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.kv-row.add {
+  border-bottom: none;
+}
+
+.kv-row.add datalist {
+  display: none;
+}
+
+.progress-row {
+  flex-wrap: nowrap;
+}
+
+.progress-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.progress-row input[type='number'] {
+  width: 70px;
+}
+
+.stage-tag {
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+.building-type-head {
+  grid-template-columns: 1fr 130px auto;
+}
+
+.building-type-head select {
+  width: 100%;
+}
+
+.tab-page.wide-page {
+  max-width: 860px;
+}
+
+.building-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.building-table th,
+.building-table td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.building-table th {
+  color: var(--frame-light);
+  font-weight: normal;
+}

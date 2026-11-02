@@ -1,0 +1,9 @@
+{
+  "description": "Construction stages of a building, in order. defaultThreshold is the progress percent where a stage begins; each building type can change them in the Buildings tab. Set by the Arbiter for Stage 3.",
+  "stages": [
+    { "id": "emptySite", "name": "Empty Site", "defaultThreshold": 0 },
+    { "id": "foundation", "name": "Foundation", "defaultThreshold": 25 },
+    { "id": "underConstruction", "name": "Under Construction", "defaultThreshold": 50 },
+    { "id": "completed", "name": "Completed", "defaultThreshold": 100 }
+  ]
+}

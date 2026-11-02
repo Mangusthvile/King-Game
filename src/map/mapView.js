@@ -4,14 +4,15 @@
 import { h } from '../ui/dom.js';
 import { dispatch } from '../data/store.js';
 import { centeredCamera, screenToCell, panBy, zoomAt } from './camera.js';
-import { buildOccupancy, objectAtCell, fitsBounds } from './grid.js';
+import { buildOccupancy, objectAtCell, fitsBounds, isSpaceFree } from './grid.js';
 import { drawMap } from './renderer.js';
 import { onSpriteLoad } from './sprites.js';
 import { TOOLS, toolHandlers } from './tools.js';
 import { getCamera, setCamera } from './cameraStore.js';
 import { getActiveView, setActiveView } from './mapKeyboard.js';
-import { removeObject } from './mapCommands.js';
-import { duplicatePlacement, objectName, placeableFor } from './placement.js';
+import { removeObject, setFootprint } from './mapCommands.js';
+import { duplicatePlacement, objectName, placeableFor, withFootprint } from './placement.js';
+import { objectKind, extraPlaceables } from './objectKinds.js';
 import { renderToolbar } from './mapToolbar.js';
 import { renderMapDetail } from './mapPanels.js';
 import { confirmRemoval } from './containerTree.js';
@@ -21,6 +22,15 @@ import { enterContainer } from '../ui/navigation.js';
 // placeTypeIds: the Region / Biome type chosen for each placeable.
 const state = { tool: 'select', tileTypeId: null, placeableId: null, placeTypeIds: {}, selectedId: null };
 const selections = new Map(); // containerId -> selected object id, so each map keeps its selection
+
+// Selects an object on a map before that map is opened (the Buildings
+// tab's "Show" button).
+export function rememberSelection(containerId, objectId) {
+  // Close the last map first: closing saves its own selection, which would
+  // otherwise overwrite this one.
+  getActiveView()?.destroy();
+  selections.set(containerId, objectId);
+}
 
 // detailPanel: the right-hand panel element this view fills in.
 // placeables: what the Place tool can put on this map (from a JSON table).
@@ -34,6 +44,8 @@ const selections = new Map(); // containerId -> selected object id, so each map 
 export function mountMapView({ world, containerId, placeables, detailPanel, header = null, infoPanels = {}, idlePanel = null, frame = null }) {
   getActiveView()?.destroy();
   const container = world.containers[containerId];
+  // Systems can add placeables to a kind of map (Buildings on Biome Maps).
+  placeables = [...placeables, ...extraPlaceables(container.kind)];
   state.selectedId = selections.get(containerId) ?? null;
   fixStaleState(world, containerId, placeables);
 
@@ -66,6 +78,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     hoverCell: null,
     ghost: null,
     stroke: null,
+    notice: null, // a short message shown in the status line
     get camera() {
       return getCamera(containerId);
     },
@@ -119,6 +132,28 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     enterSelected() {
       if (state.selectedId) view.enter(state.selectedId);
     },
+    // Turns a non-square object a quarter turn around its center.
+    rotateSelected() {
+      const obj = world.placedObjects[state.selectedId];
+      if (!obj || obj.w === obj.h) return;
+      const rect = {
+        x: obj.x + Math.floor((obj.w - obj.h) / 2),
+        y: obj.y + Math.floor((obj.h - obj.w) / 2),
+        w: obj.h,
+        h: obj.w,
+      };
+      if (!view.inBounds(rect.x, rect.y, rect.w, rect.h)) return view.showNotice('Cannot rotate: it would go past the edge of the map.');
+      if (!isSpaceFree(view.layerOf(obj), rect.x, rect.y, rect.w, rect.h, obj.id)) return view.showNotice('Cannot rotate: something is in the way.');
+      dispatch(withFootprint(world, obj, rect, setFootprint(world, obj.id, rect, objectName(world, obj), 'Rotated')));
+    },
+    showNotice(text) {
+      view.notice = text;
+      view.requestDraw();
+      setTimeout(() => {
+        if (view.notice === text) view.notice = null;
+        view.requestDraw();
+      }, 3000);
+    },
     duplicateSelected() {
       if (!state.selectedId) return;
       const command = duplicatePlacement(world, state.selectedId, view.layerOf(world.placedObjects[state.selectedId]), view.inBounds);
@@ -157,12 +192,18 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       // Each map's placeables.json decides how a kind is drawn there.
       displayOf: (obj) => placeableFor(world, placeables, obj)?.display ?? 'block',
       isZone,
+      // A registered kind (a building) draws its own placeholder.
+      customDraw: (obj) => {
+        const draw = objectKind(obj.kind)?.draw;
+        return draw && ((ctx, rect, opts) => draw(ctx, world, obj, rect, opts));
+      },
       bounds: frame?.bounds,
       backdrop: frame?.backdrop,
     });
     const cell = view.hoverCell ? `Cell ${view.hoverCell.x}, ${view.hoverCell.y}` : 'Cell -';
     const tool = TOOLS.find((t) => t.id === state.tool);
-    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${tool.hint}`;
+    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${view.notice ?? tool.hint}`;
+    status.classList.toggle('notice', !!view.notice);
   }
 
   // The canvas is drawn at its on-screen size, so one canvas pixel is one CSS pixel.

@@ -5,8 +5,9 @@ import tileTypeList from './defaults/tileTypes.json';
 import regionTypeList from './defaults/regionTypes.json';
 import biomeTypeList from './defaults/biomeTypes.json';
 import areaTypeList from './defaults/areaTypes.json';
+import buildingCategoryList from './defaults/buildingCategories.json';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 // Regions: how many Region Map cells one World Map cell becomes (map/regionFrame.js).
 export const DEFAULT_MAP_SCALE = 10;
@@ -37,12 +38,19 @@ export function defaultAreaTypes() {
   return byId(areaTypeList);
 }
 
+// Starter building categories: { id, name, color }. A building's
+// placeholder block uses its type's category color (systems/buildings).
+export function defaultBuildingCategories() {
+  return byId(buildingCategoryList);
+}
+
 function emptyDefinitions() {
   return {
     regionTypes: defaultRegionTypes(),
     biomeTypes: defaultBiomeTypes(),
     areaTypes: defaultAreaTypes(),
-    buildingTypes: {},
+    buildingTypes: {}, // see systems/buildings/buildingKind.js for the shape
+    buildingCategories: defaultBuildingCategories(),
     tileTypes: defaultTileTypes(),
     resourceTypes: {},
     species: {},
@@ -99,7 +107,7 @@ export function createWorld(name) {
     definitions: emptyDefinitions(),
     containers: { [root.id]: root },
     placedObjects: {},
-    buildings: {},
+    buildings: {}, // see systems/buildings/buildingKind.js for the shape
     followers: {},
     projects: {},
     stockpiles: {

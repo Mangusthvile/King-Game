@@ -25,6 +25,8 @@ const COLORS = {
 //   bounds:    optional { minX, minY, maxX, maxY } edges of a bounded map (Region Map)
 //   backdrop:  optional [{ x, y, size, tileId }] big squares drawn under the map's own tiles
 //   displayOf: 'block' (filled square) or 'outline' (border and name only)
+//   customDraw: optional (obj) => draw(ctx, rect, { name, zoom }) or null, for
+//              kinds that draw their own placeholder (buildings). A sprite still wins.
 //   ghost:  { x, y, w, h, ok } preview of a place or move
 //   stroke: Map of cell key -> tile id (or null) for the brush stroke in progress
 export function drawMap(ctx, width, height, world, container, view) {
@@ -45,8 +47,14 @@ export function drawMap(ctx, width, height, world, container, view) {
   const ordered = [...objects.filter(isZone), ...objects.filter((o) => !isZone(o))];
   for (const obj of ordered) {
     if (!overlapsRange(obj, range)) continue;
+    const selected = obj.id === view.selectedId;
+    const custom = !getSprite(obj.spriteKey) && view.customDraw?.(obj);
+    if (custom) {
+      drawCustom(ctx, obj, view.objectName(obj), cam, selected, custom);
+      continue;
+    }
     const draw = view.displayOf(obj) === 'outline' ? drawOutlineObject : drawObject;
-    draw(ctx, obj, view.objectName(obj), cam, obj.id === view.selectedId);
+    draw(ctx, obj, view.objectName(obj), cam, selected);
   }
 
   if (view.hoverCell && !view.ghost) {
@@ -174,6 +182,22 @@ function drawObject(ctx, obj, name, cam, selected) {
   drawLabel(ctx, name, a.x + w / 2, a.y + h / 2, w);
 }
 
+// A kind that draws itself gets its screen rectangle; the selection box is
+// drawn here so it looks the same everywhere.
+function drawCustom(ctx, obj, name, cam, selected, draw) {
+  const a = cellToScreen(cam, obj.x, obj.y);
+  const b = cellToScreen(cam, obj.x + obj.w, obj.y + obj.h);
+  const rect = { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
+  ctx.save();
+  draw(ctx, rect, { name, zoom: cam.zoom });
+  ctx.restore();
+  if (selected) {
+    ctx.strokeStyle = COLORS.selected;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(rect.x - 2, rect.y - 2, rect.w + 4, rect.h + 4);
+  }
+}
+
 // Outline style (Regions on the World Map): only a border and the name, so
 // the painted terrain underneath stays visible. A sprite, if set, still wins.
 function drawOutlineObject(ctx, obj, name, cam, selected) {
@@ -203,7 +227,7 @@ function drawOutlineObject(ctx, obj, name, cam, selected) {
 }
 
 // backed = draw a dark box behind the text so it reads over painted tiles.
-function drawLabel(ctx, text, cx, cy, maxWidth, backed = false) {
+export function drawLabel(ctx, text, cx, cy, maxWidth, backed = false) {
   if (!text || maxWidth < 16) return;
   const size = Math.max(10, Math.min(14, Math.floor(maxWidth / 6)));
   ctx.font = `${size}px Consolas, 'Courier New', monospace`;

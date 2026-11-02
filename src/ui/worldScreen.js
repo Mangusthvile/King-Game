@@ -13,6 +13,7 @@ const BASE_TABS = [
   { id: 'world', label: 'World Map', stage: 1 },
   { id: 'region', label: 'Region Map', stage: 2 },
   { id: 'biome', label: 'Biome Map', stage: 2 },
+  { id: 'buildings', label: 'Buildings', stage: 3 },
   { id: 'followers', label: 'Followers', stage: 4 },
   { id: 'projects', label: 'Projects', stage: 5 },
   { id: 'resources', label: 'Resources', stage: null }, // after the MVP

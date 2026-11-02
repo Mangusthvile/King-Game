@@ -2,8 +2,7 @@
 // current tool, and zoom controls.
 import { h } from '../ui/dom.js';
 import { TOOLS } from './tools.js';
-import { typesFor } from './containerTypes.js';
-import { placementTypeId } from './placement.js';
+import { placementTypeId, typeChoices } from './placement.js';
 
 export function renderToolbar(view) {
   const { state } = view;
@@ -74,16 +73,18 @@ function picker(view) {
   return null;
 }
 
-// Type dropdown for a placeable that creates a Region or Biome.
+// Type dropdown for a placeable that has types (Region, Biome, Area, Building).
 function typePicker(view) {
   const { state, world } = view;
   const p = view.placeables.find((x) => x.id === state.placeableId);
-  if (!p?.createsContainer || p.fixedTypeId) return null;
-  const types = Object.values(typesFor(world, p.createsContainer));
+  const choices = typeChoices(world, p);
+  if (!choices || p.fixedTypeId) return null;
+  const types = Object.values(choices);
+  const where = p.kind === 'building' ? 'the Buildings tab' : 'the side panel when nothing is selected';
   const select = h(
     'select',
     {
-      title: 'Type for the new one (edit types in the side panel when nothing is selected)',
+      title: `Type for the new one (edit types in ${where})`,
       onchange: (e) => {
         state.placeTypeIds[p.id] = e.target.value;
         view.refreshUi();

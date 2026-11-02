@@ -4,7 +4,7 @@
 import { dispatch } from '../data/store.js';
 import { cellKey, isSpaceFree, lineCells, objectAtCell } from './grid.js';
 import { paintTiles, removeObject, moveObject } from './mapCommands.js';
-import { newPlacement, objectName, placementTypeId } from './placement.js';
+import { newPlacement, objectName, placementTypeId, sizedPlaceable, withFootprint } from './placement.js';
 import { confirmRemoval } from './containerTree.js';
 
 // key = keyboard shortcut. W, A, S and D are kept free for panning.
@@ -47,7 +47,8 @@ const select = {
     view.ghost = null;
     if (!ghost || !ghost.ok) return; // dropped on another object: snap back
     const obj = view.world.placedObjects[drag.id];
-    dispatch(moveObject(view.world, obj.id, ghost.x, ghost.y, objectName(view.world, obj)));
+    const move = moveObject(view.world, obj.id, ghost.x, ghost.y, objectName(view.world, obj));
+    dispatch(withFootprint(view.world, obj, { x: ghost.x, y: ghost.y }, move));
   },
 };
 
@@ -83,8 +84,10 @@ const brush = {
 
 // ---- Place ----
 
+// With the default size of the chosen type (a building type's footprint).
 function currentPlaceable(view) {
-  return view.placeables.find((p) => p.id === view.state.placeableId);
+  const p = view.placeables.find((x) => x.id === view.state.placeableId);
+  return sizedPlaceable(view.world, view.state, p);
 }
 
 // Click to place at the default size, or drag a rectangle to choose the size.

@@ -9,7 +9,8 @@ import { renderCustomFields } from '../ui/customFieldsEditor.js';
 import { isSpaceFree } from './grid.js';
 import { isEnterable } from '../ui/navigation.js';
 import { moveObject } from './mapCommands.js';
-import { objectName, recordFor } from './placement.js';
+import { objectName, recordFor, withFootprint } from './placement.js';
+import { objectKind } from './objectKinds.js';
 import { kindName } from './containerTree.js';
 import { spriteKeys, spriteExists } from './sprites.js';
 
@@ -31,8 +32,12 @@ function objectPanel(view, obj) {
   const rec = recordFor(world, obj);
   const name = objectName(world, obj);
   // A Region, Biome or Area: its info panel comes from the map's system.
+  // A registered kind (a building) brings its own panel.
   const container = obj.refId && world.containers[obj.refId];
-  const info = container && view.infoPanels[container.kind];
+  const kind = objectKind(obj.kind);
+  const containerInfo = container && view.infoPanels[container.kind];
+  const info = containerInfo ? () => containerInfo(world, container) : kind?.infoPanel ? () => kind.infoPanel(world, obj, view) : null;
+  const title = containerInfo ? kindName(container.kind) : kind?.title;
   const message = h('p', { class: 'message error small' });
 
   const wholeNumber = (value, min) => {
@@ -44,7 +49,7 @@ function objectPanel(view, obj) {
     if (x === null || y === null) return (message.textContent = 'Position must be whole numbers.');
     if (!view.inBounds(x, y, obj.w, obj.h)) return (message.textContent = 'That is outside the edge of the map.');
     if (!isSpaceFree(view.layerOf(obj), x, y, obj.w, obj.h, obj.id)) return (message.textContent = 'Another object is in the way.');
-    dispatch(moveObject(world, obj.id, x, y, name));
+    dispatch(withFootprint(world, obj, { x, y }, moveObject(world, obj.id, x, y, name)));
   };
   const setSize = (field, value) => {
     const n = wholeNumber(value, 1);
@@ -53,7 +58,7 @@ function objectPanel(view, obj) {
     const hgt = field === 'h' ? n : obj.h;
     if (!view.inBounds(obj.x, obj.y, w, hgt)) return (message.textContent = 'That would go past the edge of the map.');
     if (!isSpaceFree(view.layerOf(obj), obj.x, obj.y, w, hgt, obj.id)) return (message.textContent = 'Not enough room to grow there.');
-    dispatch(setField(world, 'placedObjects', obj.id, field, n, name));
+    dispatch(withFootprint(world, obj, { [field]: n }, setField(world, 'placedObjects', obj.id, field, n, name)));
   };
 
   const numberInput = (value, onchange) => h('input', { type: 'number', step: 1, value, onchange: (e) => onchange(e.target.value) });
@@ -91,6 +96,7 @@ function objectPanel(view, obj) {
     container && isEnterable(container.kind)
       ? h('button', { class: 'btn small primary', title: 'Or double-click it, or press Enter', onclick: () => view.enterSelected() }, `Enter ${kindName(container.kind)}`)
       : null,
+    obj.w !== obj.h ? h('button', { class: 'btn small', title: 'Quarter turn (R)', onclick: () => view.rotateSelected() }, 'Rotate') : null,
     h('button', { class: 'btn small', title: 'Ctrl+D', onclick: () => view.duplicateSelected() }, 'Duplicate'),
     h('button', { class: 'btn small danger', title: 'Delete key', onclick: () => view.removeSelected() }, 'Remove'),
   );
@@ -104,9 +110,9 @@ function objectPanel(view, obj) {
     );
     details.addEventListener('toggle', () => (placementOpen = details.open));
     return [
-      h('h2', {}, kindName(container.kind)),
+      h('h2', {}, title),
       actions,
-      ...info(world, container),
+      ...info(),
       details,
       renderCustomFields(world, rec.path, rec.id),
     ];
@@ -223,6 +229,7 @@ function helpPanel(view) {
     line('Wheel', 'zoom at cursor'),
     line('V H B E P X', 'tools'),
     line('Delete', 'remove selected'),
+    line('R', 'rotate selected (not square)'),
     line('Ctrl+D', 'duplicate selected'),
     line('Esc', 'cancel / deselect'),
     line('Double-click / Enter', 'open a Region or Biome'),

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "building",
+    "label": "Building",
+    "kind": "building",
+    "defaultName": "New Building",
+    "w": 2,
+    "h": 2,
+    "color": "#c98a4a"
+  }
+]

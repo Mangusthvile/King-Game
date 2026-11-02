@@ -1,5 +1,5 @@
 // Keyboard shortcuts for the map on screen: WASD panning, tool keys,
-// Delete, Esc, Enter and Ctrl+D. Registered once for the whole app.
+// Delete, Esc, Enter, R (rotate) and Ctrl+D. Registered once for the whole app.
 import { panBy } from './camera.js';
 import { TOOLS } from './tools.js';
 
@@ -45,6 +45,8 @@ window.addEventListener('keydown', (e) => {
   } else if (key === 'delete' || key === 'backspace') {
     e.preventDefault();
     view.removeSelected();
+  } else if (key === 'r') {
+    view.rotateSelected();
   } else if (key === 'escape') {
     view.cancel();
   } else if (key === 'enter' && !e.target.matches?.('button')) {
