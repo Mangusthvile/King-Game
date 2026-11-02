@@ -211,6 +211,8 @@ Speed is how much activity an individual can perform per day. A character's SPD 
 
 - Keep the UI simple. New systems get their own tab or panel, not more buttons on existing ones.
 
+- Keep all UI styling centralized: colors, fonts, spacing, borders and panel styles come from shared CSS variables and reusable component classes (panel, button, tab, field, badge). No one-off inline styles in components. This keeps the Stage 8.5 overhaul a reskin rather than a rewrite. The one exception is a color that comes from the data (a tile type's, category's or faction's own color): pass it to a component class as a CSS variable (for example `style="--swatch: #5fbf55"` with `.swatch { background: var(--swatch) }`), not as a full inline style. The seven existing data-color inline styles (tile swatches, placeable dots, faction chips) should be moved to this pattern when those files are next touched.
+
 ## Development stages
 
 Build one stage at a time. Each stage must run and be manually testable before starting the next. After each stage, update the Progress section below.
@@ -232,6 +234,13 @@ Build one stage at a time. Each stage must run and be manually testable before s
 7. **Persistence and sharing polish.** Multiple worlds, Player View screenshot mode.
 
 8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, biomes, areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
+
+8.5. **UI Overhaul (pixel UI kit).** Replace the placeholder interface with pixel-art UI elements the Arbiter downloads from itch.io: panels and frames, buttons, tabs, scrollbars, sliders, checkboxes, tooltips, icons, cursors and a pixel font.
+   - Theme layer: all UI art is loaded through one theme definition (which image is used for panels, buttons, icons, fonts and colors), so a UI kit can be swapped or updated by changing the theme files, not the app code.
+   - Panels and buttons use 9-slice scaling so pixel frames stretch to any size without blurring. Pixel-perfect rendering (nearest-neighbor, integer scale).
+   - An icon set for resources, stats (STR, SPD, TOU, Health), conditions, building categories and map tools, with text fallbacks if an icon is missing.
+   - Each UI asset records its source pack, author, URL and license. Purchased or restrictive-license UI packs live in /assets-private/ (listed in .gitignore, never pushed); free CC0-style packs may be committed.
+   - Keep the layout from earlier stages: this stage changes the look, not how things work.
 
 9. **Rendered View (procedural pixel terrain) and Stamps.**
 
@@ -318,6 +327,7 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 - [ ] Stage 6
 - [ ] Stage 7
 - [ ] Stage 8
+- [ ] Stage 8.5
 - [ ] Stage 9
 
 ## Open Rules (ask the Arbiter, do not invent)
