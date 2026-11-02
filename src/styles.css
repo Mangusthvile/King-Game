@@ -1932,3 +1932,9 @@ input.setup-tool {
   flex: 1;
   min-width: 0;
 }
+
+/* A Stamina max that differs from the formula, waiting for the Arbiter. */
+.meter.speed.pending {
+  border-color: var(--tag-border);
+  color: var(--tag-border);
+}

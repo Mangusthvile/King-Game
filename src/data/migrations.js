@@ -2,6 +2,7 @@
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
 import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTeams, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
+import { staminaFormula } from '../rules/stamina.js';
 
 // migrations[n] turns a version n world into a version n + 1 world.
 const migrations = {
@@ -221,6 +222,24 @@ const migrations = {
       world.log.redo = world.log.redo.map(renameStaminaDefault);
     }
     world.schemaVersion = 13;
+    return world;
+  },
+
+  // 13 -> 14: the Stamina values stored before the formula existed (species
+  // defaults, and remaining values copied from the old daily Speed) are
+  // brought in line with it once: for every character not overridden whose
+  // species has a Base Stamina, Stamina max = the formula, and Stamina
+  // remaining is capped at that max. Characters without a Base Stamina
+  // (manual) are left alone.
+  13: (world) => {
+    for (const c of Object.values(world.characters ?? {})) {
+      if (c.staminaMaxOverride) continue;
+      const max = staminaFormula(world.definitions.species?.[c.speciesId]?.baseStamina, c.SPD);
+      if (max === null) continue;
+      c.staminaMax = max;
+      if (c.staminaRemaining === null || c.staminaRemaining === undefined || c.staminaRemaining > max) c.staminaRemaining = max;
+    }
+    world.schemaVersion = 14;
     return world;
   },
 };

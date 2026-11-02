@@ -48,11 +48,44 @@ describe('migration 12 -> 13 (Base Stamina)', async () => {
     expect(w.definitions.species.b).toEqual({ id: 'b', name: 'Baseliner', baseStamina: 1 });
   });
 
-  it('keeps the stored Stamina max and starts without an override', () => {
-    expect(w.characters.sena).toMatchObject({ staminaMax: 1, staminaMaxOverride: false });
+  it('starts without an override (then 13 -> 14 applies the formula: SPD 8 gives 4)', () => {
+    expect(w.characters.sena).toMatchObject({ staminaMax: 4, staminaMaxOverride: false });
   });
 
   it('renames the field in old undo entries', () => {
     expect(w.log.actions[0].payload.commands[0].payload.field).toBe('baseStamina');
+  });
+});
+
+describe('migration 13 -> 14 (apply the formula once)', async () => {
+  const { migrateWorld } = await import('../src/data/migrations.js');
+  const character = (id, speciesId, SPD, staminaRemaining, staminaMax, staminaMaxOverride = false) => ({ id, speciesId, SPD, staminaRemaining, staminaMax, staminaMaxOverride });
+  const w = migrateWorld({
+    schemaVersion: 13,
+    meta: {},
+    definitions: { species: { b: { id: 'b', name: 'Baseliner', baseStamina: 1 }, v: { id: 'v', name: 'Vulture', baseStamina: null } } },
+    characters: {
+      // As in the Arbiter's roster: remaining copied from the old daily Speed.
+      sena: character('sena', 'b', 8, 7, 1),
+      aren: character('aren', 'b', 1, 1, 1),
+      tired: character('tired', 'b', 5, 1, 1),
+      custom: character('custom', 'b', 5, 5, 5, true),
+      seeker: character('seeker', 'v', 5, 3, 3),
+    },
+  });
+  const stamina = (id) => [w.characters[id].staminaRemaining, w.characters[id].staminaMax];
+
+  it('sets Stamina max from the formula and caps Stamina remaining', () => {
+    expect(stamina('sena')).toEqual([4, 4]);
+    expect(stamina('aren')).toEqual([1, 1]);
+  });
+
+  it('keeps a lower Stamina remaining (already spent today)', () => {
+    expect(stamina('tired')).toEqual([1, 3]);
+  });
+
+  it('leaves overridden characters and species without a Base Stamina alone', () => {
+    expect(stamina('custom')).toEqual([5, 5]);
+    expect(stamina('seeker')).toEqual([3, 3]);
   });
 });

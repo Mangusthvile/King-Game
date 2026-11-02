@@ -5,7 +5,7 @@ import { h } from '../../ui/dom.js';
 import { swatchStyle } from '../../ui/colors.js';
 import { dispatch } from '../../data/store.js';
 import { addRecord } from '../../commands/recordCommands.js';
-import { createCharacter, libName, locationName, locationOptions } from './characterModel.js';
+import { createCharacter, libName, locationName, locationOptions, staminaFor } from './characterModel.js';
 import { refOptions } from './libraryEditor.js';
 import { renderCharacterPanel } from './characterPanel.js';
 import { renderLibraries } from './libraryEditor.js';
@@ -155,7 +155,19 @@ function rosterRow(world, c, refresh) {
     stat(c.SPD, 'spd'),
     stat(c.TOU, 'tou'),
     h('span', { class: 'meter hunger', title: 'Health current / max' }, `${c.health?.current ?? '-'}/${c.health?.max ?? '-'}`),
-    h('span', { class: 'meter speed', title: 'Stamina remaining today / Stamina max' }, `${c.staminaRemaining ?? '-'}/${c.staminaMax ?? '-'}`),
+    staminaMeter(world, c),
+  );
+}
+
+// Stamina remaining / max. Marked with ! when the Stamina formula gives a
+// different max (SPD changed) that hasn't been accepted on the sheet yet.
+function staminaMeter(world, c) {
+  const formula = c.staminaMaxOverride ? null : staminaFor(world, c).breakdown?.total ?? null;
+  const pending = formula !== null && formula !== c.staminaMax;
+  return h(
+    'span',
+    { class: pending ? 'meter speed pending' : 'meter speed', title: pending ? `Stamina remaining today / Stamina max. The formula gives ${formula}: open the sheet and press Use ${formula}.` : 'Stamina remaining today / Stamina max' },
+    `${c.staminaRemaining ?? '-'}/${c.staminaMax ?? '-'}${pending ? ' !' : ''}`,
   );
 }
 

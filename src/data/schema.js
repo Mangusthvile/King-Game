@@ -9,7 +9,7 @@ import buildingCategoryList from './defaults/buildingCategories.json';
 import speciesList from './defaults/species.json';
 import teamList from './defaults/teams.json';
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.

@@ -25,7 +25,8 @@ describe('migration 10 -> 11 (Stamina)', () => {
   });
 
   it('copies the daily Speed value into Stamina remaining and keeps SPD', () => {
-    expect(w.characters.sena).toMatchObject({ id: 'sena', speciesId: 'b', SPD: 8, staminaRemaining: 8, staminaMax: 1 });
+    // Later migrations apply the Stamina formula (13 -> 14): SPD 8 gives 4, remaining capped at 4.
+    expect(w.characters.sena).toMatchObject({ id: 'sena', speciesId: 'b', SPD: 8, staminaRemaining: 4, staminaMax: 4 });
     expect(w.characters.sena).not.toHaveProperty('speedRemaining');
   });
 
