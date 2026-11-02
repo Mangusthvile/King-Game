@@ -1,8 +1,10 @@
-// Settings tab: world name, current day, backup export.
+// Settings tab: world name, current day, Resolution Log options, backup export.
 import { h, formatDate } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { renameWorld, setCurrentDay } from '../commands/worldCommands.js';
 import { exportWorld } from '../data/exportImport.js';
+import { checkboxField } from './fields.js';
+import { setField } from '../commands/recordCommands.js';
 
 export function renderSettingsTab(world) {
   const message = h('p', { class: 'message' });
@@ -57,6 +59,15 @@ export function renderSettingsTab(world) {
       h('label', {}, 'Current day'),
       dayForm,
       message,
+    ),
+    h(
+      'section',
+      { class: 'frame panel' },
+      h('h2', {}, 'Resolution Logs'),
+      ...checkboxField('Add "(edited)" after values changed by hand', world.meta.settings?.markEdited, (on) => dispatch(setField(world, 'meta', 'settings', 'markEdited', on)), {
+        key: 'settings.markEdited',
+        title: 'Logs always show the final value; this also marks it as edited.',
+      }),
     ),
     h(
       'section',

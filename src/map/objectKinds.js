@@ -53,3 +53,17 @@ export function mapBadge(world, obj) {
   }
   return null;
 }
+
+// "Just placed" listeners: another system can react when the Arbiter places
+// an object of a kind with the Place tool (not on duplicate or redo), for
+// example the Projects system offers to make a Project for a new building.
+// listener(world, object) runs after the placement is committed.
+const placedListeners = {}; // kind -> [listener]
+
+export function onPlaced(kind, listener) {
+  (placedListeners[kind] ??= []).push(listener);
+}
+
+export function notifyPlaced(world, object) {
+  for (const listener of placedListeners[object.kind] ?? []) listener(world, object);
+}

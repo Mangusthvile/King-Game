@@ -1,0 +1,86 @@
+Day {{day}} - Project Roll {{rollNumber}}: {{projectName}}
+==============================
+Establishing Project
+==============================
+Project: {{projectName}}
+Project Size: {{sizeText}}
+Workload: {{required}}
+Prior Work: {{prior}}
+Current Workload: {{prior}}/{{required}}
+
+==============================
+Today's Workday
+==============================
+Location: {{location}}
+Danger Level: {{danger}}
+Participants ({{partySize}}): {{participantNames}}
+{{#hasNotables}}
+Notable Individuals:
+{{#notables}}
+- {{name}}: {{skillName}} ({{tier}} Lv{{level}}), Work Die d{{die}}{{bonusText}}
+{{/notables}}
+{{/hasNotables}}
+
+Stamina Invested:
+{{#participants}}
+{{name}} has spent {{stamina}} Stamina on this task: (+{{stamina}}d{{die}})
+{{/participants}}
+{{#hasTools}}
+
+Tools:
+{{#toolLines}}
+- {{item}}
+{{/toolLines}}
+{{/hasTools}}
+{{#hasPrerequisites}}
+
+Prerequisites:
+{{#prerequisites}}
+- [{{mark}}] {{text}}
+{{/prerequisites}}
+{{/hasPrerequisites}}
+
+==============================
+Preparing Work Rolls
+==============================
+{{#participants}}
+{{name}}: {{stamina}}d{{die}}{{bonusText}}{{extrasText}}
+{{/participants}}
+{{@rollDice}}
+
+==============================
+Rolling
+==============================
+{{#participants}}
+{{name}}: {{rollsText}}{{extrasText}} = {{work}}{{editedText}}
+{{/participants}}
+
+Total Work Done Today: {{total}}
+
+==============================
+Project Event
+==============================
+{{@rollEvent}}
+Event Roll (1d20): {{eventRoll}}{{eventEditedText}}
+Result: {{eventName}}
+{{eventDescription}}
+{{@effect}}
+{{#effect}}
+Effect: {{effect}}
+{{/effect}}
+{{@workloadChange}}
+{{#workloadChangeText}}
+Workload change from the Event: {{workloadChangeText}}
+{{/workloadChangeText}}
+{{@conditions}}
+{{#conditionsAdded}}
+{{name}} gained the Condition: {{condition}}
+{{/conditionsAdded}}
+{{@notes}}
+{{#notes}}
+Notes: {{notes}}
+{{/notes}}
+
+==============================
+Current Workload: {{after}}/{{required}}
+==============================

@@ -42,9 +42,9 @@ describe('characters', () => {
     expect([aren.bodyTypeLevel, aren.bodyLevel, aren.STR, aren.SPD, aren.TOU]).toEqual([1, 3, 5, 1, 3]);
     expect(aren.skills).toEqual([{ skillId: entry('skills', 'Spear Warrior').id, tier: 'T1', level: 6 }]);
     expect(aren.health).toEqual({ current: 4, max: 4 });
-    // Stamina comes from the species (Baseliner 1), not from SPD.
+    // Stamina max = Base Stamina 1 + FLOOR((SPD - 1) / 2): SPD 1 gives 1, SPD 8 gives 4.
     expect([aren.staminaRemaining, aren.staminaMax]).toEqual([1, 1]);
-    expect([byName('Sena').SPD, byName('Sena').staminaMax]).toEqual([8, 1]);
+    expect([byName('Sena').SPD, byName('Sena').staminaMax, byName('Sena').staminaMaxOverride]).toEqual([8, 4, false]);
     expect(aren.hunger).toEqual({ current: 5, max: 5 });
     expect(aren.combat.attack).toBe('d6 +5');
   });

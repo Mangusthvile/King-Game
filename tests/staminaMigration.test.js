@@ -19,13 +19,14 @@ function v10World() {
 describe('migration 10 -> 11 (Stamina)', () => {
   const w = migrateWorld(v10World());
 
-  it('gives Baseliner a default Stamina of 1 and leaves other species unset', () => {
-    expect(w.definitions.species.b.staminaDefault).toBe(1);
-    expect(w.definitions.species.v.staminaDefault).toBeNull();
+  it('gives Baseliner a Base Stamina of 1 and leaves other species unset', () => {
+    expect(w.definitions.species.b.baseStamina).toBe(1);
+    expect(w.definitions.species.v.baseStamina).toBeNull();
   });
 
   it('copies the daily Speed value into Stamina remaining and keeps SPD', () => {
-    expect(w.characters.sena).toEqual({ id: 'sena', speciesId: 'b', SPD: 8, staminaRemaining: 8, staminaMax: 1 });
+    expect(w.characters.sena).toMatchObject({ id: 'sena', speciesId: 'b', SPD: 8, staminaRemaining: 8, staminaMax: 1 });
+    expect(w.characters.sena).not.toHaveProperty('speedRemaining');
   });
 
   it('uses the copied value as Stamina max when the species has no default', () => {

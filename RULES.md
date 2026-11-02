@@ -29,6 +29,13 @@ There are 100 Levels of Authority with the maximum of allowing them to reach Low
 Followers
 Followers are the most important resources for a Ruler.
 
+Stamina
+Stamina is how much activity an individual can perform in a day. Each point of Stamina spent on a task grants that task's die (for example 1d20 for Harvesting or 1 Work Die for Projects and Crafting).
+Stamina = Species Base Stamina + FLOOR((SPD - 1) / 2)
+Species Base Stamina: Baseliner 1. Other species are set by the Arbiter.
+Examples (Baseliner): SPD 1-2 = 1 Stamina, SPD 3-4 = 2, SPD 5-6 = 3, SPD 7-8 = 4.
+Conditions, Traits and other effects can modify Stamina on top of this. The Arbiter may override any character's Stamina.
+
 
 
 

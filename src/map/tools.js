@@ -6,6 +6,7 @@ import { cellKey, isSpaceFree, lineCells, objectAtCell } from './grid.js';
 import { paintTiles, removeObject, moveObject } from './mapCommands.js';
 import { newPlacement, objectName, placementTypeId, sizedPlaceable, withFootprint } from './placement.js';
 import { confirmRemoval } from './containerTree.js';
+import { notifyPlaced } from './objectKinds.js';
 
 // key = keyboard shortcut. W, A, S and D are kept free for panning.
 export const TOOLS = [
@@ -123,6 +124,7 @@ const place = {
     const command = newPlacement(view.world, view.container.id, { ...p, w: g.w, h: g.h }, g.x, g.y, typeId);
     view.state.selectedId = command.payload.object.id; // select what was just placed
     dispatch(command);
+    notifyPlaced(view.world, view.world.placedObjects[command.payload.object.id]);
   },
 };
 

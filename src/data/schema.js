@@ -9,7 +9,7 @@ import buildingCategoryList from './defaults/buildingCategories.json';
 import speciesList from './defaults/species.json';
 import teamList from './defaults/teams.json';
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 13;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.
@@ -51,7 +51,8 @@ export function defaultBuildingCategories() {
 }
 
 // Starter species (Baseliner, Vulture). Shape:
-//   { id, name, staminaDefault, hungerMax, thirstMax (null = not set), notes,
+//   { id, name, baseStamina (Stamina = Base Stamina + FLOOR((SPD - 1) / 2),
+//     see rules/stamina.js), hungerMax, thirstMax (null = not set), notes,
 //     defaultFields (copied onto a character's custom fields, like Vulture's
 //     Mask, Vault Value and Essence notes), customFields }
 export function defaultSpecies() {
@@ -66,7 +67,13 @@ export function defaultTeams() {
 
 // A new species with nothing set yet (typed in the Region panel or a library).
 export function createSpecies(name) {
-  return { id: newId('species'), name, staminaDefault: null, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
+  return { id: newId('species'), name, baseStamina: null, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
+}
+
+// World settings (Settings tab). markEdited: Resolution Logs add "(edited)"
+// after a value the Arbiter changed by hand.
+export function defaultSettings() {
+  return { markEdited: false };
 }
 
 function emptyDefinitions() {
@@ -140,13 +147,18 @@ export function createWorld(name) {
       rootContainerId: root.id,
       created: now,
       modified: now,
+      settings: defaultSettings(),
     },
     definitions: emptyDefinitions(),
     containers: { [root.id]: root },
     placedObjects: {},
     buildings: {}, // see systems/buildings/buildingKind.js for the shape
     characters: {}, // followers, enemies and NPCs: see systems/characters/characterModel.js
-    projects: {},
+    projects: {}, // see systems/projects/projectModel.js for the shape
+    // The Day Log: each day's Resolution Logs and narration, in order.
+    // { [day]: { id: String(day), day, entries: [{ id, kind, method, refId, text }] } }
+    // (see data/dayLog.js)
+    dayLogs: {},
     stockpiles: {
       kingdom: {}, // { resourceTypeId: count }
       byLocation: {}, // { buildingOrContainerId: { resourceTypeId: count } }

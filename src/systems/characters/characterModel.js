@@ -3,13 +3,16 @@
 //
 // world.characters[id]:
 //   identity:  name, factionId, speciesId, locationContainerId (Region, Biome
-//              or Area), currentAssignment (free text until Stage 5), bio, notes
+//              or Area), currentAssignment (free text), assignmentProjectId
+//              (the Project they work on, '' = none; set from the Projects
+//              system's section on the sheet), bio, notes
 //   teamId:    Ally / Enemy / Neutral, in stasis until the Combat stage
 //   body:      bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU,
 //              health: { current, max }   max proposed by rules/health.js
 //   daily:     staminaMax, staminaRemaining   the daily activity budget, spent on
-//              tasks and reset by Advance Day. Separate from SPD, which is a
-//              combat stat. RULE NEEDED: how Stamina max is set or increased.
+//              tasks and reset by Advance Day. Stamina max follows the formula
+//              Base Stamina + FLOOR((SPD - 1) / 2) (rules/stamina.js) unless
+//              staminaMaxOverride is true (the Arbiter set their own value).
 //   needs:     hunger: { current, max }, thirst: { current, max }
 //   skills:    [{ skillId, tier, level }], defenseSkillId
 //   theories:  [{ name, percent }]   no automatic numerical bonus
@@ -23,6 +26,8 @@
 //              system is still being tested, nothing is calculated
 //   alive, death: { cause, day } | null, customFields
 import { newId } from '../../data/ids.js';
+import { setField } from '../../commands/recordCommands.js';
+import { staminaFormula, staminaBreakdown } from '../../rules/stamina.js';
 
 export const COMBAT_FIELDS = [
   { key: 'resistance', label: 'Resistance' },
@@ -38,6 +43,7 @@ export const COMBAT_FIELDS = [
 // fields copied on. values overrides any field (used by the seed import).
 export function createCharacter(world, values = {}) {
   const species = world.definitions.species[values.speciesId ?? ''];
+  const stamina = staminaFormula(species?.baseStamina, values.SPD ?? 1); // null if the species has no Base Stamina
   return {
     id: newId('character'),
     name: 'New Character',
@@ -46,6 +52,7 @@ export function createCharacter(world, values = {}) {
     speciesId: species?.id ?? '',
     locationContainerId: '',
     currentAssignment: '',
+    assignmentProjectId: '',
     bio: '',
     notes: '',
     bodyTypeId: '',
@@ -55,8 +62,9 @@ export function createCharacter(world, values = {}) {
     SPD: 1,
     TOU: 1,
     health: { current: null, max: null },
-    staminaMax: species?.staminaDefault ?? null,
-    staminaRemaining: species?.staminaDefault ?? null,
+    staminaMax: stamina,
+    staminaRemaining: stamina,
+    staminaMaxOverride: false,
     hunger: { current: species?.hungerMax ?? null, max: species?.hungerMax ?? null },
     thirst: { current: species?.thirstMax ?? null, max: species?.thirstMax ?? null },
     skills: [],
@@ -82,19 +90,8 @@ export function libName(world, libraryKey, id) {
   return world.definitions[libraryKey]?.[id]?.name ?? '(deleted)';
 }
 
-// Every Region, Biome and Area as a select option, indented under its parent.
-export function locationOptions(world) {
-  const options = [];
-  const visit = (parentId, depth) => {
-    for (const c of Object.values(world.containers)) {
-      if (c.parentId !== parentId || !['region', 'biome', 'area'].includes(c.kind)) continue;
-      options.push({ value: c.id, label: `${'  '.repeat(depth)}${depth ? '└ ' : ''}${c.name}` });
-      visit(c.id, depth + 1);
-    }
-  };
-  visit(world.meta.rootContainerId, 0);
-  return options;
-}
+// Every Region, Biome and Area as a select option (shared with other systems).
+export { placeOptions as locationOptions } from '../../data/places.js';
 
 export function locationName(world, character) {
   if (!character.locationContainerId) return '-';
@@ -116,4 +113,26 @@ export function charactersAt(world, containerId, { nested = false } = {}) {
     }
   }
   return Object.values(world.characters).filter((c) => c.alive && ids.has(c.locationContainerId));
+}
+
+// The Stamina formula for a character (or for proposed stats { SPD }):
+//   { species, breakdown ({ base, fromSpd, total, text } or null), missingBase }
+// missingBase: the species has no Base Stamina, so Stamina max is manual.
+export function staminaFor(world, c, stats = {}) {
+  const species = world.definitions.species[c.speciesId];
+  const SPD = stats.SPD ?? c.SPD;
+  return {
+    species,
+    breakdown: staminaBreakdown(species?.baseStamina, SPD),
+    missingBase: species?.baseStamina === null || species?.baseStamina === undefined,
+  };
+}
+
+// The command that sets Stamina max to the formula for these stats (for
+// example the SPD of a body level-up), or null: not when the Arbiter
+// overrode it, the formula can't be worked out, or nothing changes.
+export function staminaCommand(world, c, stats = {}) {
+  if (c.staminaMaxOverride) return null;
+  const total = staminaFor(world, c, stats).breakdown?.total ?? null;
+  return total !== null && total !== c.staminaMax ? setField(world, 'characters', c.id, 'staminaMax', total, c.name) : null;
 }

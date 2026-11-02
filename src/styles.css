@@ -1182,3 +1182,750 @@ details > summary {
     display: none;
   }
 }
+
+/* ---- Task Cards (shared window for Stamina-spending tasks) ----
+   Plain style until Stage 8.5 (pixel UI kit). */
+.task-card {
+  max-width: 1100px;
+  padding: 12px;
+}
+
+.task-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.task-type-icon {
+  font-size: 26px;
+}
+
+.task-title {
+  margin: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+.task-name {
+  color: var(--tag-border);
+}
+
+.task-portraits {
+  display: flex;
+  gap: 4px;
+}
+
+.portrait {
+  --swatch: #4a3c32;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  background: var(--swatch);
+  border: 2px solid var(--frame-light);
+  box-shadow: 0 0 0 2px #000;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Scene banner: a plain strip until the Rendered View (Stage 9). */
+.task-banner {
+  display: flex;
+  align-items: flex-end;
+  height: 56px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background: linear-gradient(#2d4a2a, #3f5f32 70%, #5a4128 70%);
+  border: 2px solid var(--frame);
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.task-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.3fr);
+  gap: 12px;
+}
+
+.task-pane {
+  padding: 10px;
+  background: var(--panel-inner);
+  border: 2px solid var(--frame);
+  min-width: 0;
+}
+
+.task-pane-title {
+  display: inline-block;
+  margin: -4px 0 8px;
+  padding: 2px 10px;
+  color: var(--text);
+  border: 2px solid var(--frame-light);
+  background: var(--panel);
+}
+
+.task-pane-sub {
+  margin: 10px 0 4px;
+  color: var(--muted);
+}
+
+.task-info-row {
+  display: grid;
+  grid-template-columns: 22px 80px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #3a302a;
+}
+
+.task-info-value {
+  text-align: right;
+}
+
+.task-log {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-log-text {
+  flex: 1;
+  min-height: 320px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.task-controls {
+  margin-top: 12px;
+  padding: 10px;
+  border: 2px dashed var(--frame);
+}
+
+.player-view .arbiter-only {
+  display: none;
+}
+
+.danger-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.danger-seg {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #000;
+  background: #3a302a;
+}
+
+.danger-seg.on {
+  background: #e07060;
+}
+
+.danger-seg.on.seg-0 {
+  background: #6fbf5f;
+}
+
+.danger-seg.on.seg-1 {
+  background: #c9c25a;
+}
+
+.member-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 6px;
+}
+
+.member-tile {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--panel);
+  border: 2px solid var(--frame);
+}
+
+.member-tile.warn {
+  border-color: var(--danger-light);
+}
+
+.member-lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Workload bar (current / required). */
+.work-bar {
+  --fill: 0%;
+  position: relative;
+  height: 18px;
+  min-width: 90px;
+  background: #0d0d0d;
+  border: 2px solid var(--frame);
+}
+
+.work-bar-fill {
+  width: var(--fill);
+  height: 100%;
+  background: var(--accent);
+}
+
+.work-bar-text {
+  position: absolute;
+  inset: 0;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* ---- Workday controls ---- */
+.participant-row {
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--frame);
+}
+
+.participant-row.warn {
+  border-color: var(--danger-light);
+}
+
+.participant-head {
+  margin-bottom: 4px;
+}
+
+.participant-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.participant-grid label {
+  margin: 0;
+}
+
+.row.inline {
+  margin: 0;
+  flex-wrap: nowrap;
+}
+
+.short-input {
+  width: 70px;
+}
+
+input.die-input {
+  width: 52px;
+  padding: 4px;
+  text-align: center;
+}
+
+.die-box {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.die-box.edited input {
+  border-color: var(--tag-border);
+}
+
+.dice-row {
+  margin: 6px 0 0;
+}
+
+.btn.tiny {
+  padding: 1px 5px;
+  font-size: 12px;
+}
+
+.event-box {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 2px solid var(--frame);
+  background: var(--panel-inner);
+}
+
+.event-box p {
+  margin: 4px 0 0;
+}
+
+.event-catastrophe,
+.event-setback {
+  border-color: var(--danger-light);
+}
+
+.event-boon,
+.event-breakthrough {
+  border-color: var(--accent-light);
+}
+
+.proposal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+/* ---- Projects tab ---- */
+.project-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) 90px minmax(120px, 1.2fr) minmax(90px, 1fr) minmax(90px, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 5px 8px;
+  margin-bottom: 3px;
+  font-family: var(--font);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: #1a1511;
+  border: 2px solid var(--panel-inner);
+  cursor: pointer;
+}
+
+.project-row.project-header {
+  background: none;
+  border-color: transparent;
+  cursor: default;
+}
+
+.project-row:not(.project-header):hover {
+  border-color: var(--frame);
+}
+
+.project-row.selected {
+  border-color: var(--tag-border);
+  background: #2a2017;
+}
+
+.status-chip {
+  padding: 1px 6px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid #000;
+  background: #3a302a;
+}
+
+.status-active {
+  background: var(--accent);
+}
+
+.status-paused {
+  background: #6a5a22;
+}
+
+.status-complete {
+  background: var(--tag);
+}
+
+.requirement-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.requirement-row input[type='text'] {
+  flex: 1;
+  min-width: 60px;
+}
+
+.requirement-row select {
+  max-width: 110px;
+}
+
+.requirement-row.unmet input[type='text'] {
+  border-color: var(--danger-light);
+}
+
+.workday-entry {
+  margin-bottom: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--frame);
+}
+
+.workday-entry summary {
+  cursor: pointer;
+}
+
+.log-pre {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 6px;
+  background: #0d0d0d;
+}
+
+/* ---- Day Log ---- */
+.day-log-entry {
+  margin-bottom: 6px;
+  padding: 8px;
+  background: var(--panel-inner);
+  border: 2px solid var(--frame);
+}
+
+.day-log-entry.narration {
+  border-style: dashed;
+}
+
+.day-log-text {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.narration-adder {
+  margin: 2px 0 6px;
+}
+
+.narration-adder summary {
+  cursor: pointer;
+}
+
+/* ---- Dialogs ---- */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog {
+  width: min(380px, calc(100vw - 32px));
+  padding: 14px;
+}
+
+.dialog-buttons {
+  margin: 12px 0 0;
+  justify-content: flex-end;
+}
+
+/* ---- Task Card as a window, dragged by its header ---- */
+
+.task-window {
+  --x: 16px;
+  --y: 16px;
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  z-index: 10;
+  width: min(880px, calc(100% - 16px));
+  box-shadow:
+    inset 0 0 0 2px var(--panel-inner),
+    0 0 0 2px #000,
+    6px 8px 0 rgba(0, 0, 0, 0.5);
+}
+
+.task-window .task-head {
+  cursor: move;
+  user-select: none;
+}
+
+.task-window .task-banner {
+  height: 40px;
+}
+
+/* The log plays like a terminal. */
+.log-screen {
+  flex: 1;
+  min-height: 200px;
+  max-height: min(420px, 45vh);
+  margin: 0;
+  padding: 6px 8px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.35;
+  background: #0d0d0d;
+  border: 2px solid var(--frame);
+  cursor: pointer;
+}
+
+div.log-screen {
+  cursor: default;
+}
+
+.log-prompt {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #0d0d0d;
+  border: 2px solid var(--tag-border);
+}
+
+.log-prompt .row {
+  margin: 4px 0 0;
+}
+
+.prompt-text {
+  color: var(--tag-border);
+}
+
+input.prompt-input {
+  width: 60px;
+  padding: 3px 6px;
+}
+
+input.prompt-input.wide {
+  flex: 1;
+  width: auto;
+}
+
+/* Setup: the party, shrunk into the Info pane. */
+.setup-row {
+  margin-bottom: 4px;
+  padding: 3px 4px;
+  font-size: 12px;
+  background: var(--panel);
+  border: 2px solid var(--frame);
+}
+
+.setup-row.warn {
+  border-color: var(--danger-light);
+}
+
+.setup-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.setup-line + .setup-line {
+  margin-top: 3px;
+}
+
+.setup-name {
+  width: 90px;
+  flex: none;
+}
+
+.setup-row select,
+.setup-row input {
+  padding: 2px 4px;
+  font-size: 12px;
+}
+
+select.setup-skill {
+  flex: 1;
+  min-width: 0;
+}
+
+input.tiny-input {
+  width: 52px;
+}
+
+.setup-confirm {
+  margin: 10px 0 0;
+}
+
+.edit-details > summary {
+  cursor: pointer;
+  color: var(--frame-light);
+}
+
+.task-body.wide-info {
+  grid-template-columns: minmax(300px, 1.5fr) minmax(200px, 1fr);
+}
+
+select.setup-skill {
+  width: 100%;
+}
+
+/* ---- Compact Task Card window ----
+   A small, fixed-size window (about 600 x 430) like a game's console
+   window. Anything that doesn't fit (Edit details) scrolls inside it. */
+.task-window {
+  width: min(600px, calc(100% - 16px));
+  max-height: 430px;
+  padding: 8px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.task-window .task-head {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.task-window .task-type-icon {
+  font-size: 18px;
+}
+
+.task-window .task-title {
+  font-size: 13px;
+}
+
+.task-window .portrait {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.task-window .task-banner {
+  height: 22px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+}
+
+.task-window .task-body,
+.task-window .task-body.wide-info {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.task-window .task-pane {
+  padding: 6px;
+  min-width: 0;
+}
+
+.task-window .task-pane-title {
+  margin: -2px 0 4px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.task-window .task-info-row {
+  grid-template-columns: 18px 60px 1fr;
+  padding: 2px 0;
+}
+
+.task-window .member-tiles {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.task-window .member-tile {
+  padding: 3px;
+}
+
+.task-window .log-screen,
+.task-window .task-log-text {
+  min-height: 0;
+  height: 230px;
+  max-height: none;
+  font-size: 11px;
+}
+
+.task-window .log-prompt {
+  padding: 4px 6px;
+}
+
+.task-window .btn.small {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.task-window .setup-row input,
+.task-window .setup-row select {
+  font-size: 11px;
+}
+
+.task-window input.tiny-input {
+  width: 46px;
+}
+
+.task-window .task-controls {
+  margin-top: 6px;
+  padding: 6px;
+}
+
+.setup-who {
+  flex: 1 1 auto;
+  min-width: 60px;
+}
+
+.task-window .setup-confirm {
+  margin-top: 6px;
+}
+
+/* Keep the title bar (the drag handle) in view when the window scrolls. */
+.task-window .task-head {
+  position: sticky;
+  top: -8px;
+  z-index: 1;
+  margin: -8px -8px 6px;
+  padding: 6px 8px;
+  background: var(--panel);
+  border-bottom: 2px solid var(--frame);
+}
+
+.task-window .log-screen,
+.task-window .task-log-text {
+  height: 165px;
+}
+
+/* A fixed-height log inside the compact window (it scrolls, not grows). */
+.task-window .log-screen,
+.task-window .task-log-text {
+  flex: none;
+}
+
+/* ---- Task Card window, 25% bigger, with a tall scene banner ----
+   The banner is where the Rendered View scene and its animation go
+   (Stage 9), so it gets a big share of the window, like the map area of a
+   game's console window. The Info and Log panes have a fixed height: the
+   log text fills its pane, and a long Info pane scrolls. */
+.task-window {
+  width: min(750px, calc(100% - 16px));
+  max-height: 600px;
+}
+
+.task-window .task-banner {
+  height: 150px;
+  padding: 6px 10px;
+}
+
+.task-window .task-body,
+.task-window .task-body.wide-info {
+  height: 300px;
+}
+
+.task-window .task-pane {
+  overflow-y: auto;
+}
+
+.task-window .task-log {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.task-window .task-log .log-screen,
+.task-window .task-log .task-log-text {
+  flex: 1 1 0;
+  min-height: 60px;
+  height: auto;
+}
+
+.task-window .task-log .log-prompt,
+.task-window .task-log .row,
+.task-window .task-log > p {
+  flex: none;
+  margin-bottom: 0;
+}
+
+.task-window .task-log > .row {
+  margin-top: 4px;
+}
+
+.task-window select[data-key='setup.add'] {
+  width: 100%;
+}
+
+.task-window .task-log > .arbiter-only {
+  flex: none;
+}
+
+input.setup-tool {
+  flex: 1;
+  min-width: 0;
+}

@@ -6,12 +6,14 @@ import { setField, removeRecord, batch } from '../../commands/recordCommands.js'
 import { createCommand } from '../../commands/registry.js';
 import { textField, selectField, fieldSetter } from '../../ui/fields.js';
 import { renderCustomFields } from '../../ui/customFieldsEditor.js';
+import { infoSections } from '../../ui/infoSections.js';
 import { locationOptions } from './characterModel.js';
 import { refOptions } from './libraryEditor.js';
 import { renderBodySection } from './bodySection.js';
 import { renderAbilities } from './abilitiesSection.js';
 import { renderGear } from './gearSection.js';
 import { deathForm, deathDetails } from './death.js';
+import { staminaInput, staminaNote } from './staminaSection.js';
 import { charactersView as view } from './state.js';
 
 // refresh(): redraws the panel after a view-only change (opening a helper).
@@ -36,7 +38,10 @@ export function renderCharacterPanel(world, c, refresh) {
       key: key('location'),
       missingLabel: () => '(removed place)',
     }),
-    ...textField('Current assignment', c.currentAssignment, set('currentAssignment'), { key: key('assignment'), placeholder: 'Free text until Stage 5' }),
+    ...textField('Current assignment', c.currentAssignment, set('currentAssignment'), { key: key('assignment'), placeholder: 'Free text' }),
+    // Other systems add their sections here (the Projects system: the
+    // Project this character is assigned to).
+    ...infoSections(world, c, 'character'),
     ...renderBodySection(world, c, refresh),
     h('h3', {}, 'Stamina and Needs'),
     h(
@@ -46,6 +51,7 @@ export function renderCharacterPanel(world, c, refresh) {
       pairInput(world, c, 'Hunger', 'hunger'),
       pairInput(world, c, 'Thirst', 'thirst'),
     ),
+    staminaNote(world, c),
     ...renderAbilities(world, c, refresh),
     ...renderGear(world, c),
     ...textField('Bio', c.bio, set('bio'), { key: key('bio'), multiline: true }),
@@ -83,32 +89,6 @@ function changeSpecies(world, c, speciesId) {
     setField(world, 'characters', c.id, 'speciesId', speciesId, c.name),
     ...missing.map(([fieldId, field]) => createCommand('addCustomField', { path: 'characters', id: c.id, fieldId, field: structuredClone(field) })),
   ]);
-}
-
-// Stamina remaining today / Stamina max: the daily activity budget, two
-// separate fields (empty = not set). Not the SPD stat.
-function staminaInput(world, c) {
-  const input = (field) =>
-    h('input', {
-      type: 'number',
-      step: 'any',
-      value: c[field] ?? '',
-      placeholder: 'not set',
-      'data-key': `${c.id}.${field}`,
-      onchange: (e) => {
-        const n = Number(e.target.value);
-        if (e.target.value === '') dispatch(setField(world, 'characters', c.id, field, null, c.name));
-        else if (Number.isFinite(n)) dispatch(setField(world, 'characters', c.id, field, n, c.name));
-      },
-    });
-  return h(
-    'div',
-    { class: 'stat-pair', title: 'Stamina remaining today / Stamina max (the daily activity budget)' },
-    h('span', { class: 'stat-label' }, 'Stamina'),
-    input('staminaRemaining'),
-    h('span', { class: 'muted' }, '/'),
-    input('staminaMax'),
-  );
 }
 
 // { current, max } as two number boxes (empty = not set).

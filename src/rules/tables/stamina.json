@@ -1,0 +1,5 @@
+{
+  "description": "Stamina max, from RULES.md (Followers > Stamina), approved by the Arbiter: Stamina = Species Base Stamina + FLOOR((SPD - spdOffset) / spdDivisor). Base Stamina is set per species (Baseliner 1). Conditions, Traits and other effects can modify it on top, and the Arbiter may override any character's Stamina.",
+  "spdOffset": 1,
+  "spdDivisor": 2
+}

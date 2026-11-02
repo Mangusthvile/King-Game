@@ -2,7 +2,7 @@
   {
     "id": "species_baseliner",
     "name": "Baseliner",
-    "staminaDefault": 1,
+    "baseStamina": 1,
     "hungerMax": 5,
     "thirstMax": 3,
     "notes": "",
@@ -12,10 +12,10 @@
   {
     "id": "species_vulture",
     "name": "Vulture",
-    "staminaDefault": null,
+    "baseStamina": null,
     "hungerMax": null,
     "thirstMax": null,
-    "notes": "Stamina, Hunger and Thirst for Vultures are open rules: set them when decided.",
+    "notes": "Base Stamina, Hunger and Thirst for Vultures are open rules: set them when decided.",
     "defaultFields": {
       "field_vulture_mask": { "name": "Mask", "type": "text", "value": "" },
       "field_vulture_vault": { "name": "Vault Value", "type": "number", "value": 0 },

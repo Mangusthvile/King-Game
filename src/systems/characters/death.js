@@ -11,6 +11,7 @@ export function markDead(world, character, cause, day) {
     setField(world, 'characters', character.id, 'alive', false, character.name),
     setField(world, 'characters', character.id, 'death', { cause, day }, character.name),
     character.currentAssignment ? setField(world, 'characters', character.id, 'currentAssignment', '', character.name) : null,
+    character.assignmentProjectId ? setField(world, 'characters', character.id, 'assignmentProjectId', '', character.name) : null,
     ...areas.map((a) => setField(world, 'containers', a.id, 'assignedFollowerIds', a.assignedFollowerIds.filter((id) => id !== character.id), a.name)),
   ]);
 }

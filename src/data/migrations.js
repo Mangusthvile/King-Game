@@ -1,6 +1,6 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTeams, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
+import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTeams, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
 
 // migrations[n] turns a version n world into a version n + 1 world.
@@ -183,7 +183,57 @@ const migrations = {
     world.schemaVersion = 11;
     return world;
   },
+
+  // 11 -> 12 (Stage 5): Projects. Adds the Day Log, world settings (the
+  // optional "(edited)" note in logs) and a character's assigned Project.
+  // Earlier versions had no way to make Projects, so existing ones (if any)
+  // only get the new fields.
+  11: (world) => {
+    world.projects ??= {};
+    for (const p of Object.values(world.projects)) {
+      p.workdays ??= [];
+      p.requirements = Array.isArray(p.requirements) ? p.requirements : [];
+      p.locationContainerId ??= '';
+      p.driveBuilding ??= true;
+      p.notes ??= '';
+      p.customFields ??= {};
+    }
+    world.dayLogs ??= {};
+    world.meta.settings = { ...defaultSettings(), ...(world.meta.settings ?? {}) };
+    for (const c of Object.values(world.characters ?? {})) c.assignmentProjectId ??= '';
+    world.schemaVersion = 12;
+    return world;
+  },
+
+  // 12 -> 13: the Stamina formula (RULES.md, Followers > Stamina). A
+  // species' default Stamina becomes its Base Stamina. Characters get
+  // staminaMaxOverride (false): their stored Stamina max is kept as it is,
+  // and the sheet proposes the formula's value for the Arbiter to accept.
+  12: (world) => {
+    for (const sp of Object.values(world.definitions.species ?? {})) {
+      sp.baseStamina ??= sp.staminaDefault ?? null;
+      delete sp.staminaDefault;
+    }
+    for (const c of Object.values(world.characters ?? {})) c.staminaMaxOverride ??= false;
+    // Undo and redo replay old log entries, so species edits follow the rename.
+    if (world.log) {
+      world.log.actions = world.log.actions.map(renameStaminaDefault);
+      world.log.redo = world.log.redo.map(renameStaminaDefault);
+    }
+    world.schemaVersion = 13;
+    return world;
+  },
 };
+
+// For migration 12 -> 13: a setField of a species' staminaDefault (at any
+// depth inside a batch) now sets baseStamina.
+function renameStaminaDefault(entry) {
+  if (entry.type === 'setField' && entry.payload?.path === 'definitions.species' && entry.payload.field === 'staminaDefault') {
+    return { ...entry, payload: { ...entry.payload, field: 'baseStamina' } };
+  }
+  if (entry.type === 'batch') return { ...entry, payload: { ...entry.payload, commands: entry.payload.commands.map(renameStaminaDefault) } };
+  return entry;
+}
 
 // For migration 3 -> 4: renames every Sub-Area name used as data, at any
 // depth (kinds, type ids, the type collection path in log payloads).

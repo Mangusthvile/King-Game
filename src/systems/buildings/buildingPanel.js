@@ -7,6 +7,7 @@ import { dispatch } from '../../data/store.js';
 import { setField, batch } from '../../commands/recordCommands.js';
 import { textField, selectField, fieldSetter } from '../../ui/fields.js';
 import { navigate } from '../../ui/navigation.js';
+import { infoSections } from '../../ui/infoSections.js';
 import { STAGES, stageName, stageForProgress, shownStage } from './stages.js';
 import { keyValueEditor, storageEditor } from './listEditors.js';
 
@@ -53,9 +54,9 @@ export function renderBuildingPanel(world, obj, view) {
       obj.w !== obj.h ? h('button', { class: 'btn small', title: 'Quarter turn (R)', onclick: () => view.rotateSelected() }, 'Rotate') : null,
     ),
     ...constructionFields(world, b, type),
-    h('label', {}, 'Project'),
-    // Stage 5 (Projects) will set projectId and drive the progress.
-    h('p', { class: 'muted small' }, b.projectId ? `Project ${b.projectId}` : 'None. Projects come in Stage 5.'),
+    // Other systems add their sections here (the Projects system: this
+    // building's Project).
+    ...infoSections(world, b, 'building'),
     h('h3', {}, 'Storage'),
     storageEditor(world, b),
     h('h3', {}, 'Properties'),

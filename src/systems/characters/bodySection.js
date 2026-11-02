@@ -1,13 +1,15 @@
 // The Body part of the stat sheet: Body Type and level, Body Level, STR,
 // SPD, TOU and Health. (SPD is a combat stat; the daily budget is Stamina,
-// shown with the Needs.) The Body Type table and the Health
-// formula only PROPOSE values; the Arbiter applies them or keeps their own.
+// shown with the Needs, and its max follows SPD through the Stamina
+// formula.) The Body Type table and the Health and Stamina formulas only
+// PROPOSE values; the Arbiter applies them or keeps their own.
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField, batch } from '../../commands/recordCommands.js';
 import { proposedStats, differencesFromTable, statsOverCeiling, nextBodyLevel, BODY_STATS } from '../../rules/bodyTypes.js';
 import { healthFor } from '../../rules/health.js';
 import { refOptions } from './libraryEditor.js';
+import { staminaFor, staminaCommand } from './characterModel.js';
 import { charactersView as view } from './state.js';
 
 const LABELS = { bodyLevel: 'Body Lv', STR: 'STR', SPD: 'SPD', TOU: 'TOU' };
@@ -56,6 +58,15 @@ function healthField(world, c) {
 function healthCommand(world, c, stats) {
   const max = healthFor({ ...c, ...stats });
   return max !== null && max !== c.health?.max ? setField(world, 'characters', c.id, 'health', { ...c.health, max }, c.name) : null;
+}
+
+// " Stamina max 3 (now 2)." when the new SPD changes the Stamina formula
+// and Stamina max isn't overridden ('' otherwise). Applying the table or the
+// level-up accepts it.
+function staminaText(world, c, stats) {
+  if (c.staminaMaxOverride) return '';
+  const total = staminaFor(world, c, stats).breakdown?.total ?? null;
+  return total !== null && total !== c.staminaMax ? ` Stamina max ${total} (now ${c.staminaMax ?? '-'}).` : '';
 }
 
 // Traits a Body Type grants that the character doesn't have yet.
@@ -131,7 +142,7 @@ function proposalBox(world, c, bodyType, proposal, differences, missingTraits) {
     { class: 'helper-box proposal' },
     h('h3', {}, `${bodyType.name} Lv ${c.bodyTypeLevel} table`),
     differences.length
-      ? h('p', { class: 'small' }, differences.map((d) => `${LABELS[d.key]} ${d.proposed} (now ${d.current ?? '-'})`).join(', '), proposal ? `. Health max ${healthFor(proposal)}.` : '')
+      ? h('p', { class: 'small' }, differences.map((d) => `${LABELS[d.key]} ${d.proposed} (now ${d.current ?? '-'})`).join(', '), proposal ? `. Health max ${healthFor(proposal)}.${staminaText(world, c, proposal)}` : '')
       : null,
     boxes.length ? h('p', { class: 'small' }, 'This Body Type grants:') : null,
     boxes.map((b) => h('label', { class: 'check-label small' }, b.box, ` Add Trait: ${b.name}`)),
@@ -147,6 +158,7 @@ function proposalBox(world, c, bodyType, proposal, differences, missingTraits) {
               batch(`${c.name}: applied the ${bodyType.name} Lv ${c.bodyTypeLevel} table`, [
                 ...(proposal ? statCommands(world, c, proposal) : []),
                 proposal ? healthCommand(world, c, proposal) : null,
+                proposal ? staminaCommand(world, c, proposal) : null,
                 addTraits(world, c, boxes),
               ]),
             ),
@@ -173,7 +185,7 @@ function levelUpForm(world, c, bodyType, next, refresh) {
       ? h(
           'p',
           { class: 'small' },
-          `Body Lv ${row.bodyLv}, STR ${row.STR}, SPD ${row.SPD}, TOU ${row.TOU}, Health max ${healthFor({ bodyLevel: row.bodyLv, STR: row.STR, TOU: row.TOU })}${row.notes ? ` (${row.notes})` : ''}`,
+          `Body Lv ${row.bodyLv}, STR ${row.STR}, SPD ${row.SPD}, TOU ${row.TOU}, Health max ${healthFor({ bodyLevel: row.bodyLv, STR: row.STR, TOU: row.TOU })}.${staminaText(world, c, { SPD: row.SPD })}${row.notes ? ` (${row.notes})` : ''}`,
         )
       : h('p', { class: 'message warning small' }, `The table has no row for Lv ${next.level} yet, so only the Body Type level changes. Add the row in Libraries > Body Types.`),
     boxes.map((b) => h('label', { class: 'check-label small' }, b.box, ` Add granted Trait: ${b.name}`)),
@@ -192,6 +204,7 @@ function levelUpForm(world, c, bodyType, next, refresh) {
                 setField(world, 'characters', c.id, 'bodyTypeLevel', next.level, c.name),
                 ...statCommands(world, c, stats),
                 row ? healthCommand(world, c, stats) : null,
+                row ? staminaCommand(world, c, stats) : null,
                 addTraits(world, c, boxes),
               ]),
             );

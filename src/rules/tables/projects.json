@@ -1,0 +1,65 @@
+{
+  "description": "Project Resolution Method, from RULES.md. Project Sizes and their Workload; the Work Die per relevant Skill Tier; the Skill Level bonus added to every Work Die (Level - 1, up to +9); the d20 Project Event ladder and each event's description. effectOptions are the examples each description lists, offered as quick picks for the event's effect.",
+  "sizes": [
+    { "id": "minor", "name": "Minor", "workload": 25 },
+    { "id": "small", "name": "Small", "workload": 50 },
+    { "id": "moderate", "name": "Moderate", "workload": 100 },
+    { "id": "large", "name": "Large", "workload": 250 },
+    { "id": "major", "name": "Major", "workload": 500 },
+    { "id": "grand", "name": "Grand", "workload": 1000 },
+    { "id": "monumental", "name": "Monumental", "workload": 2500, "orMore": true }
+  ],
+  "workDice": {
+    "none": 4,
+    "T1": 6,
+    "T2": 8,
+    "T3": 10,
+    "T4": 12,
+    "T5": 20
+  },
+  "dieChoices": [4, 6, 8, 10, 12, 20],
+  "maxLevelBonus": 9,
+  "eventDie": 20,
+  "events": [
+    {
+      "id": "catastrophe",
+      "name": "Catastrophe",
+      "min": 1,
+      "max": 1,
+      "description": "Something seriously goes wrong. This may cause major Progress loss, injuries, destroyed equipment, wasted resources, structural damage, or another severe complication.",
+      "effectOptions": ["Major Progress loss", "Injuries", "Destroyed equipment", "Wasted resources", "Structural damage"]
+    },
+    {
+      "id": "setback",
+      "name": "Setback",
+      "min": 2,
+      "max": 5,
+      "description": "A problem slows the Project. This may cause some Progress loss, wasted resources, damaged tools, minor injuries, or reduced efficiency.",
+      "effectOptions": ["Some Progress loss", "Wasted resources", "Damaged tools", "Minor injuries", "Reduced efficiency"]
+    },
+    {
+      "id": "nothingUnusual",
+      "name": "Nothing Unusual",
+      "min": 6,
+      "max": 15,
+      "description": "The day's work proceeds as expected. No additional effects occur.",
+      "effectOptions": []
+    },
+    {
+      "id": "boon",
+      "name": "Boon",
+      "min": 16,
+      "max": 19,
+      "description": "Something goes particularly well. This may grant bonus Progress, conserve resources, improve efficiency, preserve tools, or provide another useful advantage.",
+      "effectOptions": ["Bonus Progress", "Conserved resources", "Improved efficiency", "Preserved tools"]
+    },
+    {
+      "id": "breakthrough",
+      "name": "Breakthrough",
+      "min": 20,
+      "max": 20,
+      "description": "Something exceptional occurs. This may result in a large Progress gain, improved Project quality, a new Theory, Skill growth, discovering a superior method, or another major benefit.",
+      "effectOptions": ["Large Progress gain", "Improved Project quality", "A new Theory", "Skill growth", "Discovered a superior method"]
+    }
+  ]
+}
