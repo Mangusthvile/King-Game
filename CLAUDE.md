@@ -185,37 +185,37 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
 
-9. **Rendered View and Asset Library (pixel art packs).**
+9. **Rendered View and Asset Library.**
 
    Art direction
-   - Pixel art from downloaded asset packs (free or purchased), not AI-generated art. The world uses ONE base tile size (16x16 or 32x32, set in Settings); assets in another size are flagged on import.
+   - Assets are the Arbiter's own AI-generated sprite sheets, converted to pixel art. Target look: chunky, bold-outlined, bright, cozy pixel art.
    - Render pixel-perfect: nearest-neighbor scaling, integer zoom levels only in Rendered view, imageSmoothingEnabled = false.
-
-   Asset storage and licenses
-   - Free assets with permissive licenses (CC0 or similar) may live in /src/assets/packs/<pack-name>/ and be committed.
-   - Purchased or restrictive-license assets live in /assets-private/, which must be listed in .gitignore and never pushed to GitHub. They can also be imported straight into IndexedDB from the Asset Library.
-   - Every asset stores: source pack name, author, source URL, license, and tags. The Asset Library shows this.
+   - The world uses one base tile size (set in Settings, e.g. 32x32). Asset sizes are measured in tiles (a tree might be 1x2 tiles, a house 3x3).
 
    Asset Library tab
-   - Import a single PNG, a folder of PNGs, or a tileset sheet.
-   - Tileset slicer: choose tile size, margin and spacing; the sheet is cut into a grid; the Arbiter selects tiles (or groups of tiles for multi-tile objects like a 2x3 tree or a 4x4 house) and names and tags them.
+   - Import a single PNG, several PNGs, or a sprite sheet.
+   - Sheet importer: the sheet is on a plain white background. Auto-detect each separate object, remove the background, trim, then let the Arbiter name, tag and set the tile size (w x h) of each piece. Save each as its own asset.
+   - Pixelize on import (optional, on by default; skip it for sheets that are already pixel art): downscale to the chosen tile size with nearest-neighbor, reduce to a limited palette, keep a clean dark outline, and show a before/after preview so the Arbiter can adjust the pixel scale before saving.
    - Tags come from file or piece names: every word is a tag, numbers ignored, plurals singular ("grassland tree 01" = [grassland, tree]; "any" fits every biome). Tags stay editable.
-   - Autotile sets: the Arbiter can register a group of tiles as a terrain set for smooth edges (support at least the 16-tile 2-corner Wang layout and the 47-tile blob layout; RPG Maker A2 layout if simple).
+   - Each asset stores its source sheet name, tags, size in tiles, and whether it already includes its own shadow.
+   - Source sheets live in references/asset-sheets/ and are only used through the importer, never loaded directly by the app.
 
    How assets are chosen
-   - Tile types map to a terrain set (or a plain tile); region, sub-area and building types list asset needs as tag sets with a density (e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate). Buildings list one tag set per construction stage.
-   - Lookup order for [forest, tree]: all tags matched, then [any, tree], then a simple colored placeholder.
+   - Region, sub-area, tile and building types list asset needs as tag sets with a density (e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate). Buildings list one tag set per construction stage.
+   - Lookup order for [forest, tree]: all tags matched, then [any, tree], then a simple colored pixel placeholder.
 
    Missing asset prompts
    - When a need has no matching asset (or a new biome, sub-area or building type is created), show a non-blocking "Assets needed" prompt listing the missing tag sets. For each:
-     1. "Select from my files": file picker; files are auto-tagged from their names; the Arbiter confirms tags, pack, author, URL and license.
-     2. "Copy search terms": copies suggested search phrases to the clipboard (e.g. "top down pixel forest tree 16x16") plus the reminder to check the license.
+     1. "Select from my files": file picker; files are auto-tagged from their names; the Arbiter confirms tags and size.
+     2. "Copy generation prompt": copies a ready prompt to the clipboard in this format, with [SUBJECTS] filled in, and shows the file name to save it as ("sheet [tags].png"):
+        "Sheet: 4 [SUBJECTS]. Follow the style guide."
+        Also include a "Copy style guide" button that copies the full style setup message (stored in Settings, editable) for starting a new chat.
      3. "Use placeholder for now": the need stays in an "Assets needed" list in the Asset Library until filled.
 
    Renderer
    - Pure function of tile data plus a saved seed. No AI, no network.
-   - Terrain uses autotiling so water, roads and biome borders get proper edges and corners instead of hard squares.
-   - Then it scatters matching props by density, sorted by y so lower objects draw in front.
+   - Water, roads and biome borders are smoothed into curved shapes that stay inside their painted cells, drawn in pixel style (snapped to the pixel grid, same outline color as the assets).
+   - Then it scatters matching assets by density, sorted by y so lower objects draw in front. If an asset has no shadow, add a small pixel shadow under it.
    - The Arbiter can Reroll, Lock, and move, swap or delete individual props. Locked props are saved.
    - Each map tab toggles between Tile view (editing) and Rendered view (playing and screenshots).
 

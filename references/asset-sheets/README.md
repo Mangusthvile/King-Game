@@ -1,6 +1,1 @@
-This folder is no longer used for AI-generated sprite sheets. Stage 9 now uses pixel art from downloaded asset packs instead (see Stage 9 in CLAUDE.md):
-
-- Free assets with permissive licenses (CC0 or similar) go in /src/assets/packs/<pack-name>/.
-- Purchased or restrictive-license assets go in /assets-private/, which is never pushed to GitHub, or are imported straight into the Asset Library.
-
-Do not add new files here.
+Source sprite sheets for the Stage 9 Asset Library: the Arbiter's own AI-generated sheets, converted to pixel art on import. Each file is named 'sheet [tags].png' (for example 'sheet grassland tree.png'); the words after 'sheet' become the suggested tags when imported. Only approved sheets go here; overwrite a sheet when redoing it. These files are only used through the sheet importer, never loaded directly by the app, and not until Stage 9 is built.
