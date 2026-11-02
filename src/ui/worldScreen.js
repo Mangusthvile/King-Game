@@ -4,8 +4,11 @@ import { h } from './dom.js';
 import { canUndo, canRedo, undo, redo, getSaveStatus } from '../data/store.js';
 import { renderSettingsTab } from './settingsTab.js';
 import { renderLogTab } from './logTab.js';
+import { getSystemTabs } from '../systems/registry.js';
 
-const TABS = [
+// Built-in tabs. Tabs without a render function are placeholders until a
+// system in /src/systems provides a tab with the same id.
+const BASE_TABS = [
   { id: 'world', label: 'World Map', stage: 1 },
   { id: 'region', label: 'Region Map', stage: 2 },
   { id: 'local', label: 'Local Map', stage: 2 },
@@ -14,6 +17,12 @@ const TABS = [
   { id: 'resources', label: 'Resources', stage: null }, // after the MVP
   { id: 'log', label: 'Log', render: renderLogTab },
   { id: 'settings', label: 'Settings', render: renderSettingsTab },
+];
+
+const systemTabs = getSystemTabs();
+const TABS = [
+  ...BASE_TABS.map((t) => systemTabs.find((s) => s.id === t.id) ?? t),
+  ...systemTabs.filter((s) => !BASE_TABS.some((t) => t.id === s.id)),
 ];
 
 // Remembered between re-renders so the tab doesn't reset after every change.
@@ -55,14 +64,15 @@ export function renderWorldScreen(root, world, { onBack }) {
     ),
   );
 
-  const content = tab.render ? tab.render(world) : placeholder(tab);
-
   const detailPanel = h(
     'aside',
     { class: 'detail-panel frame' },
     h('h2', {}, 'Details'),
     h('p', { class: 'muted' }, 'Select something on a map to see it here.'),
   );
+
+  // Tabs may fill the detail panel themselves (the maps do).
+  const content = tab.render ? tab.render(world, { detailPanel }) : placeholder(tab);
 
   root.replaceChildren(
     h(

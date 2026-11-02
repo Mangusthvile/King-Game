@@ -1,17 +1,24 @@
 // The shape of one world (campaign) document.
 // Bump SCHEMA_VERSION whenever the shape changes, and add a step in migrations.js.
 import { newId } from './ids.js';
+import tileTypeList from './defaults/tileTypes.json';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 // Collections are plain objects keyed by record id. Plain objects (not Map)
 // so the whole world can be saved to IndexedDB and exported as JSON as-is.
+// Starter paint colors, keyed by id. The Arbiter can rename, recolor, add and
+// delete them in the app (Paint tool panel).
+export function defaultTileTypes() {
+  return Object.fromEntries(tileTypeList.map((t) => [t.id, structuredClone(t)]));
+}
+
 function emptyDefinitions() {
   return {
     regionTypes: {},
     subAreaTypes: {},
     buildingTypes: {},
-    tileTypes: {},
+    tileTypes: defaultTileTypes(),
     resourceTypes: {},
     species: {},
     theories: {},
@@ -35,6 +42,7 @@ export function createContainer({ kind, parentId = null, name }) {
     placedObjectIds: [],
     resources: [], // sub-areas only: { resourceTypeId, availability, notes }
     notes: '',
+    customFields: {}, // Arbiter-made fields: { [fieldId]: { name, type, value } }
   };
 }
 

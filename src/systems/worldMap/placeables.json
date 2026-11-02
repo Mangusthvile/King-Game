@@ -1,0 +1,22 @@
+[
+  {
+    "id": "region",
+    "label": "Region",
+    "kind": "region",
+    "createsContainer": "region",
+    "defaultName": "New Region",
+    "w": 6,
+    "h": 4,
+    "color": "#e8c66a",
+    "display": "outline"
+  },
+  {
+    "id": "marker",
+    "label": "Marker",
+    "kind": "marker",
+    "defaultName": "Marker",
+    "w": 1,
+    "h": 1,
+    "color": "#d9b37a"
+  }
+]

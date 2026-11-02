@@ -1,6 +1,9 @@
 // Entry point: decides which screen to show and wires global shortcuts.
 import './styles.css';
 import './commands/worldCommands.js'; // registers the world command types
+import './commands/recordCommands.js'; // generic field / record commands
+import './commands/customFieldCommands.js'; // Arbiter-made custom fields
+import './systems/registry.js'; // every game system and its commands
 import { getWorld, openWorld, closeWorld, subscribe, undo, redo } from './data/store.js';
 import { renderWorldList } from './ui/worldListScreen.js';
 import { renderWorldScreen, updateSaveStatus } from './ui/worldScreen.js';

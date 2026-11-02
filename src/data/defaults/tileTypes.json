@@ -1,0 +1,12 @@
+[
+  { "id": "tile_grass", "name": "Grassland", "color": "#5a8f3c", "spriteKey": "" },
+  { "id": "tile_forest", "name": "Forest", "color": "#2f5e2a", "spriteKey": "" },
+  { "id": "tile_water", "name": "Water", "color": "#2d5f9a", "spriteKey": "" },
+  { "id": "tile_deep_water", "name": "Deep Water", "color": "#1d3f6e", "spriteKey": "" },
+  { "id": "tile_sand", "name": "Sand", "color": "#c9b27a", "spriteKey": "" },
+  { "id": "tile_dirt", "name": "Dirt", "color": "#7a5a3a", "spriteKey": "" },
+  { "id": "tile_barren", "name": "Barren", "color": "#8a7a5e", "spriteKey": "" },
+  { "id": "tile_stone", "name": "Stone", "color": "#7d7d7d", "spriteKey": "" },
+  { "id": "tile_mountain", "name": "Mountain", "color": "#5a5048", "spriteKey": "" },
+  { "id": "tile_snow", "name": "Snow", "color": "#e6eef2", "spriteKey": "" }
+]

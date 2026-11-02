@@ -130,7 +130,8 @@ h2 {
 }
 
 input[type='text'],
-input[type='number'] {
+input[type='number'],
+select {
   font-family: var(--font);
   font-size: 14px;
   color: var(--text);
@@ -279,8 +280,9 @@ label {
 
 .content {
   flex: 1;
+  position: relative; /* the map view fills it */
   overflow: auto;
-  /* Procedural-looking grid backdrop until the canvas arrives in Stage 1. */
+  /* Grid backdrop for the placeholder tabs. */
   background-color: var(--bg);
   background-image:
     linear-gradient(var(--bg-grid) 1px, transparent 1px),
@@ -344,6 +346,190 @@ label {
 }
 
 .log-day {
+  color: var(--tag-border);
+}
+
+/* ---- Map view ---- */
+.map-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: #1a1512;
+  border-bottom: 2px solid var(--frame);
+}
+
+.tool-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn.active {
+  background: var(--tag);
+  border-color: var(--tag-border);
+  color: #fff;
+}
+
+.key-hint {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.zoom-label {
+  min-width: 36px;
+  text-align: center;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid #000;
+  box-shadow: 0 0 0 1px var(--frame);
+  cursor: pointer;
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 2px var(--tag-border);
+}
+
+.swatch-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border: 1px solid #000;
+}
+
+.map-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map-canvas {
+  display: block;
+  touch-action: none; /* let pointer events handle drags */
+}
+
+.map-status {
+  padding: 4px 8px;
+  color: var(--muted);
+  background: #1a1512;
+  border-top: 2px solid var(--frame);
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* ---- Detail panel contents ---- */
+h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--frame-light);
+  text-transform: uppercase;
+}
+
+.kind-tag {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+input.wide {
+  width: 100%;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.field-grid label {
+  margin: 0;
+}
+
+.field-grid input,
+.field-grid select {
+  width: 100%;
+}
+
+input[type='color'] {
+  width: 100%;
+  height: 28px;
+  padding: 0;
+  background: #0d0d0d;
+  border: 2px solid var(--frame);
+}
+
+.tile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tile-row,
+.custom-field {
+  display: grid;
+  grid-template-columns: auto 1fr 44px auto;
+  gap: 4px;
+  align-items: center;
+  padding: 2px;
+}
+
+.tile-row.active {
+  outline: 2px solid var(--tag-border);
+}
+
+/* Two lines per field: name | type, then value | remove. */
+.custom-field {
+  grid-template-columns: 1fr 84px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.custom-field input[type='checkbox'] {
+  justify-self: start;
+}
+
+.custom-fields select {
+  width: 84px;
+  flex-shrink: 0;
+}
+
+.custom-field input,
+.custom-fields .row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.custom-fields .row {
+  flex-wrap: nowrap;
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1.8;
+}
+
+.help-list .key-hint {
+  margin: 0;
   color: var(--tag-border);
 }
 
