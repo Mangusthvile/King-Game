@@ -2,6 +2,7 @@
 // the roster with search, sort and filters, and the Death Log. The selected
 // character's stat sheet fills the right-hand panel.
 import { h } from '../../ui/dom.js';
+import { swatchStyle } from '../../ui/colors.js';
 import { dispatch } from '../../data/store.js';
 import { addRecord } from '../../commands/recordCommands.js';
 import { createCharacter, libName, locationName, locationOptions } from './characterModel.js';
@@ -147,7 +148,7 @@ function rosterRow(world, c, refresh) {
       onclick: () => (selectCharacter(c.id), refresh()),
     },
     h('span', { class: 'roster-name' }, c.alive ? '' : '✝ ', c.name),
-    h('span', { class: 'team-chip ellipsis', style: `background:${faction?.color ?? '#3a3029'}`, title: faction?.name ?? 'No faction' }, faction?.name ?? '-'),
+    h('span', { class: 'team-chip ellipsis', style: swatchStyle(faction?.color ?? '#3a3029'), title: faction?.name ?? 'No faction' }, faction?.name ?? '-'),
     h('span', { class: 'muted small ellipsis' }, libName(world, 'species', c.speciesId)),
     h('span', { class: 'small ellipsis' }, libName(world, 'bodyTypes', c.bodyTypeId), c.bodyTypeId ? h('span', { class: 'muted' }, ` ${c.bodyTypeLevel}`) : null),
     stat(c.STR, 'str'),

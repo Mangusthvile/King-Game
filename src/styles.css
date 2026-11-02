@@ -878,12 +878,15 @@ details > summary {
   white-space: nowrap;
 }
 
+/* A faction chip: its color and a readable text color come from the data
+   (ui/colors.js swatchStyle). */
 .team-chip {
   display: inline-block;
   padding: 0 6px;
   margin-left: 6px;
   font-size: 11px;
-  color: #120d09;
+  color: var(--swatch-text, #120d09);
+  background: var(--swatch, #3a3029);
   border: 1px solid #000;
   text-align: center;
   vertical-align: middle;

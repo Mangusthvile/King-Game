@@ -7,6 +7,7 @@ import { createCommand } from '../../commands/registry.js';
 import { textField, selectField, fieldSetter } from '../../ui/fields.js';
 import { renderCustomFields } from '../../ui/customFieldsEditor.js';
 import { infoSections } from '../../ui/infoSections.js';
+import { swatchStyle } from '../../ui/colors.js';
 import { locationOptions } from './characterModel.js';
 import { refOptions } from './libraryEditor.js';
 import { renderBodySection } from './bodySection.js';
@@ -24,7 +25,7 @@ export function renderCharacterPanel(world, c, refresh) {
   const closeHelper = () => ((view.helper = null), refresh());
 
   return [
-    h('h2', {}, c.alive ? 'Character' : 'Character (dead)', faction ? h('span', { class: 'team-chip', style: `background:${faction.color}` }, faction.name) : null),
+    h('h2', {}, c.alive ? 'Character' : 'Character (dead)', faction ? h('span', { class: 'team-chip', style: swatchStyle(faction.color) }, faction.name) : null),
     ...textField('Name', c.name, (v) => v.trim() && set('name')(v.trim()), { key: key('name') }),
     ...selectField('Faction', c.factionId ?? '', [{ value: '', label: '(none)' }, ...refOptions(world, 'factions')], set('factionId'), {
       key: key('faction'),
