@@ -185,6 +185,21 @@ Rules tables (Harvest availability ladders, Environmental Danger table, Work Die
 
 - Stage 5 (Projects) is the first stage that must implement this.
 
+## Task Cards (core UI for every Speed-spending activity)
+
+Mockups: `references/ui/task-card-mockup-1.png` (four cards) and `references/ui/task-card-mockup-2.png` (one card). They show the target look and layout; their placeholder text (the "Expedition" title, clock times, generic "Check" rolls) is superseded by the rules below.
+
+- One shared window style for any task where characters spend Speed. Title format: "[Type]: [Task name]" (Harvest, Project, Training, Crafting, and future types). Each type plugs into the card framework as a module (Extensibility rules).
+- Header: type icon, task name, portraits of assigned characters.
+- Scene banner: the Rendered View of the task's Area with character sprites (Stage 9); a plain colored strip before then. Yield bubbles (e.g. "+3 Wood") appear over the banner.
+- Info panel: party size; location (shows [???] if undiscovered); Environmental Danger meter with 6 segments (Safe, Low, Moderate, High, Extreme, Lethal); member tiles showing portrait, Speed spent, die type and source (e.g. "1 Speed · d6 · Digger T1"), and key equipment icons.
+- Type-specific info: Project shows a Workload bar (current / required); Harvest shows target resource and Availability; Training shows teacher, Theory and Max Possible Progress; Crafting shows Recipe, Crafting Cost and item count.
+- Log panel: the Resolution Log for this task (see Resolution Logs), labeled by Day and roll number, never clock times (King's Game has no in-day clock). Entries show the real rolls from RULES.md (e.g. "Harvest Roll (Abundant): 14, Good Success, Yield 6" then "Danger (Moderate): None"). Copy and Copy whole day buttons. Training changes Theory percent, never stats.
+- Arbiter controls (hidden in Player View): roll, reroll, edit any result, accept, cancel. Nothing commits until accepted.
+- Player View hides Arbiter controls so cards can be screenshotted for players.
+- Build order: Stage 5 builds the card framework in plain style with the Project type; Stage 6 connects Speed and the Day Log; Harvest, Training and Crafting types come after the MVP; Stage 8.5 applies the pixel frame look shown in the mockups; Stage 9 fills the scene banner.
+- Scouting is a planned card type but has no rule yet (see Open Rules).
+
 ## Commands, undo and time
 
 - Every change is a command object `{ type, payload, do(world), undo(world) }`, pushed to the action log.
@@ -361,3 +376,5 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 - Specific Boon and Setback options for Project Events.
 
 - Harvest carry limit without storage equipment (seen as 6 per Speed for Emerald Puff Fruits): is it per resource, or a general rule?
+
+- Scouting/Exploration Resolution Method: how discovery and found resources are rolled (needed for the Scouting task card).
