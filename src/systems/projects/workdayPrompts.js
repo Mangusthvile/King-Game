@@ -1,10 +1,11 @@
 // The questions the workday log asks as it plays (an Oregon Trail style
 // prompt under the log): roll the Work Dice? Y/N (N = type in physical
-// dice), roll the Event? Y/N (or type the d20 result), then type the
+// dice), roll the Event? Y/N (N = type the d20 result), then type the
 // effect, the Workload change, any Conditions and notes, and finally
-// "Accept this workday? Y/N". Every question is one text box with an
-// info tip (hover the "i") saying what to type, plus suggestions where
-// RULES.md gives some. Answers change the draft only; Accept is the one commit.
+// "Accept this workday? Y/N". Yes/no questions are two buttons; questions
+// that need a short answer are one text box (with suggestions where
+// RULES.md gives some). Each has an info tip (hover the "i") saying what it
+// wants. Answers change the draft only; Accept is the one commit.
 import { h } from '../../ui/dom.js';
 import { infoTip } from '../../ui/taskCard.js';
 import { EVENT_DIE, PROJECT_EVENTS } from '../../rules/projects.js';
@@ -16,38 +17,27 @@ export function currentStop(script, draft) {
   return script.stops.find((s) => !draft.answered[s.name]) ?? null;
 }
 
-// "> Question (Y/N)" with one text box: typing Y or N answers at once.
-// onNumber (optional): a whole number followed by Enter answers too (the
-// Event roll from a physical d20). info: the hover text of the "i".
-// (Reacting to the typed text, not the key, also works with on-screen
-// keyboards and pasted text.)
-function ynPrompt(question, onYes, onNo, { info, onNumber = null } = {}) {
-  const message = h('span', { class: 'flag-text small' });
-  const input = h('input', {
-    type: 'text',
-    class: onNumber ? 'prompt-input wide' : 'prompt-input',
-    maxLength: onNumber ? 4 : 3,
-    placeholder: onNumber ? 'Y, N or a roll' : 'Y or N',
-    'data-autofocus': true,
-    oninput: (e) => {
-      const answer = e.target.value.trim().toLowerCase();
-      if (answer.startsWith('y')) onYes();
-      else if (answer.startsWith('n')) onNo();
-      else if (!(onNumber && /^\d+$/.test(answer))) e.target.value = '';
-    },
-    onkeydown: (e) => {
-      if (e.key !== 'Enter' || !onNumber) return;
-      e.preventDefault();
-      const n = Number(e.target.value.trim());
-      if (e.target.value.trim() === '' || !onNumber(n)) message.textContent = `Type Y, N, or a roll from 1 to ${EVENT_DIE}.`;
-    },
-  });
+// "> Question (Y/N)" answered with two buttons, labelled with what each
+// does (yes / no: the button texts). The Y and N keys press them too, since
+// the first button gets the focus. info: the hover text of the "i".
+function ynPrompt(question, onYes, onNo, { info, yes = 'Yes', no = 'No' } = {}) {
   return h(
     'div',
-    { class: 'log-prompt' },
-    h('span', { class: 'prompt-text' }, `> ${question} (Y/N)`, infoTip(info)),
-    h('div', { class: 'row' }, input),
-    message,
+    {
+      class: 'log-prompt',
+      onkeydown: (e) => {
+        const key = e.key.toLowerCase();
+        if (key === 'y') (e.preventDefault(), onYes());
+        else if (key === 'n') (e.preventDefault(), onNo());
+      },
+    },
+    h('span', { class: 'prompt-text' }, `> ${question}`, infoTip(info)),
+    h(
+      'div',
+      { class: 'row' },
+      h('button', { class: 'btn small primary', 'data-autofocus': true, onclick: onYes }, `[Y] ${yes}`),
+      h('button', { class: 'btn small', onclick: onNo }, `[N] ${no}`),
+    ),
   );
 }
 
@@ -156,6 +146,8 @@ export function renderPrompt(world, draft, resolved, stop, refresh) {
       if (draft.sub === 'manualDice') return manualDice(world, draft, resolved, answer, refresh);
       return ynPrompt('Roll the Work Dice?', () => (rollAll(world, draft), answer()), sub('manualDice'), {
         info: 'Y: the app rolls every Work Die for you. N: you roll real dice and type each result in.',
+        yes: 'Roll them',
+        no: 'I rolled my own',
       });
     case 'rollEvent': {
       const enter = (n) => typeEventRoll(draft, n) && (answer(), true);
@@ -166,8 +158,9 @@ export function renderPrompt(world, draft, resolved, stop, refresh) {
         });
       }
       return ynPrompt(`Roll the Project Event (d${EVENT_DIE})?`, () => (rollEvent(draft), answer()), sub('manualEvent'), {
-        info: `Y: the app rolls the d20. N: you type the result of your own d20. You can also type the result (1 to ${EVENT_DIE}) straight away and press Enter. ${EVENT_LADDER}.`,
-        onNumber: enter,
+        info: `Y: the app rolls the d20. N: you type the result of your own d20. ${EVENT_LADDER}.`,
+        yes: 'Roll it',
+        no: 'I rolled my own',
       });
     }
     case 'effect': {
@@ -187,6 +180,8 @@ export function renderPrompt(world, draft, resolved, stop, refresh) {
       if (draft.sub === 'conditionForm') return conditionForm(world, draft, () => ((draft.sub = null), refresh()), refresh);
       return ynPrompt(draft.conditionsToAdd.length ? 'Add another Condition?' : 'Add a Condition to a participant?', sub('conditionForm'), answer, {
         info: 'Y: give a participant a Condition from the Event (an injury, exhaustion...), with its modifier and how many days it lasts. N: nobody gets one.',
+        yes: 'Add one',
+        no: draft.conditionsToAdd.length ? 'Done' : 'None',
       });
     case 'notes':
       return typedPrompt('Any notes for this workday?', draft.notes, (value) => ((draft.notes = value), answer()), {
@@ -194,7 +189,7 @@ export function renderPrompt(world, draft, resolved, stop, refresh) {
       });
     default:
       // A stop the app doesn't know (typo in an edited template): just continue.
-      return ynPrompt(`Continue? (unknown stop "${stop.name}")`, answer, answer, { info: 'This question is not known to the app. Y or N both continue.' });
+      return ynPrompt(`Continue? (unknown stop "${stop.name}")`, answer, answer, { info: 'This question is not known to the app. Either button continues.', yes: 'Continue', no: 'Skip' });
   }
 }
 
@@ -206,6 +201,8 @@ export function renderAcceptPrompt(draft, blocker, onAccept, refresh) {
   }
   return ynPrompt('Accept this workday?', onAccept, () => ((draft.declined = true), refresh()), {
     info: 'Y: save the workday (Workload, Stamina spent, history, Day Log). Ctrl+Z undoes it. N: open Edit details to change something first.',
+    yes: 'Accept',
+    no: 'Not yet',
   });
 }
 
