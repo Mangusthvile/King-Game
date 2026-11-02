@@ -9,7 +9,7 @@ import buildingCategoryList from './defaults/buildingCategories.json';
 import speciesList from './defaults/species.json';
 import teamList from './defaults/teams.json';
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.
@@ -51,7 +51,7 @@ export function defaultBuildingCategories() {
 }
 
 // Starter species (Baseliner, Vulture). Shape:
-//   { id, name, hungerMax, thirstMax (null = not set), notes,
+//   { id, name, staminaDefault, hungerMax, thirstMax (null = not set), notes,
 //     defaultFields (copied onto a character's custom fields, like Vulture's
 //     Mask, Vault Value and Essence notes), customFields }
 export function defaultSpecies() {
@@ -66,7 +66,7 @@ export function defaultTeams() {
 
 // A new species with nothing set yet (typed in the Region panel or a library).
 export function createSpecies(name) {
-  return { id: newId('species'), name, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
+  return { id: newId('species'), name, staminaDefault: null, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
 }
 
 function emptyDefinitions() {

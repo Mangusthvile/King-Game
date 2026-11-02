@@ -109,7 +109,6 @@ export function buildImportPlan(world, bodyFile, charFile) {
       SPD: raw.SPD ?? null,
       TOU: raw.TOU ?? null,
       health: { current: raw.health ?? null, max: raw.health ?? null },
-      speedRemaining: raw.SPD ?? null,
       skills: (raw.skills ?? []).map((s) => ({ skillId: ensure('skills', s.name, flags, who, { tier: s.tier ?? 'T1' }), tier: s.tier ?? 'T1', level: s.level ?? 1 })),
       defenseSkillId: raw.defenseSkill ? ensure('skills', raw.defenseSkill, flags, who) : '',
       theories: structuredClone(raw.theories ?? []),

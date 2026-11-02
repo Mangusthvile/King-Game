@@ -1,5 +1,6 @@
 // The Body part of the stat sheet: Body Type and level, Body Level, STR,
-// SPD, TOU, Health, and today's Speed. The Body Type table and the Health
+// SPD, TOU and Health. (SPD is a combat stat; the daily budget is Stamina,
+// shown with the Needs.) The Body Type table and the Health
 // formula only PROPOSE values; the Arbiter applies them or keeps their own.
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
@@ -119,15 +120,6 @@ export function renderBodySection(world, c, refresh) {
           ? h('p', { class: 'muted small' }, `${bodyType.name} is at its max level (${bodyType.maxLevel}).`)
           : null,
     ...healthField(world, c),
-    h('h3', {}, 'Speed today'),
-    h(
-      'div',
-      { class: 'stat-pair', title: 'SPD is also the daily Speed budget' },
-      h('span', { class: 'stat-label' }, 'Remaining'),
-      numberField(world, c, 'speedRemaining'),
-      h('span', { class: 'muted' }, '/'),
-      h('span', { class: 'speed-max' }, `SPD ${c.SPD}`),
-    ),
   ];
 }
 

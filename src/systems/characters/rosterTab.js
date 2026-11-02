@@ -20,7 +20,7 @@ const SORTS = {
   SPD: { label: 'SPD', key: (w, c) => -(c.SPD ?? 0) },
   TOU: { label: 'TOU', key: (w, c) => -(c.TOU ?? 0) },
   health: { label: 'Health', key: (w, c) => -(c.health?.current ?? 0) },
-  speed: { label: 'Speed left', key: (w, c) => -(c.speedRemaining ?? 0) },
+  stamina: { label: 'Stamina left', key: (w, c) => -(c.staminaRemaining ?? 0) },
   location: { label: 'Location', key: (w, c) => locationName(w, c).toLowerCase() },
 };
 
@@ -128,7 +128,7 @@ function rosterList(world, refresh) {
     h('h2', {}, `Roster (${list.length} of ${total})`),
     list.length
       ? [
-          h('div', { class: 'roster-row roster-header small muted' }, ['Name', 'Faction', 'Species', 'Body Type', 'STR', 'SPD', 'TOU', 'Health', 'Speed'].map((t) => h('span', {}, t))),
+          h('div', { class: 'roster-row roster-header small muted' }, ['Name', 'Faction', 'Species', 'Body Type', 'STR', 'SPD', 'TOU', 'Health', 'Stamina'].map((t) => h('span', {}, t))),
           list.map((c) => rosterRow(world, c, refresh)),
         ]
       : h('p', { class: 'muted small' }, total ? 'No character matches.' : 'No characters yet. Add one, or use Import seed data.'),
@@ -154,7 +154,7 @@ function rosterRow(world, c, refresh) {
     stat(c.SPD, 'spd'),
     stat(c.TOU, 'tou'),
     h('span', { class: 'meter hunger', title: 'Health current / max' }, `${c.health?.current ?? '-'}/${c.health?.max ?? '-'}`),
-    h('span', { class: 'meter speed', title: 'Speed remaining today / SPD' }, `${c.speedRemaining ?? '-'}/${c.SPD ?? '-'}`),
+    h('span', { class: 'meter speed', title: 'Stamina remaining today / Stamina max' }, `${c.staminaRemaining ?? '-'}/${c.staminaMax ?? '-'}`),
   );
 }
 

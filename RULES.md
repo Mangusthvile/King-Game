@@ -70,7 +70,7 @@ The Resources Availability refers to an individual harvestable resource availabi
 
 While a Location Environment Danger Level represents the general hazards faced while gathering there and is independent of the resource being collected. A harmless fruit growing inside a deadly forest is still dangerous to harvest because the forest itself is dangerous.
 
-1. Decide on how much Speed each individual will spend on this Task. As each point of Speed spent will grants a 1d20 to roll for the Harvest. The Resources Availability determines the specific Success ladder for the Harvest Roll. The Harvest rolled equals the output for this gathering session.
+1. Decide on how much Stamina each individual will spend on this Task. As each point of Stamina spent will grants a 1d20 to roll for the Harvest. The Resources Availability determines the specific Success ladder for the Harvest Roll. The Harvest rolled equals the output for this gathering session.
 Harvest Availability Tables 
 Overflowing Resources 
 Roll	Result	Yeild
@@ -183,7 +183,7 @@ Grand	1,000
 Monumental	2,500+
 
 The Arbiter may freely adjust the Workload point value if they feel is falls between two size. Or is above the Monumental Size.
-1. After determining the Size and Workload of a Project. The next step involves assigning individuals to work on the Project as a Task. From their determine how much Speed each individual will invest in that individual Task. Each point of speed invested will grant 1 Work Die. The specific type of Die used is determined by the Relayed Skills posses by the Individuals.
+1. After determining the Size and Workload of a Project. The next step involves assigning individuals to work on the Project as a Task. From their determine how much Stamina each individual will invest in that individual Task. Each point of Stamina invested will grant 1 Work Die. The specific type of Die used is determined by the Relayed Skills posses by the Individuals.
 
 Relevant Skill	Work Die
 None	d4
@@ -242,8 +242,8 @@ Resource Costs are the tools and resources listed on the specific Recipe needed 
 Recipes include the Resource Cost, Crafting Cost, Item Description, Stats, Level, Maximum Quality, and any other requirements needed to create the item.
 
 If the construction would take multiple days, then it would use the Project Resolution Method.
-1. Crafting begins with asking the Player some questions or making some simple decisions. What item do you want to make, how many of that item do you want to make, and how much Speed are you willing to invest into this Task? From here, select the Recipe or decide if you're doing Experimental Crafting. You can scroll down further to see the rules on that.
-2. From the last step, begin by looking at the Crafting Cost. This is a specific point value that the craft has to reach to create the item. It is usually listed on the Recipe unless you're doing Experimental Crafting. When you begin crafting, you'll first decide how much of an individual's Speed you'll dedicate to the Task. Each point of Speed invested into crafting grants +1 Work Die.
+1. Crafting begins with asking the Player some questions or making some simple decisions. What item do you want to make, how many of that item do you want to make, and how much Stamina are you willing to invest into this Task? From here, select the Recipe or decide if you're doing Experimental Crafting. You can scroll down further to see the rules on that.
+2. From the last step, begin by looking at the Crafting Cost. This is a specific point value that the craft has to reach to create the item. It is usually listed on the Recipe unless you're doing Experimental Crafting. When you begin crafting, you'll first decide how much of an individual's Stamina you'll dedicate to the Task. Each point of Stamina invested into crafting grants +1 Work Die.
 3. These Work Dice will be rolled to determine how many Crafting Points you've earned during this Task, which will determine how many of the selected Recipe or Recipes you're able to craft.
 Example 
 For example, if you wanted to craft 5 Stone Spears and each had a Crafting Cost of 2, then you'd need 10 Crafting Points to complete all 5 Spears.
@@ -259,7 +259,7 @@ T5	d20
 Higher Skill Tiers normally do not directly increase the Craft Roll bonus. Instead, they expand the types and complexity of Recipes that the Skill can properly apply to. Certain Skills may break this rule if their specific effects say otherwise.
 5. Once you've got your number and type of Work Dice, as well as the Total Crafting Cost, roll your Dice and see how many items you're potentially able to craft in the time you've devoted to the Craft. If you have any leftover points, you can convert them into bonuses to the Craft Roll using the standard point conversion.
 Example
-So, back to the Stone Spears example. Let's say someone devotes 4 Speed to crafting 5 Stone Spears. Let's say they have the T1 Primitive Tool Crafter Skill at Lv 5.
+So, back to the Stone Spears example. Let's say someone devotes 4 Stamina to crafting 5 Stone Spears. Let's say they have the T1 Primitive Tool Crafter Skill at Lv 5.
 
 They would have 4d6 Work Dice to roll. They need a total of 10 Crafting Points to reach the Crafting Cost.
 
@@ -406,7 +406,7 @@ Craft Roll	Result
 
 If a Craft Roll results in a Failure, the item is not successfully created. Whether the resources used in the attempt are completely destroyed, partially recoverable, or mostly reusable depends on the item, materials, and how the attempt failed. The Arbiter determines how much of the Resource Cost is lost based on the situation.
 
-Lastly, going back to what I referenced earlier, Experimental Crafting is the process of crafting an item without using a Recipe. This is a much simpler process where you ask the Player what materials they're going to use and what steps they take to attempt to craft that item. The Arbiter will decide the Complexity based on the steps/process the Player described, along with any Resource Costs, tools, or other requirements they believe are necessary. Experimental Crafting is usually less efficient than crafting through a known Recipe. It may require more resources, more difficult steps, or have a higher Crafting Cost than a proper Recipe. You can only perform one Experimental Crafting attempt per Speed used.
+Lastly, going back to what I referenced earlier, Experimental Crafting is the process of crafting an item without using a Recipe. This is a much simpler process where you ask the Player what materials they're going to use and what steps they take to attempt to craft that item. The Arbiter will decide the Complexity based on the steps/process the Player described, along with any Resource Costs, tools, or other requirements they believe are necessary. Experimental Crafting is usually less efficient than crafting through a known Recipe. It may require more resources, more difficult steps, or have a higher Crafting Cost than a proper Recipe. You can only perform one Experimental Crafting attempt per Stamina used.
 Experimental Complexity Success Tables
 Trivial
 Craft Roll Result	Result

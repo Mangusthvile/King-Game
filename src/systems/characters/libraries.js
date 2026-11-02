@@ -2,7 +2,7 @@
 // Libraries): what fields each has, how to make a new entry, and which
 // characters use an entry. Every entry has customFields.
 //
-//   species:    { name, hungerMax, thirstMax, notes, defaultFields }
+//   species:    { name, staminaDefault, hungerMax, thirstMax, notes, defaultFields }
 //   bodyTypes:  { name, speciesId, rarity, maxLevel (null = not yet established),
 //                 statCeiling (null = none), prerequisite,
 //                 levels: [{ lv, bodyLv, STR, SPD, TOU, notes }], grantsTraitIds, description }
@@ -48,12 +48,13 @@ export const LIBRARIES = [
     label: 'Species',
     create: (name = 'New Species') => createSpecies(name),
     fields: [
+      { key: 'staminaDefault', label: 'Default Stamina (daily budget)', type: 'number', placeholder: 'not set' },
       { key: 'hungerMax', label: 'Hunger max', type: 'number', placeholder: 'not set' },
       { key: 'thirstMax', label: 'Thirst max', type: 'number', placeholder: 'not set' },
       { key: 'notes', label: 'Notes', type: 'textarea' },
       { key: 'defaultFields', label: 'Default fields (copied onto its characters)', type: 'defaultFields' },
     ],
-    summary: (world, e) => `Hunger ${e.hungerMax ?? '-'}, Thirst ${e.thirstMax ?? '-'}`,
+    summary: (world, e) => `Stamina ${e.staminaDefault ?? '-'}, Hunger ${e.hungerMax ?? '-'}, Thirst ${e.thirstMax ?? '-'}`,
   },
   {
     key: 'bodyTypes',

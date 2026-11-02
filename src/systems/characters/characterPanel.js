@@ -38,8 +38,14 @@ export function renderCharacterPanel(world, c, refresh) {
     }),
     ...textField('Current assignment', c.currentAssignment, set('currentAssignment'), { key: key('assignment'), placeholder: 'Free text until Stage 5' }),
     ...renderBodySection(world, c, refresh),
-    h('h3', {}, 'Needs'),
-    h('div', { class: 'stat-grid' }, pairInput(world, c, 'Hunger', 'hunger'), pairInput(world, c, 'Thirst', 'thirst')),
+    h('h3', {}, 'Stamina and Needs'),
+    h(
+      'div',
+      { class: 'stat-grid' },
+      staminaInput(world, c),
+      pairInput(world, c, 'Hunger', 'hunger'),
+      pairInput(world, c, 'Thirst', 'thirst'),
+    ),
     ...renderAbilities(world, c, refresh),
     ...renderGear(world, c),
     ...textField('Bio', c.bio, set('bio'), { key: key('bio'), multiline: true }),
@@ -77,6 +83,32 @@ function changeSpecies(world, c, speciesId) {
     setField(world, 'characters', c.id, 'speciesId', speciesId, c.name),
     ...missing.map(([fieldId, field]) => createCommand('addCustomField', { path: 'characters', id: c.id, fieldId, field: structuredClone(field) })),
   ]);
+}
+
+// Stamina remaining today / Stamina max: the daily activity budget, two
+// separate fields (empty = not set). Not the SPD stat.
+function staminaInput(world, c) {
+  const input = (field) =>
+    h('input', {
+      type: 'number',
+      step: 'any',
+      value: c[field] ?? '',
+      placeholder: 'not set',
+      'data-key': `${c.id}.${field}`,
+      onchange: (e) => {
+        const n = Number(e.target.value);
+        if (e.target.value === '') dispatch(setField(world, 'characters', c.id, field, null, c.name));
+        else if (Number.isFinite(n)) dispatch(setField(world, 'characters', c.id, field, n, c.name));
+      },
+    });
+  return h(
+    'div',
+    { class: 'stat-pair', title: 'Stamina remaining today / Stamina max (the daily activity budget)' },
+    h('span', { class: 'stat-label' }, 'Stamina'),
+    input('staminaRemaining'),
+    h('span', { class: 'muted' }, '/'),
+    input('staminaMax'),
+  );
 }
 
 // { current, max } as two number boxes (empty = not set).

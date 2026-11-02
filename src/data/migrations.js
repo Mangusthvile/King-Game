@@ -164,6 +164,25 @@ const migrations = {
     world.schemaVersion = 10;
     return world;
   },
+
+  // 10 -> 11: the daily activity budget is Stamina, separate from the
+  // combat stat SPD. Species get a default Stamina (Baseliner 1, others not
+  // set). The old daily Speed value (speedRemaining) is copied into
+  // staminaRemaining; staminaMax comes from the species default, or that
+  // same value if the species has none. SPD is unchanged.
+  10: (world) => {
+    for (const sp of Object.values(world.definitions.species ?? {})) {
+      sp.staminaDefault ??= sp.name?.trim().toLowerCase() === 'baseliner' ? 1 : null;
+    }
+    for (const c of Object.values(world.characters ?? {})) {
+      const old = c.speedRemaining ?? null;
+      c.staminaRemaining ??= old;
+      c.staminaMax ??= world.definitions.species?.[c.speciesId]?.staminaDefault ?? old;
+      delete c.speedRemaining;
+    }
+    world.schemaVersion = 11;
+    return world;
+  },
 };
 
 // For migration 3 -> 4: renames every Sub-Area name used as data, at any

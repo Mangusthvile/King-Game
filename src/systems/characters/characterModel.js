@@ -7,7 +7,9 @@
 //   teamId:    Ally / Enemy / Neutral, in stasis until the Combat stage
 //   body:      bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU,
 //              health: { current, max }   max proposed by rules/health.js
-//   daily:     speedRemaining   SPD doubles as the daily Speed budget
+//   daily:     staminaMax, staminaRemaining   the daily activity budget, spent on
+//              tasks and reset by Advance Day. Separate from SPD, which is a
+//              combat stat. RULE NEEDED: how Stamina max is set or increased.
 //   needs:     hunger: { current, max }, thirst: { current, max }
 //   skills:    [{ skillId, tier, level }], defenseSkillId
 //   theories:  [{ name, percent }]   no automatic numerical bonus
@@ -32,7 +34,7 @@ export const COMBAT_FIELDS = [
   { key: 'effectiveDamage', label: 'Effective Damage' },
 ];
 
-// A new character with its species' Hunger and Thirst max and default
+// A new character with its species' Stamina, Hunger and Thirst max and default
 // fields copied on. values overrides any field (used by the seed import).
 export function createCharacter(world, values = {}) {
   const species = world.definitions.species[values.speciesId ?? ''];
@@ -53,7 +55,8 @@ export function createCharacter(world, values = {}) {
     SPD: 1,
     TOU: 1,
     health: { current: null, max: null },
-    speedRemaining: 1,
+    staminaMax: species?.staminaDefault ?? null,
+    staminaRemaining: species?.staminaDefault ?? null,
     hunger: { current: species?.hungerMax ?? null, max: species?.hungerMax ?? null },
     thirst: { current: species?.thirstMax ?? null, max: species?.thirstMax ?? null },
     skills: [],

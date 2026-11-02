@@ -24,7 +24,7 @@ These override convenience. If a task seems to require breaking one, stop and as
 
 **1. Never invent game rules.** King's Game is an existing ruleset, documented in RULES.md. Implement those rules exactly. If a mechanic is missing or unclear, make the value a manual, editable field and add a `// RULE NEEDED:` comment plus an entry in the Open Rules list at the bottom of this file. Do not fill gaps with generic RPG or colony-sim mechanics.
 
-**2. The Arbiter has absolute authority.** Every important value is a stored, editable field, never a value that only exists as a calculation. The rules engine PROPOSES results (dice rolls, progress, yields); the Arbiter can accept, edit, reroll or discard before anything is committed. The Arbiter must be able to set any number to anything (1,000 of a resource, finish a Project instantly, change any Speed).
+**2. The Arbiter has absolute authority.** Every important value is a stored, editable field, never a value that only exists as a calculation. The rules engine PROPOSES results (dice rolls, progress, yields); the Arbiter can accept, edit, reroll or discard before anything is committed. The Arbiter must be able to set any number to anything (1,000 of a resource, finish a Project instantly, change any Stamina or stat).
 
 **3. Everything is undoable.** Every change to world data goes through a command that records how to reverse it. No code may mutate world state directly.
 
@@ -144,7 +144,7 @@ Every instance record (containers, buildings, followers, projects, and items whe
 - In stasis until the Combat stage (kept in the data and filled by the seed import, hidden in the app; `IN_STASIS` in `src/systems/characters/libraries.js`): teams `{ name, color }` (Ally, Enemy, Neutral) and conditions.
 
 - Character libraries, all editable in Characters > Libraries, each entry with customFields (shapes in `src/systems/characters/libraries.js`):
-  - species: name, hungerMax, thirstMax (null = not set), notes, defaultFields copied onto its characters (Baseliner: Hunger 5, Thirst 3; Vulture: Hunger and Thirst blank, default fields Mask, Vault Value, Essence notes).
+  - species: name, staminaDefault, hungerMax, thirstMax (null = not set), notes, defaultFields copied onto its characters (Baseliner: Stamina 1, Hunger 5, Thirst 3; Vulture: Stamina, Hunger and Thirst blank, default fields Mask, Vault Value, Essence notes).
   - bodyTypes: name, species, rarity, maxLevel (null = not yet established), statCeiling, prerequisite, level progression table `[{ lv, bodyLv, STR, SPD, TOU, notes }]`, traits granted, description.
   - skills: name, tier (T1 to T5, or a special tier such as "Inner Monster"), adeptWith, required theories, canBoost (yes / no / blank), description, skillFeature, limitation.
   - traits: name, tags, description, narrativeFeature, mechanicalFeature. A Pact is a Trait tagged "Pact".
@@ -159,9 +159,9 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 **buildings:** id, buildingTypeId, name, areaId (optional: the Area it belongs to; empty means it stands alone on the Biome Map), constructionState, projectId (optional), storage (resource counts), properties (free-form key/value the Arbiter can add), notes.
 
-**characters:** followers, enemies and NPCs (the stat sheet; shape in `src/systems/characters/characterModel.js`). Identity: name, factionId, speciesId, locationContainerId (a Region, Biome or Area), currentAssignment, bio, notes. Body: bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU, health `{ current, max }` (the Health formula proposes max: `MAX(1, ROUNDUP((Body Level + STR + TOU) / 3))`, from the Combat Profiles sheet, in `src/rules/health.js` and `tables/health.json`). speedRemaining. Needs: hunger and thirst `{ current, max }`. skills `[{ skillId, tier, level }]` plus defenseSkillId, theories `[{ name, percent }]`, traits `[{ traitId, note }]`, teamId and conditions `[{ conditionId or one-off name, modifier text, durationDays, note }]` (both in stasis), weapons `[{ equipmentId, qty }]`, armorId, otherGear, inventory, combat (manual text fields: resistance, defense, actions, attack, basePower, physicalDamageMod, effectiveDamage), alive, death `{ cause, day }` (the Death Log). Areas list the characters assigned to work there in `assignedFollowerIds` (name kept from before characters replaced followers).
+**characters:** followers, enemies and NPCs (the stat sheet; shape in `src/systems/characters/characterModel.js`). Identity: name, factionId, speciesId, locationContainerId (a Region, Biome or Area), currentAssignment, bio, notes. Body: bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU, health `{ current, max }` (the Health formula proposes max: `MAX(1, ROUNDUP((Body Level + STR + TOU) / 3))`, from the Combat Profiles sheet, in `src/rules/health.js` and `tables/health.json`). Daily budget: staminaMax, staminaRemaining (separate from SPD). Needs: hunger and thirst `{ current, max }`. skills `[{ skillId, tier, level }]` plus defenseSkillId, theories `[{ name, percent }]`, traits `[{ traitId, note }]`, teamId and conditions `[{ conditionId or one-off name, modifier text, durationDays, note }]` (both in stasis), weapons `[{ equipmentId, qty }]`, armorId, otherGear, inventory, combat (manual text fields: resistance, defense, actions, attack, basePower, physicalDamageMod, effectiveDamage), alive, death `{ cause, day }` (the Death Log). Areas list the characters assigned to work there in `assignedFollowerIds` (name kept from before characters replaced followers).
 
-**projects:** id, name, sizeLabel, workloadRequired, workloadCurrent, siteBuildingId, requirements (text and resource list), status (`planned` | `active` | `paused` | `complete`), and a workday history: for each day, the participants, Speed invested, dice type, each die result, bonuses, Event roll, Event result and Arbiter notes.
+**projects:** id, name, sizeLabel, workloadRequired, workloadCurrent, siteBuildingId, requirements (text and resource list), status (`planned` | `active` | `paused` | `complete`), and a workday history: for each day, the participants, Stamina invested, dice type, each die result, bonuses, Event roll, Event result and Arbiter notes.
 
 **stockpiles:** resource counts owned by the kingdom, and per building or location.
 
@@ -171,9 +171,9 @@ Rules tables (Harvest availability ladders, Environmental Danger table, Work Die
 
 ## Resolution Logs (required for every roll system)
 
-- Every resolution method (Project, Harvest, Crafting, Training, and any future one) produces a text log of the roll, formatted like the Arbiter's own write-ups. The format reference is `references/roll-log-examples.md` (to be added by the Arbiter); match its wording, order, separator lines and roll notation as closely as possible.
+- Every resolution method (Project, Harvest, Crafting, Training, and any future one) produces a text log of the roll, formatted like the Arbiter's own write-ups. The format reference is `references/roll-log-examples.md` (to be added by the Arbiter); match its wording, order, separator lines and roll notation as closely as possible. Its examples come from older game days and say "Speed"; follow their format but write "Stamina".
 
-- Each log lists: who took part; the location (shown as `[???]` followed by "(Location Name Not Discovered)" if the place is undiscovered, using its undiscoveredName); the Danger Level; what was attempted; the Speed spent and dice (for example +4d20); equipment and storage effects; every individual roll with its result; totals; and events.
+- Each log lists: who took part; the location (shown as `[???]` followed by "(Location Name Not Discovered)" if the place is undiscovered, using its undiscoveredName); the Danger Level; what was attempted; the Stamina spent and dice (for example "King has spent 4 Stamina on this task: (+4d20)"); equipment and storage effects; every individual roll with its result; totals; and events.
 
 - After rolling, the log appears in a panel with a "Copy" button. The Arbiter can edit the text before copying.
 
@@ -185,20 +185,19 @@ Rules tables (Harvest availability ladders, Environmental Danger table, Work Die
 
 - Stage 5 (Projects) is the first stage that must implement this.
 
-## Task Cards (core UI for every Speed-spending activity)
+## Task Cards (core UI for every Stamina-spending activity)
 
 Mockups: `references/ui/task-card-mockup-1.png` (four cards) and `references/ui/task-card-mockup-2.png` (one card). They show the target look and layout; their placeholder text (the "Expedition" title, clock times, generic "Check" rolls) is superseded by the rules below.
 
-- One shared window style for any task where characters spend Speed. Title format: "[Type]: [Task name]" (Harvest, Project, Training, Crafting, and future types). Each type plugs into the card framework as a module (Extensibility rules).
+- One shared window style for any task where characters spend Stamina. Title format: "[Type]: [Task name]" (Harvest, Project, Training, Crafting, and future types). Each type plugs into the card framework as a module (Extensibility rules).
 - Header: type icon, task name, portraits of assigned characters.
 - Scene banner: the Rendered View of the task's Area with character sprites (Stage 9); a plain colored strip before then. Yield bubbles (e.g. "+3 Wood") appear over the banner.
-- Info panel: party size; location (shows [???] if undiscovered); Environmental Danger meter with 6 segments (Safe, Low, Moderate, High, Extreme, Lethal); member tiles showing portrait, Speed spent, die type and source (e.g. "1 Speed · d6 · Digger T1"), and key equipment icons.
+- Info panel: party size; location (shows [???] if undiscovered); Environmental Danger meter with 6 segments (Safe, Low, Moderate, High, Extreme, Lethal); member tiles showing portrait, Stamina spent, die type and source (e.g. "1 Stamina · d6 · Digger T1"), and key equipment icons.
 - Type-specific info: Project shows a Workload bar (current / required); Harvest shows target resource and Availability; Training shows teacher, Theory and Max Possible Progress; Crafting shows Recipe, Crafting Cost and item count.
 - Log panel: the Resolution Log for this task (see Resolution Logs), labeled by Day and roll number, never clock times (King's Game has no in-day clock). Entries show the real rolls from RULES.md (e.g. "Harvest Roll (Abundant): 14, Good Success, Yield 6" then "Danger (Moderate): None"). Copy and Copy whole day buttons. Training changes Theory percent, never stats.
 - Arbiter controls (hidden in Player View): roll, reroll, edit any result, accept, cancel. Nothing commits until accepted.
 - Player View hides Arbiter controls so cards can be screenshotted for players.
-- Build order: Stage 5 builds the card framework in plain style with the Project type; Stage 6 connects Speed and the Day Log; Harvest, Training and Crafting types come after the MVP; Stage 8.5 applies the pixel frame look shown in the mockups; Stage 9 fills the scene banner.
-- Scouting is a planned card type but has no rule yet (see Open Rules).
+- Build order: Stage 5 builds the card framework in plain style with the Project type; Stage 6 connects Stamina and the Day Log; Harvest, Training and Crafting types come after the MVP; Stage 8.5 applies the pixel frame look shown in the mockups; Stage 9 fills the scene banner.
 
 ## Commands, undo and time
 
@@ -206,15 +205,19 @@ Mockups: `references/ui/task-card-mockup-1.png` (four cards) and `references/ui/
 
 - Undo and redo walk the log within the current day.
 
-- Advance Day: save a snapshot, increment currentDay, reset every living character's speedRemaining to their SPD (the daily Speed budget), then present the end-of-day steps (food consumption, hunger and thirst, Project Event rolls) as proposals for the Arbiter to accept or edit. Do not auto-apply.
+- Advance Day: save a snapshot, increment currentDay, reset every living character's staminaRemaining to their staminaMax, then present the end-of-day steps (food consumption, hunger and thirst, Project Event rolls) as proposals for the Arbiter to accept or edit. Do not auto-apply.
 
 - Reverse Day: restore the previous day's snapshot after a confirmation.
 
 - The Arbiter can manually set currentDay.
 
-## Speed and tasks
+## Stamina and tasks
 
-Speed is how much activity an individual can perform per day. A character's SPD stat doubles as their daily Speed budget: the sheet shows "Speed remaining today / SPD", and the Arbiter can override the remaining Speed. Assigning a character to a task spends Speed from speedRemaining. Every task record stores who, what, how much Speed, the result and notes. Speed values and costs are always editable. Do not invent an action economy beyond what RULES.md states.
+- Stamina is the daily activity budget. Each character has Stamina max and Stamina remaining. Advance Day resets Stamina remaining to Stamina max.
+- SPD (Speed) is a separate combat stat from Body Types (turn order and Actions in combat). It does not affect daily tasks.
+- Stamina max is an editable field with a default per species (Baseliner: 1). RULE NEEDED: how Stamina max is determined or increased (see Open Rules).
+
+Assigning a character to a task spends Stamina from staminaRemaining. Every task record stores who, what, how much Stamina, the result and notes. Stamina values and costs are always editable. Do not invent an action economy beyond what RULES.md states.
 
 ## Interface
 
@@ -240,11 +243,11 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 3. **Buildings.** Multi-cell buildings on the Biome Map, either inside an Area (areaId, for example the Communal Sleeping Hole on a Building Site Area) or standing alone on the Biome Map, building type editor, placeholder sprites, editable properties, construction stage visuals (Empty Site, Foundation, Under Construction, Completed) driven by editable percentage thresholds.
 
-4. **Characters.** Characters tab (followers, enemies, NPCs) with roster and stat sheet, every field editable: identity, Body Type and body stats, Speed, needs, Skills, Theories, Traits and Pacts, Conditions, Equipment, a manual combat profile. Editable libraries (Species, Body Types, Skills, Traits, Conditions, Equipment, Teams). Theory and Skill helpers, death and Death Log. Import the seed data (see Seed Data). No combat formulas: combat values are plain fields until the Combat stage.
+4. **Characters.** Characters tab (followers, enemies, NPCs) with roster and stat sheet, every field editable: identity, Body Type and body stats, Stamina, needs, Skills, Theories, Traits and Pacts, Conditions, Equipment, a manual combat profile. Editable libraries (Species, Body Types, Skills, Traits, Conditions, Equipment, Teams). Theory and Skill helpers, death and Death Log. Import the seed data (see Seed Data). No combat formulas: combat values are plain fields until the Combat stage.
 
-5. **Projects.** Create a Project on a building site, assign followers, choose Speed, roll Work Dice per RULES.md, roll the Event, show the proposed result, Arbiter accepts, edits or rerolls. First stage that must produce Resolution Logs (see that section) and the Day Log in the Log tab.
+5. **Projects.** Create a Project on a building site, assign followers, choose Stamina, roll Work Dice per RULES.md, roll the Event, show the proposed result, Arbiter accepts, edits or rerolls. First stage that must produce Resolution Logs (see that section) and the Day Log in the Log tab.
 
-6. **Time.** Speed tracking, task records, Advance Day with proposals, undo, redo, reverse day.
+6. **Time.** Stamina tracking, task records, Advance Day with proposals, undo, redo, reverse day.
 
 7. **Persistence and sharing polish.** Multiple worlds, Player View screenshot mode.
 
@@ -336,8 +339,9 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 - [x] Stage 3: Buildings system (`src/systems/buildings`). Shared map engine hook `src/map/objectKinds.js`: a system registers a kind of placed object backed by its own record (create, duplicate, linked records, name, draw, info panel, re-link on footprint change) and can add placeables to a kind of map, so the Biome Map gets "Building" without the biomeMap system changing. Place/remove payloads carry `linked` records, so removing a building, or a Biome or Region holding buildings, undoes in one step. A building is a placed object (kind `building`, solid layer) plus a `buildings` record (type, name, areaId, constructionProgress 0-100, forcedStage, projectId for Stage 5, storage counts, properties as key/value, stageStamps for Stage 9, notes, customFields). Placing it links it to the Area covering most of its cells; moving, rotating or resizing re-links; the panel can change the link. Rotate (R or button) turns non-square footprints around their center with overlap and edge checks (`setFootprint` command). Placeholder visuals per stage: Empty Site dashed outline, Foundation hatched, Under Construction partly filled, Completed solid, plus a progress bar; color from the type's category. Stage = highest threshold at or below progress (`stages.js`, thresholds per type, defaults in `tables/constructionStages.json`), or a forced stage. Buildings tab: building type editor (name, category, default footprint, stage thresholds, default properties, custom fields), category editor (name, color), list of all buildings with Show. Duplicates start with empty storage. Schema v6 (migration 5 to 6 adds starter building categories).
 - [x] Discovery data (for Resolution Logs): Regions, Biomes and Areas have `discovered` and `undiscoveredName` ("???"); resources listed in Biomes and Areas have `known`. Checkboxes in the info panels. Schema v7 (migration 6 to 7: existing places start discovered, existing resources known).
 - [x] Stage 3.5: Linked map levels (`src/map/mapFrame.js`). One rule for World to Region and Region to Biome: the child map covers its footprint on the parent scaled by its mapScale (default 8, editable in the Region and Biome panels), with the parent's terrain under the footprint as an inherited base layer (`terrainAt`: own paint, else inherited, recursively), recomputed each draw so parent paint shows up live. Parent maps draw a mini preview of each child's own paint and objects inside its outline (`src/map/childPreview.js`); hovering any object shows its name. Biome Map is a framed board: thick border, dimmed outside, camera clamped to the board plus a 64px margin (`clampCamera`). Zoom levels 2 and 3 added so a whole board fits on screen (only every 10th grid line below 4px). Schema v8 (migration 7 to 8 sets Biomes' unused mapScale to 8; Regions keep theirs).
-- [x] Stage 4: Characters system (`src/systems/characters`): Characters tab with Roster, Libraries and Import seed data views. Schema v9 (migration 8 to 9: the unused followers collection becomes characters; adds teams and the character libraries; species get Hunger max, Thirst max and default fields; Baseliner and Vulture added or completed). Libraries: generic editor driven by field lists in `libraries.js` (Body Types have a level table editor, `levelsTable.js`). Roster: live search, sort, filters (team, species, Body Type, location, alive or dead), compact rows (team, species, Body Type, STR, SPD, TOU, Health, Speed remaining / SPD, condition icons), Death Log section. Stat sheet: every field editable; choosing a Body Type and level shows the table's stats (and granted Traits) as a proposal to Apply or ignore (`src/rules/bodyTypes.js`); stat ceiling warning; Level up body shows the next row and the prerequisite; Health is manual; Skill Bonus = Level - 1 shown per Skill; one Defense Skill; Theory and Skill helpers (`src/rules/skills.js`, tier labels, special tiers have no Tier-up); Traits and Pacts from the library with a note; Conditions from the library or one-off; weapons, armor or shield, other gear, inventory; collapsed manual combat profile (no calculation). Death clears assignments in one step; Revive. Seed import (`seedImport.js`, tested on the real files): libraries first, then characters linked by name; unmatched names become new flagged entries; existing entries are reused, never overwritten; one undo step. Hooks: `src/ui/infoSections.js` (systems add sections to Region/Biome/Area panels: "Characters here") and map badges in `objectKinds.js` (character count on each Area).
+- [x] Stage 4: Characters system (`src/systems/characters`): Characters tab with Roster, Libraries and Import seed data views. Schema v9 (migration 8 to 9: the unused followers collection becomes characters; adds teams and the character libraries; species get Hunger max, Thirst max and default fields; Baseliner and Vulture added or completed). Libraries: generic editor driven by field lists in `libraries.js` (Body Types have a level table editor, `levelsTable.js`). Roster: live search, sort, filters (team, species, Body Type, location, alive or dead), compact rows (team, species, Body Type, STR, SPD, TOU, Health, Speed remaining / SPD, condition icons; Speed renamed Stamina later, see below), Death Log section. Stat sheet: every field editable; choosing a Body Type and level shows the table's stats (and granted Traits) as a proposal to Apply or ignore (`src/rules/bodyTypes.js`); stat ceiling warning; Level up body shows the next row and the prerequisite; Health is manual; Skill Bonus = Level - 1 shown per Skill; one Defense Skill; Theory and Skill helpers (`src/rules/skills.js`, tier labels, special tiers have no Tier-up); Traits and Pacts from the library with a note; Conditions from the library or one-off; weapons, armor or shield, other gear, inventory; collapsed manual combat profile (no calculation). Death clears assignments in one step; Revive. Seed import (`seedImport.js`, tested on the real files): libraries first, then characters linked by name; unmatched names become new flagged entries; existing entries are reused, never overwritten; one undo step. Hooks: `src/ui/infoSections.js` (systems add sections to Region/Biome/Area panels: "Characters here") and map badges in `objectKinds.js` (character count on each Area).
 - [x] Stage 4 revisions: Factions (editable library, on the sheet, roster column and filter) replace Teams on screen; Teams and Conditions are in stasis (data and seed import kept, hidden until the Combat stage). Health max formula from the Combat Profiles sheet (`src/rules/health.js`, tested against all 10 seed characters) shown on the sheet with a Use button, and applied with Body Type table proposals and Level up body (current Health is left alone). Schema v10 (migration 9 to 10 adds factions and factionId).
+- [x] Stamina: the daily activity budget is Stamina (staminaMax, staminaRemaining on characters, staminaDefault on species, Baseliner 1), separate from the combat stat SPD. RULES.md task wording renamed from Speed to Stamina. Sheet shows "Stamina remaining today / Stamina max" with the Needs; roster shows Stamina remaining. Schema v11 (migration 10 to 11 copies the old daily Speed values into Stamina; SPD unchanged).
 - [ ] Stage 5
 - [ ] Stage 6
 - [ ] Stage 7
@@ -351,7 +355,7 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 
 - When a Skill tiers up: are the combined Theories or Skills consumed, and what happens to its Level?
 
-- How a follower's Speed increases above 1.
+- How Stamina max is determined or increased (it is an editable field with a species default, Baseliner 1, for now).
 
 - Full attribute list and meaning (seen: Strength, Agility, Intelligence, Charisma, Willpower, Might) and what Body Type means.
 
@@ -375,6 +379,4 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 
 - Specific Boon and Setback options for Project Events.
 
-- Harvest carry limit without storage equipment (seen as 6 per Speed for Emerald Puff Fruits): is it per resource, or a general rule?
-
-- Scouting/Exploration Resolution Method: how discovery and found resources are rolled (needed for the Scouting task card).
+- Harvest carry limit without storage equipment (seen as 6 per Stamina for Emerald Puff Fruits): is it per resource, or a general rule?
