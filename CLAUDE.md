@@ -185,6 +185,33 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
 
+9. **Rendered View and Asset Library.**
+
+   Asset Library
+   - An Asset Library tab to upload, preview, rename, tag and delete PNG doodle assets. Assets are stored with the world in IndexedDB; default assets can also live in /src/assets/doodles.
+   - Tags come from the file name: every word is a tag, numbers are ignored, plurals become singular. "grassland tree 01.png" = tags [grassland, tree]. "any" means it fits every biome. Tags can be edited in the app afterward.
+   - Sheet importer: upload a sprite sheet on a plain background. The app auto-detects each separate object, removes the background, trims it, lets the Arbiter name and tag each piece, then saves each as its own asset.
+
+   How assets are chosen
+   - Tile, region, sub-area and building types each list the asset needs they draw from, as tag sets with a density, e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate. Buildings list one tag set per construction stage, e.g. [construction, site], [construction, scaffold], [house].
+   - Lookup order for a need like [forest, tree]: assets with all those tags, then [any, tree], then a simple code-drawn fallback doodle.
+
+   Missing asset prompts
+   - Whenever a need has no matching asset (including when the fallback is in use, or when the Arbiter creates a new biome, sub-area or building type), show a non-blocking "Assets needed" prompt listing the missing tag sets. For each, offer:
+     1. "Select from my files": file picker; the chosen files are auto-tagged from their names (the Arbiter can adjust tags before saving).
+     2. "Copy generation prompt": copies a ready-made sheet prompt to the clipboard, filled in with the subject and the house style (template below), and shows the file name to save the results as.
+     3. "Use fallback for now": dismiss; the need stays listed in an "Assets needed" list in the Asset Library tab until filled.
+   - Generation prompt template:
+     "A sprite sheet of 4 separate [SUBJECT], evenly spaced in a loose grid with lots of empty space between them, not touching or overlapping. Hand-drawn doodle style like a cozy indie card game: soft watercolor fill in muted pastel colors, slightly wobbly dark brown-black ink outline, simple shapes, minimal detail, small soft shadow underneath each. Top-down three-quarter view. Plain flat white background, no text, no labels, no border."
+
+   Renderer
+   - Pure function of tile data plus a saved seed. No AI and no network at render time.
+   - Shape-following features (water, roads, region borders, board frame) are drawn in code with a hand-drawn line library (Rough.js or perfect-freehand), smoothed but staying inside their painted cells.
+   - Then it scatters matching assets by density.
+   - A shared style layer applies to everything: paper texture, palette tint, consistent outline color, soft shadow blob under props, so assets from different sources look unified. Target look: soft watercolor, wobbly ink outlines, pastel, cozy (inspired by Stacklands, but no assets from that game).
+   - The Arbiter can Reroll the seed, Lock the result, and move, swap or delete individual props. Locked props are saved.
+   - Each map tab toggles between Tile view (editing) and Rendered view (playing and screenshots).
+
 After the MVP (do not start without being asked): Harvesting tab, resources and stockpiles UI, Crafting, Training, building connections and automation (always pausable and overridable), Morale and Prosperity, population groups, Units, Armies.
 
 ## Seed data
@@ -214,6 +241,7 @@ The first test world should recreate the current campaign so the app is tested a
 - [ ] Stage 6
 - [ ] Stage 7
 - [ ] Stage 8
+- [ ] Stage 9
 
 ## Open Rules (ask the Arbiter, do not invent)
 
