@@ -3,7 +3,7 @@
 import { cellToScreen, visibleRange } from './camera.js';
 import { cellKey, parseKey, objectsIn } from './grid.js';
 import { getSprite } from './sprites.js';
-import { drawPreview, drawTooltip, drawBoardFrame } from './linkedDrawing.js';
+import { drawPreview, drawTooltip, drawBoardFrame, drawBadge } from './linkedDrawing.js';
 
 const COLORS = {
   background: '#121212',
@@ -32,6 +32,7 @@ const COLORS = {
 //   previewOf: optional (obj) => [{ x, y, w, h, color, outline }] or null, the
 //              mini preview of a child map drawn inside an outlined object
 //   hoverLabel: optional { text, x, y } name shown beside the hovered cell
+//   badgeOf:   optional (obj) => { text } or null, a tag on the object's corner
 //   displayOf: 'block' (filled square) or 'outline' (border and name only)
 //   customDraw: optional (obj) => draw(ctx, rect, { name, zoom }) or null, for
 //              kinds that draw their own placeholder (buildings). A sprite still wins.
@@ -63,12 +64,14 @@ export function drawMap(ctx, width, height, world, container, view) {
     const custom = !getSprite(obj.spriteKey) && view.customDraw?.(obj);
     if (custom) {
       drawCustom(ctx, obj, view.objectName(obj), cam, selected, custom);
-      continue;
+    } else {
+      const outline = view.displayOf(obj) === 'outline';
+      if (outline) drawPreview(ctx, obj, view.previewOf?.(obj), cam);
+      const draw = outline ? drawOutlineObject : drawObject;
+      draw(ctx, obj, view.objectName(obj), cam, selected);
     }
-    const outline = view.displayOf(obj) === 'outline';
-    if (outline) drawPreview(ctx, obj, view.previewOf?.(obj), cam);
-    const draw = outline ? drawOutlineObject : drawObject;
-    draw(ctx, obj, view.objectName(obj), cam, selected);
+    const badge = view.badgeOf?.(obj);
+    if (badge) drawBadge(ctx, obj, badge.text, cam);
   }
 
   if (view.hoverCell && !view.ghost) {

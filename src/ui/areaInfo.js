@@ -1,11 +1,12 @@
 // Info panel for an Area (a mine, a farm, a building site...): name, area
 // type (its focus), description, Danger Level, resources with Availability,
-// assigned followers, notes. Custom fields are added by the map panel.
+// assigned characters, notes. Custom fields are added by the map panel.
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { setField } from '../commands/recordCommands.js';
 import { nameAndType, discoveryFields, descriptionField, dangerField, notesField } from './containerFields.js';
 import { resourcesEditor } from './resourcesEditor.js';
+import { infoSections } from './infoSections.js';
 
 export function renderAreaInfo(world, area) {
   // An Area with no Danger Level of its own uses its Biome's.
@@ -18,15 +19,17 @@ export function renderAreaInfo(world, area) {
     ...dangerField(world, area, 'Environmental Danger Level', inherited),
     h('label', {}, 'Resources'),
     resourcesEditor(world, area),
-    h('label', {}, 'Assigned followers'),
-    followersEditor(world, area),
+    h('label', {}, 'Assigned characters (who works here)'),
+    assignedEditor(world, area),
+    ...infoSections(world, area),
     ...notesField(world, area),
   ];
 }
 
-// Followers come in Stage 4; until then the list is simply empty.
-function followersEditor(world, area) {
-  const followers = world.followers;
+// Characters assigned to work in this Area (who works here, which is not the
+// same as who is located here). Dead characters can't be assigned.
+function assignedEditor(world, area) {
+  const characters = world.characters;
   const ids = area.assignedFollowerIds ?? [];
   const setIds = (next) => dispatch(setField(world, 'containers', area.id, 'assignedFollowerIds', next, area.name));
 
@@ -34,19 +37,19 @@ function followersEditor(world, area) {
     h(
       'span',
       { class: 'chip' },
-      followers[id]?.name ?? '(removed follower)',
+      characters[id]?.name ?? '(removed character)',
       h('button', { class: 'chip-x', title: 'Unassign', onclick: () => setIds(ids.filter((x) => x !== id)) }, 'x'),
     ),
   );
-  const available = Object.values(followers).filter((f) => !ids.includes(f.id));
-  if (Object.keys(followers).length === 0) {
-    return h('div', {}, chips, h('p', { class: 'muted small' }, 'No followers yet (the roster comes in Stage 4).'));
+  const available = Object.values(characters).filter((f) => f.alive && !ids.includes(f.id));
+  if (Object.keys(characters).length === 0) {
+    return h('div', {}, chips, h('p', { class: 'muted small' }, 'No characters yet. Add them in the Characters tab.'));
   }
 
   const select = h(
     'select',
     { 'data-key': `${area.id}.assign` },
-    h('option', { value: '' }, 'Choose a follower...'),
+    h('option', { value: '' }, 'Choose a character...'),
     available.map((f) => h('option', { value: f.id }, f.name)),
   );
   return h(

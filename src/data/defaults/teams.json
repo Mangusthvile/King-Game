@@ -1,0 +1,5 @@
+[
+  { "id": "team_ally", "name": "Ally", "color": "#5fbf55" },
+  { "id": "team_enemy", "name": "Enemy", "color": "#c24a4a" },
+  { "id": "team_neutral", "name": "Neutral", "color": "#9a8f82" }
+]

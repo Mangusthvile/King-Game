@@ -12,8 +12,9 @@ import worldMap from './worldMap/index.js';
 import regionMap from './regionMap/index.js';
 import biomeMap from './biomeMap/index.js';
 import buildings from './buildings/index.js';
+import characters from './characters/index.js';
 
-export const systems = [worldMap, regionMap, biomeMap, buildings];
+export const systems = [worldMap, regionMap, biomeMap, buildings, characters];
 
 export function getSystemTabs() {
   return systems.flatMap((system) => system.tabs ?? []);

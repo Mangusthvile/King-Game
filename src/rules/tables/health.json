@@ -1,0 +1,5 @@
+{
+  "description": "Health max, from the Arbiter's King's Game - Combat Profiles sheet (Character Roster tab, Health column): Health = MAX(minimum, ROUNDUP((Body Level + Strength + Toughness) / divisor)).",
+  "divisor": 3,
+  "minimum": 1
+}

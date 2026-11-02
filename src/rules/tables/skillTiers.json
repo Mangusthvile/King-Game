@@ -1,0 +1,13 @@
+{
+  "description": "Theories and Skill Tiers, from RULES.md (Skills, Traits, and Theories). A Theory at theoryCompletePercent can become a T1 Skill at Lv1. A Skill of a Tier tiers up by combining combineCount related items, listed per current Tier in tierUpSources. The Arbiter decides which items are related.",
+  "theoryCompletePercent": 100,
+  "combineCount": 5,
+  "maxTier": 5,
+  "maxLevel": 10,
+  "tierUpSources": {
+    "1": { "kind": "theory", "note": "T1 to T2: 5 related Theories at 100%" },
+    "2": { "kind": "skill", "tier": 1, "note": "T2 to T3: 5 related T1 Skills" },
+    "3": { "kind": "skill", "tier": 2, "note": "T3 to T4: 5 related T2 Skills" },
+    "4": { "kind": "skill", "tier": 3, "note": "T4 to T5: 5 related T3 Skills" }
+  }
+}

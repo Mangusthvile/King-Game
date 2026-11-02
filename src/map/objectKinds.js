@@ -36,3 +36,20 @@ export function objectKind(kind) {
 export function extraPlaceables(containerKind) {
   return Object.values(kinds).flatMap((k) => k.placeables?.[containerKind] ?? []);
 }
+
+// Map badges: a small tag drawn on the corner of a placed object, for
+// example the number of characters in an Area. A system registers a function
+// (world, obj) => { text, title } or null. The first one that answers wins.
+const badgeSources = [];
+
+export function registerMapBadge(source) {
+  badgeSources.push(source);
+}
+
+export function mapBadge(world, obj) {
+  for (const source of badgeSources) {
+    const badge = source(world, obj);
+    if (badge) return badge;
+  }
+  return null;
+}

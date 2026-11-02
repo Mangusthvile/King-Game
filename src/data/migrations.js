@@ -1,6 +1,6 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_UNDISCOVERED_NAME, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
+import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTeams, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
 
 // migrations[n] turns a version n world into a version n + 1 world.
@@ -120,6 +120,48 @@ const migrations = {
       if (c.kind === 'biome') c.mapScale = DEFAULT_MAP_SCALE;
     }
     world.schemaVersion = 8;
+    return world;
+  },
+
+  // 8 -> 9 (Stage 4): characters. The unused followers collection becomes
+  // characters (followers, enemies and NPCs). Adds the character libraries
+  // and starter teams, gives species Hunger max, Thirst max and default
+  // fields (null = not set, so nothing is invented for species made
+  // earlier), and adds or completes Baseliner and Vulture.
+  8: (world) => {
+    world.characters = { ...(world.followers ?? {}), ...(world.characters ?? {}) };
+    delete world.followers;
+    const defs = world.definitions;
+    if (Object.keys(defs.teams ?? {}).length === 0) defs.teams = defaultTeams();
+    for (const key of ['bodyTypes', 'skills', 'traits', 'conditions', 'equipment', 'species']) defs[key] ??= {};
+    for (const sp of Object.values(defs.species)) {
+      sp.hungerMax ??= null;
+      sp.thirstMax ??= null;
+      sp.notes ??= '';
+      sp.defaultFields ??= {};
+      sp.customFields ??= {};
+    }
+    for (const starter of Object.values(defaultSpecies())) {
+      const existing = Object.values(defs.species).find((sp) => sp.name.trim().toLowerCase() === starter.name.toLowerCase());
+      if (!existing) {
+        defs.species[starter.id] = starter;
+        continue;
+      }
+      // Fill only what is empty; anything the Arbiter set is kept.
+      existing.hungerMax ??= starter.hungerMax;
+      existing.thirstMax ??= starter.thirstMax;
+      if (Object.keys(existing.defaultFields).length === 0) existing.defaultFields = starter.defaultFields;
+    }
+    world.schemaVersion = 9;
+    return world;
+  },
+
+  // 9 -> 10: Factions replace Teams on the character sheet. Teams (and
+  // Conditions) are kept in the data, in stasis until the Combat stage.
+  9: (world) => {
+    world.definitions.factions ??= {};
+    for (const c of Object.values(world.characters ?? {})) c.factionId ??= '';
+    world.schemaVersion = 10;
     return world;
   },
 };

@@ -14,7 +14,7 @@ const BASE_TABS = [
   { id: 'region', label: 'Region Map', stage: 2 },
   { id: 'biome', label: 'Biome Map', stage: 2 },
   { id: 'buildings', label: 'Buildings', stage: 3 },
-  { id: 'followers', label: 'Followers', stage: 4 },
+  { id: 'characters', label: 'Characters', stage: 4 },
   { id: 'projects', label: 'Projects', stage: 5 },
   { id: 'resources', label: 'Resources', stage: null }, // after the MVP
   { id: 'log', label: 'Log', render: renderLogTab },

@@ -38,6 +38,8 @@ These override convenience. If a task seems to require breaking one, stop and as
 
 - Rules values live in JSON tables, never hard-coded.
 
+- Prerequisites and "leads to" links are structured data, not just text. When adding or changing Skills, Traits, Recipes or buildings, store their prerequisites and what they lead to as lists of references by id (for example `requiredSkillIds`, `leadsToIds`), so the Skill Tree and Tech Tree (Stages 11 and 12) can be generated later without reworking the data. Free-text notes can sit alongside, but never instead of, the structured list. Current gap: a Skill's required Theories are stored as names (`theories: ["Theory of Combat"]`) because Theories have no library yet; convert them to ids when a Theories library is added.
+
 - Do not refactor Stage 0 code now unless it blocks this. Apply these rules from Stage 1 onward.
 
 ## Tech stack
@@ -137,9 +139,19 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 - resourceTypes: name, description, tags (for example `[Wood]`, `[Food]`, `[Medical Herb]`, `[Special]`).
 
-- species: name, base attributes, notes (for example Baseliner).
+- factions: `{ name, color, description, notes }`, an editable list the Arbiter fills (a character's alignment or allegiance).
 
-- theories, skills, traits, conditions, recipes.
+- In stasis until the Combat stage (kept in the data and filled by the seed import, hidden in the app; `IN_STASIS` in `src/systems/characters/libraries.js`): teams `{ name, color }` (Ally, Enemy, Neutral) and conditions.
+
+- Character libraries, all editable in Characters > Libraries, each entry with customFields (shapes in `src/systems/characters/libraries.js`):
+  - species: name, hungerMax, thirstMax (null = not set), notes, defaultFields copied onto its characters (Baseliner: Hunger 5, Thirst 3; Vulture: Hunger and Thirst blank, default fields Mask, Vault Value, Essence notes).
+  - bodyTypes: name, species, rarity, maxLevel (null = not yet established), statCeiling, prerequisite, level progression table `[{ lv, bodyLv, STR, SPD, TOU, notes }]`, traits granted, description.
+  - skills: name, tier (T1 to T5, or a special tier such as "Inner Monster"), adeptWith, required theories, canBoost (yes / no / blank), description, skillFeature, limitation.
+  - traits: name, tags, description, narrativeFeature, mechanicalFeature. A Pact is a Trait tagged "Pact".
+  - conditions (in stasis): name, description, mechanicalFeature.
+  - equipment: name, grade (F, D, C, B, A, S, plus EX and Max flags), type, range, attackPower, damage, defense, protection, special or weapon trait, description.
+
+- theories, recipes (later stages).
 
 **containers:** every World, Region, Biome and Area. Fields: id, kind (`world` | `region` | `biome` | `area`), parentId, typeId, name, description, dangerLevel (Biomes and Areas; for an Area, empty means "same as its Biome"; Regions have none), species, civilizations and mapScale (Regions), residents notes, sparse tile map, list of placed object ids, for Biomes and Areas a list of resource availabilities `{ resourceTypeId, availability, notes, known }`, and for Areas assignedFollowerIds. Regions, Biomes and Areas also have `discovered` (true or false) and `undiscoveredName` (default "???"), used by Resolution Logs for places the followers haven't discovered. A resource's `known` flag says whether it has been found; logs say "Known Resource Found" and hide unknown ones.
 
@@ -147,7 +159,7 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 **buildings:** id, buildingTypeId, name, areaId (optional: the Area it belongs to; empty means it stands alone on the Biome Map), constructionState, projectId (optional), storage (resource counts), properties (free-form key/value the Arbiter can add), notes.
 
-**followers:** id, name, speciesId, attributes, speedMax, speedRemaining, hunger `{ current, max }`, thirst `{ current, max }`, theories `[{ name, percent }]`, skills `[{ name, tier, level }]`, traits (Pacts are stored as Traits), conditions (for example a broken arm at -3 to all tasks), inventory, equipment, locationContainerId, currentAssignment, bio, notes, alive or dead plus a death log entry.
+**characters:** followers, enemies and NPCs (the stat sheet; shape in `src/systems/characters/characterModel.js`). Identity: name, factionId, speciesId, locationContainerId (a Region, Biome or Area), currentAssignment, bio, notes. Body: bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU, health `{ current, max }` (the Health formula proposes max: `MAX(1, ROUNDUP((Body Level + STR + TOU) / 3))`, from the Combat Profiles sheet, in `src/rules/health.js` and `tables/health.json`). speedRemaining. Needs: hunger and thirst `{ current, max }`. skills `[{ skillId, tier, level }]` plus defenseSkillId, theories `[{ name, percent }]`, traits `[{ traitId, note }]`, teamId and conditions `[{ conditionId or one-off name, modifier text, durationDays, note }]` (both in stasis), weapons `[{ equipmentId, qty }]`, armorId, otherGear, inventory, combat (manual text fields: resistance, defense, actions, attack, basePower, physicalDamageMod, effectiveDamage), alive, death `{ cause, day }` (the Death Log). Areas list the characters assigned to work there in `assignedFollowerIds` (name kept from before characters replaced followers).
 
 **projects:** id, name, sizeLabel, workloadRequired, workloadCurrent, siteBuildingId, requirements (text and resource list), status (`planned` | `active` | `paused` | `complete`), and a workday history: for each day, the participants, Speed invested, dice type, each die result, bonuses, Event roll, Event result and Arbiter notes.
 
@@ -179,7 +191,7 @@ Rules tables (Harvest availability ladders, Environmental Danger table, Work Die
 
 - Undo and redo walk the log within the current day.
 
-- Advance Day: save a snapshot, increment currentDay, reset every follower's speedRemaining to speedMax, then present the end-of-day steps (food consumption, hunger and thirst, Project Event rolls) as proposals for the Arbiter to accept or edit. Do not auto-apply.
+- Advance Day: save a snapshot, increment currentDay, reset every living character's speedRemaining to their SPD (the daily Speed budget), then present the end-of-day steps (food consumption, hunger and thirst, Project Event rolls) as proposals for the Arbiter to accept or edit. Do not auto-apply.
 
 - Reverse Day: restore the previous day's snapshot after a confirmation.
 
@@ -187,7 +199,7 @@ Rules tables (Harvest availability ladders, Environmental Danger table, Work Die
 
 ## Speed and tasks
 
-Speed is how much activity an individual can perform per day. Assigning a follower to a task spends Speed from speedRemaining. Every task record stores who, what, how much Speed, the result and notes. Speed values and costs are always editable. Do not invent an action economy beyond what RULES.md states.
+Speed is how much activity an individual can perform per day. A character's SPD stat doubles as their daily Speed budget: the sheet shows "Speed remaining today / SPD", and the Arbiter can override the remaining Speed. Assigning a character to a task spends Speed from speedRemaining. Every task record stores who, what, how much Speed, the result and notes. Speed values and costs are always editable. Do not invent an action economy beyond what RULES.md states.
 
 ## Interface
 
@@ -211,7 +223,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 3. **Buildings.** Multi-cell buildings on the Biome Map, either inside an Area (areaId, for example the Communal Sleeping Hole on a Building Site Area) or standing alone on the Biome Map, building type editor, placeholder sprites, editable properties, construction stage visuals (Empty Site, Foundation, Under Construction, Completed) driven by editable percentage thresholds.
 
-4. **Followers.** Followers tab with roster and detail panel, every field editable. Import the current roster (see Seed Data).
+4. **Characters.** Characters tab (followers, enemies, NPCs) with roster and stat sheet, every field editable: identity, Body Type and body stats, Speed, needs, Skills, Theories, Traits and Pacts, Conditions, Equipment, a manual combat profile. Editable libraries (Species, Body Types, Skills, Traits, Conditions, Equipment, Teams). Theory and Skill helpers, death and Death Log. Import the seed data (see Seed Data). No combat formulas: combat values are plain fields until the Combat stage.
 
 5. **Projects.** Create a Project on a building site, assign followers, choose Speed, roll Work Dice per RULES.md, roll the Event, show the proposed result, Arbiter accepts, edits or rerolls. First stage that must produce Resolution Logs (see that section) and the Day Log in the Log tab.
 
@@ -256,15 +268,29 @@ Build one stage at a time. Each stage must run and be manually testable before s
    - Placed stamps are saved per container as decoration objects. They are visual only; they don't change game data unless the Arbiter links a stamp to a building or other record.
    - Buildings can optionally use a chosen stamp per construction stage. If none is set, the renderer draws a simple code-drawn placeholder for each stage.
 
+10. **Combat.** Implement the King's Game combat rules once the Arbiter finalizes them (currently in the Combat Profiles sheet, Rules tab). Until then the combat profile on each character stays manual, and no combat formulas, attack rolls or calculated combat values are written. This stage also brings Teams (Ally, Enemy, Neutral) and Conditions back out of stasis.
+
+11. **Skill Tree** (later stage). A visual tree of how progression connects: Theories lead to Skills, Skills tier up into higher-tier Skills (T1 to T5), and Skills or other conditions can lead to Traits.
+    - Built from the Skills and Traits libraries: each Skill's required Theories, each tier-up's required Skills, and an optional "leads to" list on Skills and Traits.
+    - Nodes show the name and tier, color-coded by status for a selected character: known, in progress (with percent), or not started.
+    - The Arbiter can add, remove or edit links by hand. Nothing is assumed; unknown links stay blank.
+
+12. **Tech Tree** (much later stage). A kingdom-level tree of technologies and discoveries (for example Claw Weapons, Scaled Armor, Metal Remedies, Grove Medicine).
+    - Shows each technology's prerequisites (Skills, resources, Recipes, buildings or other technologies) and what it unlocks.
+    - Tracks which technologies the kingdom has discovered, is researching, or hasn't found.
+    - Uses the same node and link system as the Skill Tree.
+
 After the MVP (do not start without being asked): Harvesting tab, resources and stockpiles UI, Crafting, Training, building connections and automation (always pausable and overridable), Morale and Prosperity, population groups, Units, Armies.
 
 ## Seed data
 
-The first test world should recreate the current campaign so the app is tested against real data: Day 8, 15 living Baseliner followers (Speed 1, Hunger 5/5, Thirst 3/3), the Communal Sleeping Hole Project at 30 of 75 Workload, and the map:
+Characters: the current test world uses the 10 test characters from `references/test-characters.json` (with its Skills, Traits, Pacts, Conditions and Equipment) and the Body Types in `references/body-types.json`, loaded with Characters > Import seed data. The real follower roster (`references/roster.txt`) will be imported in a later stage; do not import it until asked.
+
+The rest of the first test world should recreate the current campaign: Day 8, the Communal Sleeping Hole Project at 30 of 75 Workload, and the map:
 
 - Regions on the World Map: the Central Grasslands, Kie's Grove, the Ruined Forge of Creation and the Tower of Apocalypse.
 - Biomes on the Region Maps: the Jade Garden (in Kie's Grove) with its resources; the Grasslands, a single Biome covering the whole Central Grasslands Region.
-- Areas on the Biome Maps: a Building Site Area holding the Communal Sleeping Hole building and its Project (the Arbiter will say which Biome it is in). The Arbiter will provide the roster and world notes as text files.
+- Areas on the Biome Maps: a Building Site Area holding the Communal Sleeping Hole building and its Project (the Arbiter will say which Biome it is in). The Arbiter will provide the world notes as text files.
 
 ## Working agreement for the AI
 
@@ -286,7 +312,8 @@ The first test world should recreate the current campaign so the app is tested a
 - [x] Stage 3: Buildings system (`src/systems/buildings`). Shared map engine hook `src/map/objectKinds.js`: a system registers a kind of placed object backed by its own record (create, duplicate, linked records, name, draw, info panel, re-link on footprint change) and can add placeables to a kind of map, so the Biome Map gets "Building" without the biomeMap system changing. Place/remove payloads carry `linked` records, so removing a building, or a Biome or Region holding buildings, undoes in one step. A building is a placed object (kind `building`, solid layer) plus a `buildings` record (type, name, areaId, constructionProgress 0-100, forcedStage, projectId for Stage 5, storage counts, properties as key/value, stageStamps for Stage 9, notes, customFields). Placing it links it to the Area covering most of its cells; moving, rotating or resizing re-links; the panel can change the link. Rotate (R or button) turns non-square footprints around their center with overlap and edge checks (`setFootprint` command). Placeholder visuals per stage: Empty Site dashed outline, Foundation hatched, Under Construction partly filled, Completed solid, plus a progress bar; color from the type's category. Stage = highest threshold at or below progress (`stages.js`, thresholds per type, defaults in `tables/constructionStages.json`), or a forced stage. Buildings tab: building type editor (name, category, default footprint, stage thresholds, default properties, custom fields), category editor (name, color), list of all buildings with Show. Duplicates start with empty storage. Schema v6 (migration 5 to 6 adds starter building categories).
 - [x] Discovery data (for Resolution Logs): Regions, Biomes and Areas have `discovered` and `undiscoveredName` ("???"); resources listed in Biomes and Areas have `known`. Checkboxes in the info panels. Schema v7 (migration 6 to 7: existing places start discovered, existing resources known).
 - [x] Stage 3.5: Linked map levels (`src/map/mapFrame.js`). One rule for World to Region and Region to Biome: the child map covers its footprint on the parent scaled by its mapScale (default 8, editable in the Region and Biome panels), with the parent's terrain under the footprint as an inherited base layer (`terrainAt`: own paint, else inherited, recursively), recomputed each draw so parent paint shows up live. Parent maps draw a mini preview of each child's own paint and objects inside its outline (`src/map/childPreview.js`); hovering any object shows its name. Biome Map is a framed board: thick border, dimmed outside, camera clamped to the board plus a 64px margin (`clampCamera`). Zoom levels 2 and 3 added so a whole board fits on screen (only every 10th grid line below 4px). Schema v8 (migration 7 to 8 sets Biomes' unused mapScale to 8; Regions keep theirs).
-- [ ] Stage 4
+- [x] Stage 4: Characters system (`src/systems/characters`): Characters tab with Roster, Libraries and Import seed data views. Schema v9 (migration 8 to 9: the unused followers collection becomes characters; adds teams and the character libraries; species get Hunger max, Thirst max and default fields; Baseliner and Vulture added or completed). Libraries: generic editor driven by field lists in `libraries.js` (Body Types have a level table editor, `levelsTable.js`). Roster: live search, sort, filters (team, species, Body Type, location, alive or dead), compact rows (team, species, Body Type, STR, SPD, TOU, Health, Speed remaining / SPD, condition icons), Death Log section. Stat sheet: every field editable; choosing a Body Type and level shows the table's stats (and granted Traits) as a proposal to Apply or ignore (`src/rules/bodyTypes.js`); stat ceiling warning; Level up body shows the next row and the prerequisite; Health is manual; Skill Bonus = Level - 1 shown per Skill; one Defense Skill; Theory and Skill helpers (`src/rules/skills.js`, tier labels, special tiers have no Tier-up); Traits and Pacts from the library with a note; Conditions from the library or one-off; weapons, armor or shield, other gear, inventory; collapsed manual combat profile (no calculation). Death clears assignments in one step; Revive. Seed import (`seedImport.js`, tested on the real files): libraries first, then characters linked by name; unmatched names become new flagged entries; existing entries are reused, never overwritten; one undo step. Hooks: `src/ui/infoSections.js` (systems add sections to Region/Biome/Area panels: "Characters here") and map badges in `objectKinds.js` (character count on each Area).
+- [x] Stage 4 revisions: Factions (editable library, on the sheet, roster column and filter) replace Teams on screen; Teams and Conditions are in stasis (data and seed import kept, hidden until the Combat stage). Health max formula from the Combat Profiles sheet (`src/rules/health.js`, tested against all 10 seed characters) shown on the sheet with a Use button, and applied with Body Type table proposals and Level up body (current Health is left alone). Schema v10 (migration 9 to 10 adds factions and factionId).
 - [ ] Stage 5
 - [ ] Stage 6
 - [ ] Stage 7
@@ -308,6 +335,12 @@ The first test world should recreate the current campaign so the app is tested a
 - Thirst consequences per day without water.
 
 - Conditions and healing: durations, how injuries heal.
+
+- The combat system (in testing by the Arbiter; to be added as its own later stage, Stage 10). Combat values are manual fields until then.
+
+- Hunger and Thirst for Vultures (left blank on the Vulture species).
+
+- When a Theory becomes a T1 Skill, is the Theory removed? (RULES.md says it "becomes" the Skill, but T1 to T2 needs 5 Theories at 100%, so some must stay as Theories.) For now a checkbox, on by default.
 
 - Morale and Prosperity rules.
 

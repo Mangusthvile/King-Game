@@ -1,0 +1,155 @@
+{
+  "source": "King's Game - Combat Profiles (Google Sheet), Body Types tab. Seed data only; every value is editable in the app.",
+  "notes": [
+    "Every species begins with a Basic Body Type at Body Level 1. Specialized Body Types build on stats already earned rather than resetting them.",
+    "Common-rarity Body Types normally grant 3 physical stat points per level, distributed by the profile's growth pattern.",
+    "A Body Type cannot gain another level unless the full intended growth fits under its physical ceiling.",
+    "Normal Baseliner physical stats cap at 4. Iron Body Types can reach 8.",
+    "Vault Body Types: first level costs 100 of the relevant Essence, then 200, then 300 (+100 per level). Max level not yet established."
+  ],
+  "bodyTypes": [
+    {
+      "name": "Baseliner Basic", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 4,
+      "prerequisite": "Be a Mature Baseliner.",
+      "levels": [ { "lv": 1, "bodyLv": 1, "STR": 1, "SPD": 1, "TOU": 1, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "The Foundational Body type of the Baseliner, it represents the average physical state of a Mature Baseliner. While Baseliners have a list of physical traits none are notable enough to be integrated into their Soul Emblems."
+    },
+    {
+      "name": "Brute", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 4,
+      "prerequisite": "Have the Basic Baseliner Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 2, "STR": 3, "SPD": 1, "TOU": 2, "notes": "+2 STR, +1 TOU. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type developed through focused training that prioritizes raw Strength while reinforcing Toughness. Every level allocates exactly 3 physical stat points as +2 Strength and +1 Toughness."
+    },
+    {
+      "name": "Swift", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 4,
+      "prerequisite": "Have the Basic Baseliner Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 2, "STR": 1, "SPD": 4, "TOU": 1, "notes": "+3 SPD. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type developed through focused training centered entirely on speed, reflexes, and rapid movement. Its single level raises the Baseliner's Speed directly to the normal physical limit of 4."
+    },
+    {
+      "name": "Strong", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 4,
+      "prerequisite": "Have the Basic Baseliner Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 2, "STR": 4, "SPD": 1, "TOU": 1, "notes": "+3 STR. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type developed through focused training centered entirely on raw physical Strength. Its single level raises the Baseliner's Strength directly to the normal physical limit of 4."
+    },
+    {
+      "name": "Scout", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 4,
+      "prerequisite": "Have the Basic Baseliner Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 2, "STR": 1, "SPD": 3, "TOU": 2, "notes": "+2 SPD, +1 TOU. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type developed through focused training that emphasizes mobility while building enough Toughness to endure sustained movement and dangerous travel. Every level allocates exactly 3 physical stat points as +2 Speed and +1 Toughness."
+    },
+    {
+      "name": "Advanced", "species": "Baseliner", "rarity": "Common", "maxLevel": 3, "statCeiling": 4,
+      "prerequisite": "Have the Basic Baseliner Body Type.",
+      "levels": [
+        { "lv": 1, "bodyLv": 2, "STR": 2, "SPD": 2, "TOU": 2, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." },
+        { "lv": 2, "bodyLv": 3, "STR": 3, "SPD": 3, "TOU": 3, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." },
+        { "lv": 3, "bodyLv": 4, "STR": 4, "SPD": 4, "TOU": 4, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type developed through balanced and intensive physical training. Rather than specializing in one area, every level allocates exactly 3 physical stat points as +1 Strength, +1 Speed, and +1 Toughness."
+    },
+    {
+      "name": "Iron Brute", "species": "Baseliner", "rarity": "Common", "maxLevel": 2, "statCeiling": 8,
+      "prerequisite": "Achieve Max level in the Baseliner Brute Body Type.",
+      "levels": [
+        { "lv": 1, "bodyLv": 3, "STR": 5, "SPD": 1, "TOU": 3, "notes": "+2 STR, +1 TOU. 3 points total." },
+        { "lv": 2, "bodyLv": 4, "STR": 7, "SPD": 1, "TOU": 4, "notes": "+2 STR, +1 TOU. 3 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "An advanced Common-rarity Body Type. Through focused training methods and consumption of the Iron Remedies, an individual may exceed their normal physical limits. Every level allocates exactly 3 physical stat points as +2 Strength and +1 Toughness."
+    },
+    {
+      "name": "Iron Swift", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 8,
+      "prerequisite": "Achieve Max level in the Baseliner Swift Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 3, "STR": 1, "SPD": 8, "TOU": 1, "notes": "+4 SPD. 4 points total." } ],
+      "grantsTraits": [],
+      "description": "An advanced Common-rarity Body Type. Through focused training methods and consumption of the Iron Remedies, an individual may exceed their normal physical limits. Its single level focuses entirely on Speed, raising that stat directly to the Iron physical limit of 8."
+    },
+    {
+      "name": "Iron Strong", "species": "Baseliner", "rarity": "Common", "maxLevel": 1, "statCeiling": 8,
+      "prerequisite": "Achieve Max level in the Baseliner Strong Body Type.",
+      "levels": [ { "lv": 1, "bodyLv": 3, "STR": 8, "SPD": 1, "TOU": 1, "notes": "+4 STR. 4 points total." } ],
+      "grantsTraits": [],
+      "description": "An advanced Common-rarity Body Type. Through focused training methods and consumption of the Iron Remedies, an individual may exceed their normal physical limits. Its single level focuses entirely on Strength, raising that stat directly to the Iron physical limit of 8."
+    },
+    {
+      "name": "Iron Scout", "species": "Baseliner", "rarity": "Common", "maxLevel": 2, "statCeiling": 8,
+      "prerequisite": "Achieve Max level in the Baseliner Scout Body Type.",
+      "levels": [
+        { "lv": 1, "bodyLv": 3, "STR": 1, "SPD": 5, "TOU": 3, "notes": "+2 SPD, +1 TOU. 3 points total." },
+        { "lv": 2, "bodyLv": 4, "STR": 1, "SPD": 7, "TOU": 4, "notes": "+2 SPD, +1 TOU. 3 points total." }
+      ],
+      "grantsTraits": ["Weak Danger Premonition"],
+      "description": "An advanced Common-rarity Body Type. Through focused training methods and consumption of the Iron Remedies, an individual may exceed their normal physical limits. Every level allocates exactly 3 physical stat points as +2 Speed and +1 Toughness. The Body Type also grants the Weak Danger Premonition Trait, they gain alarm trait when in mortal danger."
+    },
+    {
+      "name": "Iron Advanced", "species": "Baseliner", "rarity": "Common", "maxLevel": 4, "statCeiling": 8,
+      "prerequisite": "Achieve Max level in the Baseliner Advanced Body Type.",
+      "levels": [
+        { "lv": 1, "bodyLv": 5, "STR": 5, "SPD": 5, "TOU": 5, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." },
+        { "lv": 2, "bodyLv": 6, "STR": 6, "SPD": 6, "TOU": 6, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." },
+        { "lv": 3, "bodyLv": 7, "STR": 7, "SPD": 7, "TOU": 7, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." },
+        { "lv": 4, "bodyLv": 8, "STR": 8, "SPD": 8, "TOU": 8, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "An advanced Common-rarity Body Type. Through balanced training methods and consumption of the Iron Remedies, an individual may exceed their normal physical limits without specializing in a single area. Every level allocates exactly 3 physical stat points as +1 Strength, +1 Speed, and +1 Toughness."
+    },
+    {
+      "name": "V-1-B Basic Vulture", "species": "Vulture", "rarity": "Common", "maxLevel": 1, "statCeiling": null,
+      "prerequisite": "Transformation into a Vulture.",
+      "levels": [ { "lv": 1, "bodyLv": 1, "STR": 1, "SPD": 1, "TOU": 1, "notes": "+1 STR, +1 SPD, +1 TOU. 3 points total." } ],
+      "grantsTraits": [],
+      "description": "A Common-rarity Body Type exclusive to the Vultures and formed through their transformation from Baseliners. The corruption and sealing process strips away most previous physical development, leaving the Vulture with a weakened but stable foundation from which the Vault paths can develop."
+    },
+    {
+      "name": "Malicious Vault", "species": "Vulture", "rarity": "Uncommon", "maxLevel": null, "statCeiling": null,
+      "prerequisite": "V-1-B and more than 100 Wicked Essence stored in the Vault.",
+      "levels": [
+        { "lv": 1, "bodyLv": 2, "STR": 3, "SPD": 1, "TOU": 1, "notes": "+2 STR. 2 points total." },
+        { "lv": 2, "bodyLv": 3, "STR": 5, "SPD": 1, "TOU": 1, "notes": "+2 STR. 2 points total." },
+        { "lv": 3, "bodyLv": 4, "STR": 7, "SPD": 1, "TOU": 1, "notes": "+2 STR. 2 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "An Uncommon-rarity Body Type exclusive to the Vultures. The Darkness tainting their body has been sealed through a Vault formed of Wicked Essence, focusing that power toward raw physical force and violent impact. Every level allocates exactly 2 physical stat points as +2 Strength, while also increasing the Vulture's physical Damage by +2."
+    },
+    {
+      "name": "Swift Vault", "species": "Vulture", "rarity": "Uncommon", "maxLevel": null, "statCeiling": null,
+      "prerequisite": "V-1-B and more than 100 Aerial Essence stored in the Vault.",
+      "levels": [
+        { "lv": 1, "bodyLv": 2, "STR": 1, "SPD": 5, "TOU": 1, "notes": "+4 SPD. 4 points total." },
+        { "lv": 2, "bodyLv": 3, "STR": 1, "SPD": 9, "TOU": 1, "notes": "+4 SPD. 4 points total." },
+        { "lv": 3, "bodyLv": 4, "STR": 1, "SPD": 13, "TOU": 1, "notes": "+4 SPD. 4 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "An Uncommon-rarity Body Type exclusive to the Vultures. The Darkness tainting their body has been sealed through a Vault formed of Aerial Essence. Similar to water streaming through a funnel, the power of Darkness is focused into enhancing the Vulture's speed. Every level allocates exactly 4 physical stat points as +4 Speed."
+    },
+    {
+      "name": "Stable Vault", "species": "Vulture", "rarity": "Uncommon", "maxLevel": null, "statCeiling": null,
+      "prerequisite": "V-1-B and more than 100 Earthen Essence stored in the Vault.",
+      "levels": [
+        { "lv": 1, "bodyLv": 2, "STR": 1, "SPD": 1, "TOU": 5, "notes": "+4 TOU. 4 points total." },
+        { "lv": 2, "bodyLv": 3, "STR": 1, "SPD": 1, "TOU": 9, "notes": "+4 TOU. 4 points total." },
+        { "lv": 3, "bodyLv": 4, "STR": 1, "SPD": 1, "TOU": 13, "notes": "+4 TOU. 4 points total." }
+      ],
+      "grantsTraits": [],
+      "description": "An Uncommon-rarity Body Type exclusive to the Vultures. The Darkness tainting their body has been sealed through a Vault formed of Earthen Essence, focusing that power into stability, endurance, and bodily resilience. Every level allocates exactly 4 physical stat points as +4 Toughness."
+    },
+    {
+      "name": "Radiant Vault", "species": "Vulture", "rarity": "Uncommon", "maxLevel": null, "statCeiling": null,
+      "prerequisite": "V-1-B and more than 100 Infernal Essence stored in the Vault.",
+      "levels": [
+        { "lv": 1, "bodyLv": 2, "STR": 4, "SPD": 1, "TOU": 1, "notes": "+3 STR. 3 points total." },
+        { "lv": 2, "bodyLv": 3, "STR": 7, "SPD": 1, "TOU": 1, "notes": "+3 STR. 3 points total." },
+        { "lv": 3, "bodyLv": 4, "STR": 10, "SPD": 1, "TOU": 1, "notes": "+3 STR. 3 points total." }
+      ],
+      "grantsTraits": ["Infernal"],
+      "description": "An Uncommon-rarity Body Type exclusive to the Vultures. The Darkness tainting their body has been sealed through a Vault formed of Infernal Essence, focusing that power into brilliant and destructive physical force. Every level allocates exactly 3 physical stat points as +3 Strength. The Body Type also grants the Infernal Trait, causing Brutal Attacks to inflict Burn."
+    }
+  ]
+}

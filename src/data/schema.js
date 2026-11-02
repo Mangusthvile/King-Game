@@ -6,8 +6,10 @@ import regionTypeList from './defaults/regionTypes.json';
 import biomeTypeList from './defaults/biomeTypes.json';
 import areaTypeList from './defaults/areaTypes.json';
 import buildingCategoryList from './defaults/buildingCategories.json';
+import speciesList from './defaults/species.json';
+import teamList from './defaults/teams.json';
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 10;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.
@@ -48,6 +50,25 @@ export function defaultBuildingCategories() {
   return byId(buildingCategoryList);
 }
 
+// Starter species (Baseliner, Vulture). Shape:
+//   { id, name, hungerMax, thirstMax (null = not set), notes,
+//     defaultFields (copied onto a character's custom fields, like Vulture's
+//     Mask, Vault Value and Essence notes), customFields }
+export function defaultSpecies() {
+  return byId(speciesList);
+}
+
+// Character teams: { id, name, color }. In stasis until the Combat stage
+// (kept in the data, hidden in the app).
+export function defaultTeams() {
+  return byId(teamList);
+}
+
+// A new species with nothing set yet (typed in the Region panel or a library).
+export function createSpecies(name) {
+  return { id: newId('species'), name, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
+}
+
 function emptyDefinitions() {
   return {
     regionTypes: defaultRegionTypes(),
@@ -57,11 +78,17 @@ function emptyDefinitions() {
     buildingCategories: defaultBuildingCategories(),
     tileTypes: defaultTileTypes(),
     resourceTypes: {},
-    species: {},
-    theories: {},
+    // Character libraries (Characters tab > Libraries); shapes in
+    // systems/characters/libraries.js.
+    factions: {}, // { name, color, description, notes }, made by the Arbiter
+    teams: defaultTeams(),
+    species: defaultSpecies(),
+    bodyTypes: {},
     skills: {},
     traits: {},
     conditions: {},
+    equipment: {},
+    theories: {},
     recipes: {},
   };
 }
@@ -92,7 +119,9 @@ export function createContainer({ kind, parentId = null, name }) {
     tiles: {}, // sparse: { "x,y": tileTypeId }, only painted cells are stored
     placedObjectIds: [],
     resources: [], // biomes and areas: { resourceTypeId, availability, notes, known }
-    assignedFollowerIds: [], // areas: followers assigned to work there
+    // areas: characters assigned to work there (the name is kept from before
+    // characters replaced followers, so old saves and undo history still work)
+    assignedFollowerIds: [],
     notes: '',
     customFields: {}, // Arbiter-made fields: { [fieldId]: { name, type, value } }
   };
@@ -116,7 +145,7 @@ export function createWorld(name) {
     containers: { [root.id]: root },
     placedObjects: {},
     buildings: {}, // see systems/buildings/buildingKind.js for the shape
-    followers: {},
+    characters: {}, // followers, enemies and NPCs: see systems/characters/characterModel.js
     projects: {},
     stockpiles: {
       kingdom: {}, // { resourceTypeId: count }

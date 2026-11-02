@@ -1,0 +1,24 @@
+[
+  {
+    "id": "species_baseliner",
+    "name": "Baseliner",
+    "hungerMax": 5,
+    "thirstMax": 3,
+    "notes": "",
+    "defaultFields": {},
+    "customFields": {}
+  },
+  {
+    "id": "species_vulture",
+    "name": "Vulture",
+    "hungerMax": null,
+    "thirstMax": null,
+    "notes": "Hunger and Thirst for Vultures are an open rule: set them when decided.",
+    "defaultFields": {
+      "field_vulture_mask": { "name": "Mask", "type": "text", "value": "" },
+      "field_vulture_vault": { "name": "Vault Value", "type": "number", "value": 0 },
+      "field_vulture_essence": { "name": "Essence notes", "type": "text", "value": "" }
+    },
+    "customFields": {}
+  }
+]

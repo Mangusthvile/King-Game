@@ -3,7 +3,7 @@
 // Danger Level of their own: danger belongs to each Biome inside them.
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
-import { newId } from '../data/ids.js';
+import { createSpecies } from '../data/schema.js';
 import { setField, addRecord, batch } from '../commands/recordCommands.js';
 import { chipList } from './fields.js';
 import { nameAndType, discoveryFields, descriptionField, notesField, childList, mapScaleField } from './containerFields.js';
@@ -36,7 +36,7 @@ function speciesField(world, region) {
       if (!region.speciesIds.includes(existing.id)) dispatch(setIds([...region.speciesIds, existing.id]));
       return;
     }
-    const species = { id: newId('species'), name, baseAttributes: {}, notes: '', customFields: {} };
+    const species = createSpecies(name);
     dispatch(
       batch(`Added species "${name}" to "${region.name}"`, [
         addRecord('definitions.species', species),

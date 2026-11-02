@@ -1,6 +1,7 @@
 // Drawing for linked map levels (see mapFrame.js): the mini preview of a
-// child map inside its outline, the name tag of the hovered object, and the
-// frame around a framed board (Biome Map). Used by renderer.js.
+// child map inside its outline, the name tag of the hovered object, the
+// frame around a framed board (Biome Map), and corner badges (the number of
+// characters in an Area). Used by renderer.js.
 import { cellToScreen } from './camera.js';
 
 const COLORS = {
@@ -66,4 +67,21 @@ export function drawBoardFrame(ctx, a, b) {
   ring(9, 4, '#000');
   ring(5, 6, COLORS.edge);
   ring(1.5, 3, COLORS.boardDark);
+}
+
+// A small tag on an object's top-right corner, for example "3" characters.
+export function drawBadge(ctx, obj, text, cam) {
+  const corner = cellToScreen(cam, obj.x + obj.w, obj.y);
+  ctx.font = `bold 11px Consolas, 'Courier New', monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const w = Math.max(16, Math.ceil(ctx.measureText(text).width) + 8);
+  const x = corner.x - w - 2;
+  const y = corner.y + 2;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(x - 1, y - 1, w + 2, 18);
+  ctx.fillStyle = COLORS.edge;
+  ctx.fillRect(x, y, w, 16);
+  ctx.fillStyle = '#1a120c';
+  ctx.fillText(text, x + w / 2, y + 8);
 }

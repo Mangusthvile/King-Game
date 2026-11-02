@@ -14,7 +14,7 @@ import { getCamera, setCamera } from './cameraStore.js';
 import { getActiveView, setActiveView } from './mapKeyboard.js';
 import { removeObject, setFootprint } from './mapCommands.js';
 import { duplicatePlacement, objectName, placeableFor, withFootprint } from './placement.js';
-import { objectKind, extraPlaceables } from './objectKinds.js';
+import { objectKind, extraPlaceables, mapBadge } from './objectKinds.js';
 import { childPreview } from './childPreview.js';
 import { renderToolbar } from './mapToolbar.js';
 import { renderMapDetail } from './mapPanels.js';
@@ -213,6 +213,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
         if (!previews.has(obj.id)) previews.set(obj.id, childPreview(world, obj));
         return previews.get(obj.id);
       },
+      badgeOf: (obj) => mapBadge(world, obj),
       hoverLabel: hoverObj ? { text: objectName(world, hoverObj), x: view.hoverCell.x, y: view.hoverCell.y } : null,
       bounds: frame?.bounds,
       backdrop: frame?.backdrop,
