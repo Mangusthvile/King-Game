@@ -2,7 +2,7 @@
 // resources with Availability, residents, notes.
 import { h } from './dom.js';
 import { textField, fieldSetter } from './fields.js';
-import { nameAndType, discoveryFields, descriptionField, dangerField, notesField } from './containerFields.js';
+import { nameAndType, discoveryFields, descriptionField, dangerField, notesField, mapScaleField } from './containerFields.js';
 import { resourcesEditor } from './resourcesEditor.js';
 
 export function renderBiomeInfo(world, biome) {
@@ -18,5 +18,6 @@ export function renderBiomeInfo(world, biome) {
       multiline: true,
     }),
     ...notesField(world, biome),
+    ...mapScaleField(world, biome, 'Biome Map scale (cells per Region Map cell)'),
   ];
 }

@@ -3,6 +3,7 @@
 import { cellToScreen, visibleRange } from './camera.js';
 import { cellKey, parseKey, objectsIn } from './grid.js';
 import { getSprite } from './sprites.js';
+import { drawPreview, drawTooltip, drawBoardFrame } from './linkedDrawing.js';
 
 const COLORS = {
   background: '#121212',
@@ -17,13 +18,20 @@ const COLORS = {
   ghostBad: 'rgba(194, 74, 74, 0.55)',
   eraseMark: 'rgba(0, 0, 0, 0.6)',
   outside: 'rgba(0, 0, 0, 0.6)', // beyond the edge of a bounded map
+  outsideBoard: 'rgba(0, 0, 0, 0.72)', // beyond a framed board (Biome Map)
   edge: '#d9b37a',
+  board: '#241d17', // a framed board's unpainted ground
 };
 
 // view: { camera, selectedId, hoverCell, ghost, stroke, objectName(obj), displayOf(obj), isZone(obj) }
 //   isZone:    zones (Areas) are drawn first, underneath everything on top of them
 //   bounds:    optional { minX, minY, maxX, maxY } edges of a bounded map (Region Map)
 //   backdrop:  optional [{ x, y, size, tileId }] big squares drawn under the map's own tiles
+//              (the inherited base layer, see mapFrame.js)
+//   board:     draw the bounds as a framed board (Biome Map)
+//   previewOf: optional (obj) => [{ x, y, w, h, color, outline }] or null, the
+//              mini preview of a child map drawn inside an outlined object
+//   hoverLabel: optional { text, x, y } name shown beside the hovered cell
 //   displayOf: 'block' (filled square) or 'outline' (border and name only)
 //   customDraw: optional (obj) => draw(ctx, rect, { name, zoom }) or null, for
 //              kinds that draw their own placeholder (buildings). A sprite still wins.
@@ -36,11 +44,15 @@ export function drawMap(ctx, width, height, world, container, view) {
   ctx.fillRect(0, 0, width, height);
 
   const range = visibleRange(cam, width, height);
+  if (view.board && view.bounds) {
+    const b = view.bounds;
+    fillCells(ctx, cam, b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY, COLORS.board);
+  }
   for (const b of view.backdrop ?? []) drawTile(ctx, world, b.x, b.y, b.tileId, cam, b.size);
   drawTiles(ctx, world, container.tiles, range, cam);
   if (view.stroke) drawStroke(ctx, world, view.stroke, cam);
   drawGrid(ctx, range, cam, width, height);
-  if (view.bounds) drawOutside(ctx, view.bounds, cam, width, height);
+  if (view.bounds) drawOutside(ctx, view.bounds, cam, width, height, view.board);
 
   const objects = objectsIn(world, container);
   const isZone = view.isZone ?? (() => false);
@@ -53,7 +65,9 @@ export function drawMap(ctx, width, height, world, container, view) {
       drawCustom(ctx, obj, view.objectName(obj), cam, selected, custom);
       continue;
     }
-    const draw = view.displayOf(obj) === 'outline' ? drawOutlineObject : drawObject;
+    const outline = view.displayOf(obj) === 'outline';
+    if (outline) drawPreview(ctx, obj, view.previewOf?.(obj), cam);
+    const draw = outline ? drawOutlineObject : drawObject;
     draw(ctx, obj, view.objectName(obj), cam, selected);
   }
 
@@ -64,6 +78,7 @@ export function drawMap(ctx, width, height, world, container, view) {
     const g = view.ghost;
     fillCells(ctx, cam, g.x, g.y, g.w, g.h, g.ok ? COLORS.ghostOk : COLORS.ghostBad);
   }
+  if (view.hoverLabel) drawTooltip(ctx, view.hoverLabel, cam, width);
 }
 
 function overlapsRange(obj, r) {
@@ -93,15 +108,17 @@ function drawTile(ctx, world, x, y, tileId, cam, size = 1) {
 }
 
 // Shades everything beyond a bounded map's edges and outlines the edge.
-function drawOutside(ctx, bounds, cam, width, height) {
+// board = a thick frame around it, like a game board (Biome Map).
+function drawOutside(ctx, bounds, cam, width, height, board = false) {
   const a = cellToScreen(cam, bounds.minX, bounds.minY);
   const b = cellToScreen(cam, bounds.maxX, bounds.maxY);
   const clamp = (n) => Math.max(0, n);
-  ctx.fillStyle = COLORS.outside;
+  ctx.fillStyle = board ? COLORS.outsideBoard : COLORS.outside;
   ctx.fillRect(0, 0, width, clamp(a.y)); // above
   ctx.fillRect(0, b.y, width, clamp(height - b.y)); // below
   ctx.fillRect(0, a.y, clamp(a.x), b.y - a.y); // left
   ctx.fillRect(b.x, a.y, clamp(width - b.x), b.y - a.y); // right
+  if (board) return drawBoardFrame(ctx, a, b);
   ctx.strokeStyle = COLORS.edge;
   ctx.lineWidth = 2;
   ctx.strokeRect(a.x - 1, a.y - 1, b.x - a.x + 2, b.y - a.y + 2);
@@ -137,16 +154,19 @@ function drawStroke(ctx, world, stroke, cam) {
 }
 
 // Procedural grid lines: nothing is stored, they are worked out from the camera.
-// Shown at every zoom level; when zoomed far out the cell lines get fainter
-// so they don't drown out the map, while every 10th line stays clear.
+// When zoomed far out the cell lines get fainter so they don't drown out
+// the map, while every 10th line stays clear. Below 4px per cell only every
+// 10th line is drawn (a line every cell would cover the map).
 function drawGrid(ctx, range, cam, width, height) {
-  const minor = cam.zoom < 8 ? COLORS.gridFar : COLORS.grid;
+  const minor = cam.zoom < 4 ? null : cam.zoom < 8 ? COLORS.gridFar : COLORS.grid;
   const lineColor = (n) => (n === 0 ? COLORS.axis : n % 10 === 0 ? COLORS.gridMajor : minor);
   for (let x = range.minX; x <= range.maxX + 1; x++) {
+    if (!lineColor(x)) continue;
     ctx.fillStyle = lineColor(x);
     ctx.fillRect(cellToScreen(cam, x, 0).x, 0, 1, height);
   }
   for (let y = range.minY; y <= range.maxY + 1; y++) {
+    if (!lineColor(y)) continue;
     ctx.fillStyle = lineColor(y);
     ctx.fillRect(0, cellToScreen(cam, 0, y).y, width, 1);
   }

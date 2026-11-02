@@ -10,6 +10,7 @@ import { renderBiomeInfo } from '../../ui/biomeInfo.js';
 import { renderAreaInfo } from '../../ui/areaInfo.js';
 import { renderTypeEditor } from '../../ui/typeEditor.js';
 import { renderCustomFields } from '../../ui/customFieldsEditor.js';
+import { mapFrame } from '../../map/mapFrame.js';
 import placeables from './placeables.json';
 
 export default {
@@ -34,6 +35,9 @@ export default {
           detailPanel,
           header: renderBreadcrumb(world),
           infoPanels: { area: renderAreaInfo },
+          // A framed board over the Biome's Region Map footprint, with the
+          // Region's terrain under it as the inherited base layer.
+          frame: mapFrame(world, biome, { board: true }),
           // With nothing selected, the side panel shows this Biome's own info.
           idlePanel: () => [
             h('h2', {}, 'Biome'),

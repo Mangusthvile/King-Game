@@ -2,6 +2,7 @@
 // Danger Level and notes. regionInfo.js, biomeInfo.js and areaInfo.js add the rest.
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
+import { setField } from '../commands/recordCommands.js';
 import { textField, selectField, checkboxField, fieldSetter } from './fields.js';
 import { typesFor, changeType } from '../map/containerTypes.js';
 import dangerTable from '../rules/tables/dangerLevels.json';
@@ -58,6 +59,30 @@ export function notesField(world, c) {
     key: `${c.id}.notes`,
     multiline: true,
   });
+}
+
+// How many child map cells one parent map cell becomes (see map/mapFrame.js),
+// for Regions and Biomes. A map setting, not a game rule. Changing it can
+// leave things outside the map's edge; they stay where they are and can be
+// moved back in.
+export function mapScaleField(world, c, label) {
+  const input = h('input', {
+    type: 'number',
+    min: 1,
+    max: 100,
+    step: 1,
+    value: c.mapScale,
+    'data-key': `${c.id}.mapScale`,
+    onchange: (e) => {
+      const n = Number(e.target.value);
+      if (Number.isInteger(n) && n >= 1 && n <= 100 && n !== c.mapScale) {
+        dispatch(setField(world, 'containers', c.id, 'mapScale', n, c.name));
+      } else {
+        e.target.value = c.mapScale;
+      }
+    },
+  });
+  return [h('label', {}, label), input];
 }
 
 // A list of the Regions or Biomes placed on a container's map, each with

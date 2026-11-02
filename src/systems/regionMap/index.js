@@ -9,7 +9,7 @@ import { renderRegionInfo } from '../../ui/regionInfo.js';
 import { renderBiomeInfo } from '../../ui/biomeInfo.js';
 import { renderTypeEditor } from '../../ui/typeEditor.js';
 import { renderCustomFields } from '../../ui/customFieldsEditor.js';
-import { regionFrame } from '../../map/regionFrame.js';
+import { mapFrame } from '../../map/mapFrame.js';
 import placeables from './placeables.json';
 
 export default {
@@ -35,8 +35,8 @@ export default {
           header: renderBreadcrumb(world),
           infoPanels: { biome: renderBiomeInfo },
           // Bounded by the Region's World Map footprint, with the World Map
-          // tiles under it drawn scaled up as the background.
-          frame: regionFrame(world, region),
+          // terrain under it drawn scaled up as the inherited base layer.
+          frame: mapFrame(world, region),
           // With nothing selected, the side panel shows this Region's own info.
           idlePanel: () => [
             h('h2', {}, 'Region'),

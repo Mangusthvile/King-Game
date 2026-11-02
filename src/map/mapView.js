@@ -3,16 +3,19 @@
 // selection, the drag in progress); world changes go through commands.
 import { h } from '../ui/dom.js';
 import { dispatch } from '../data/store.js';
-import { centeredCamera, screenToCell, panBy, zoomAt } from './camera.js';
+import { centeredCamera, zoomAt, clampCamera } from './camera.js';
 import { buildOccupancy, objectAtCell, fitsBounds, isSpaceFree } from './grid.js';
+import { attachPointerEvents } from './mapPointer.js';
+import { boardPanBox } from './mapFrame.js';
 import { drawMap } from './renderer.js';
 import { onSpriteLoad } from './sprites.js';
-import { TOOLS, toolHandlers } from './tools.js';
+import { TOOLS } from './tools.js';
 import { getCamera, setCamera } from './cameraStore.js';
 import { getActiveView, setActiveView } from './mapKeyboard.js';
 import { removeObject, setFootprint } from './mapCommands.js';
 import { duplicatePlacement, objectName, placeableFor, withFootprint } from './placement.js';
 import { objectKind, extraPlaceables } from './objectKinds.js';
+import { childPreview } from './childPreview.js';
 import { renderToolbar } from './mapToolbar.js';
 import { renderMapDetail } from './mapPanels.js';
 import { confirmRemoval } from './containerTree.js';
@@ -38,9 +41,11 @@ export function rememberSelection(containerId, objectId) {
 // infoPanels: { [containerKind]: (world, container) => nodes } the info shown
 //             when a Region or Biome object is selected.
 // idlePanel:  optional (view) => nodes shown when nothing is selected.
-// frame:      optional { bounds, backdrop } for a map with edges (the Region
-//             Map, see regionFrame.js). Nothing can be painted or placed
-//             outside bounds; backdrop is drawn underneath the map.
+// frame:      optional { bounds, backdrop, board } for a map with edges (the
+//             Region and Biome Maps, see mapFrame.js). Nothing can be painted
+//             or placed outside bounds; backdrop (the inherited base layer) is
+//             drawn underneath the map's own paint; board = framed board with
+//             panning limited to it (Biome Map).
 export function mountMapView({ world, containerId, placeables, detailPanel, header = null, infoPanels = {}, idlePanel = null, frame = null }) {
   getActiveView()?.destroy();
   const container = world.containers[containerId];
@@ -59,6 +64,8 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
   // Zones (Regions, Biomes, Areas) are outlines that other objects can sit inside.
   const isZone = (obj) => placeableFor(world, placeables, obj)?.layer === 'zone';
   const occupancy = buildOccupancy(world, container, isZone);
+  const panBox = frame?.board ? boardPanBox(world, container, frame.bounds) : null;
+  const previews = new Map(); // object id -> mini preview of its child map (worked out once per view)
 
   let drawRequest = 0; // pending requestAnimationFrame id
   const view = {
@@ -83,7 +90,8 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       return getCamera(containerId);
     },
     set camera(cam) {
-      setCamera(containerId, cam);
+      // On a framed board the view can't wander off the board.
+      setCamera(containerId, panBox && canvas.width ? clampCamera(cam, panBox, canvas.width, canvas.height) : cam);
     },
     requestDraw() {
       if (!drawRequest) drawRequest = requestAnimationFrame(() => ((drawRequest = 0), draw()));
@@ -182,6 +190,9 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
 
   function draw() {
     if (!view.camera || canvas.width === 0) return;
+    // The name of whatever is under the cursor, shown beside it.
+    const hoverId = !view.drag && view.hoverCell && objectAtCell(occupancy, view.hoverCell.x, view.hoverCell.y);
+    const hoverObj = hoverId && world.placedObjects[hoverId];
     drawMap(ctx, canvas.width, canvas.height, world, container, {
       camera: view.camera,
       selectedId: state.selectedId,
@@ -197,8 +208,15 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
         const draw = objectKind(obj.kind)?.draw;
         return draw && ((ctx, rect, opts) => draw(ctx, world, obj, rect, opts));
       },
+      // Regions and Biomes show a mini preview of their own map inside their outline.
+      previewOf: (obj) => {
+        if (!previews.has(obj.id)) previews.set(obj.id, childPreview(world, obj));
+        return previews.get(obj.id);
+      },
+      hoverLabel: hoverObj ? { text: objectName(world, hoverObj), x: view.hoverCell.x, y: view.hoverCell.y } : null,
       bounds: frame?.bounds,
       backdrop: frame?.backdrop,
+      board: frame?.board,
     });
     const cell = view.hoverCell ? `Cell ${view.hoverCell.x}, ${view.hoverCell.y}` : 'Cell -';
     const tool = TOOLS.find((t) => t.id === state.tool);
@@ -213,6 +231,8 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     if (!view.camera) {
       view.camera = centeredCamera(0, 0, canvas.width, canvas.height);
       view.refreshUi(); // shows the zoom level now that there is a camera
+    } else if (panBox) {
+      view.camera = view.camera; // re-applies the board's pan limit for the new size
     }
     draw(); // resizing clears the canvas, so draw right away
   });
@@ -232,79 +252,4 @@ function fixStaleState(world, containerId, placeables) {
   }
   if (!placeables.some((p) => p.id === state.placeableId)) state.placeableId = placeables[0]?.id ?? null;
   if (world.placedObjects[state.selectedId]?.containerId !== containerId) state.selectedId = null;
-}
-
-function attachPointerEvents(view, canvas) {
-  const local = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    return { sx, sy, cell: screenToCell(view.camera, sx, sy) };
-  };
-  const tool = () => toolHandlers[view.state.tool];
-
-  canvas.addEventListener('pointerdown', (e) => {
-    canvas.setPointerCapture(e.pointerId);
-    const { sx, sy, cell } = local(e);
-    // Middle or right drag always pans, whatever the tool.
-    if (e.button === 1 || e.button === 2 || view.state.tool === 'pan') view.startPan(sx, sy);
-    else if (e.button === 0) tool().down?.(view, cell, sx, sy);
-    view.requestDraw();
-  });
-
-  canvas.addEventListener('pointermove', (e) => {
-    const { sx, sy, cell } = local(e);
-    view.hoverCell = cell;
-    const drag = view.drag;
-    if (drag?.type === 'pan') {
-      view.camera = panBy(view.camera, sx - drag.lastX, sy - drag.lastY);
-      drag.lastX = sx;
-      drag.lastY = sy;
-    } else if (drag) {
-      tool().move?.(view, cell);
-    } else {
-      tool().hover?.(view, cell);
-    }
-    view.requestDraw();
-  });
-
-  const finish = (e) => {
-    const drag = view.drag;
-    if (!drag) return;
-    // up() may dispatch a command, which rebuilds the screen with a new view.
-    // That's fine: this old view is simply thrown away afterwards.
-    if (drag.type !== 'pan') tool().up?.(view, local(e).cell);
-    view.drag = null;
-    view.requestDraw();
-  };
-  canvas.addEventListener('pointerup', finish);
-  canvas.addEventListener('pointercancel', () => view.cancel());
-
-  canvas.addEventListener('pointerleave', () => {
-    view.hoverCell = null;
-    if (!view.drag) view.ghost = null;
-    view.requestDraw();
-  });
-
-  canvas.addEventListener(
-    'wheel',
-    (e) => {
-      e.preventDefault(); // stop the page from scrolling
-      const { sx, sy } = local(e);
-      view.camera = zoomAt(view.camera, sx, sy, e.deltaY < 0 ? 1 : -1);
-      view.refreshUi();
-      view.requestDraw();
-    },
-    { passive: false },
-  );
-
-  // Double-click a Region or Biome to enter it.
-  canvas.addEventListener('dblclick', (e) => {
-    if (view.state.tool !== 'select') return;
-    const { cell } = local(e);
-    const id = objectAtCell(view.occupancy, cell.x, cell.y);
-    if (id) view.enter(id);
-  });
-
-  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }

@@ -83,7 +83,7 @@ const migrations = {
   // scaled up by mapScale. (Regions' old dangerLevel values are kept but no
   // longer shown: danger belongs to Biomes.)
   4: (world) => {
-    for (const c of Object.values(world.containers)) c.mapScale ??= DEFAULT_MAP_SCALE;
+    for (const c of Object.values(world.containers)) c.mapScale ??= 10; // the default at the time
     world.schemaVersion = 5;
     return world;
   },
@@ -108,6 +108,18 @@ const migrations = {
       for (const r of c.resources ?? []) r.known ??= true;
     }
     world.schemaVersion = 7;
+    return world;
+  },
+
+  // 7 -> 8 (Stage 3.5): the Biome Map is now bounded by the Biome's Region
+  // Map footprint, scaled up by its mapScale. A Biome's mapScale was never
+  // used before, so it takes the new default. Regions keep theirs, so
+  // existing Region Maps don't change.
+  7: (world) => {
+    for (const c of Object.values(world.containers)) {
+      if (c.kind === 'biome') c.mapScale = DEFAULT_MAP_SCALE;
+    }
+    world.schemaVersion = 8;
     return world;
   },
 };

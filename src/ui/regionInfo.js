@@ -6,7 +6,7 @@ import { dispatch } from '../data/store.js';
 import { newId } from '../data/ids.js';
 import { setField, addRecord, batch } from '../commands/recordCommands.js';
 import { chipList } from './fields.js';
-import { nameAndType, discoveryFields, descriptionField, notesField, childList } from './containerFields.js';
+import { nameAndType, discoveryFields, descriptionField, notesField, childList, mapScaleField } from './containerFields.js';
 import { enterContainer } from './navigation.js';
 
 export function renderRegionInfo(world, region) {
@@ -19,31 +19,8 @@ export function renderRegionInfo(world, region) {
     h('label', {}, 'Biomes here'),
     childList(world, region, (id) => enterContainer(world, id)),
     ...notesField(world, region),
-    ...mapScaleField(world, region),
+    ...mapScaleField(world, region, 'Region Map scale (cells per World Map cell)'),
   ];
-}
-
-// How many Region Map cells one World Map cell becomes (see map/regionFrame.js).
-// A map setting, not a game rule. Shrinking it can leave Biomes outside the
-// Region's edge; they stay where they are and can be moved back in.
-function mapScaleField(world, region) {
-  const input = h('input', {
-    type: 'number',
-    min: 1,
-    max: 100,
-    step: 1,
-    value: region.mapScale,
-    'data-key': `${region.id}.mapScale`,
-    onchange: (e) => {
-      const n = Number(e.target.value);
-      if (Number.isInteger(n) && n >= 1 && n <= 100 && n !== region.mapScale) {
-        dispatch(setField(world, 'containers', region.id, 'mapScale', n, region.name));
-      } else {
-        e.target.value = region.mapScale;
-      }
-    },
-  });
-  return [h('label', {}, 'Region Map scale (cells per World Map cell)'), input];
 }
 
 // Species are shared definitions (definitions.species), so the same species

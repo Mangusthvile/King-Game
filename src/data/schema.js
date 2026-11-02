@@ -7,10 +7,11 @@ import biomeTypeList from './defaults/biomeTypes.json';
 import areaTypeList from './defaults/areaTypes.json';
 import buildingCategoryList from './defaults/buildingCategories.json';
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
-// Regions: how many Region Map cells one World Map cell becomes (map/regionFrame.js).
-export const DEFAULT_MAP_SCALE = 10;
+// Regions and Biomes: how many cells of their own map one cell of their
+// parent's map becomes (map/mapFrame.js). Editable per container.
+export const DEFAULT_MAP_SCALE = 8;
 
 // What Resolution Logs call a Region, Biome or Area that isn't discovered yet.
 export const DEFAULT_UNDISCOVERED_NAME = '???';
@@ -84,7 +85,7 @@ export function createContainer({ kind, parentId = null, name }) {
     // rules/tables/dangerLevels.json. '' = not set; for an Area, '' means
     // "same as its Biome". Regions have no Danger Level of their own.
     dangerLevel: '',
-    mapScale: DEFAULT_MAP_SCALE, // regions: Region Map cells per World Map cell
+    mapScale: DEFAULT_MAP_SCALE, // regions and biomes: own map cells per parent map cell
     speciesIds: [], // regions: species that live there (definitions.species ids)
     civilizations: [], // regions: names of civilizations or cities that reside there
     residentsNotes: '',

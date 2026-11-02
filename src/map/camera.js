@@ -4,7 +4,8 @@
 //   zoom  = how many screen pixels one cell takes. Always a whole number so
 //           pixel art and grid lines stay crisp.
 
-export const ZOOM_LEVELS = [4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96];
+// 2 and 3 let a whole Biome board fit on screen.
+export const ZOOM_LEVELS = [2, 3, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96];
 export const DEFAULT_ZOOM = 24;
 
 // A camera that puts cell (cx, cy) in the middle of a canvas of the given size.
@@ -56,4 +57,18 @@ export function zoomAt(cam, sx, sy, direction) {
   if (zoom === cam.zoom) return cam;
   const anchor = screenToWorld(cam, sx, sy);
   return { x: anchor.x - sx / zoom, y: anchor.y - sy / zoom, zoom };
+}
+
+// Keeps the view on a box { minX, minY, maxX, maxY } (in cells) plus a
+// margin of marginPx screen pixels on every side. Along an axis where the
+// whole box fits on screen, the box is centered instead. Used for the
+// Biome Map's framed board.
+export function clampCamera(cam, box, width, height, marginPx = 64) {
+  const m = marginPx / cam.zoom;
+  const axis = (pos, view, lo, hi) => (hi - lo <= view ? (lo + hi) / 2 - view / 2 : Math.min(Math.max(pos, lo), hi - view));
+  return {
+    ...cam,
+    x: axis(cam.x, width / cam.zoom, box.minX - m, box.maxX + m),
+    y: axis(cam.y, height / cam.zoom, box.minY - m, box.maxY + m),
+  };
 }
