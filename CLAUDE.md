@@ -185,39 +185,33 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
 
-9. **Rendered View and Asset Library.**
+9. **Rendered View (procedural pixel terrain) and Stamps.**
 
-   Art direction
-   - Assets are the Arbiter's own AI-generated sprite sheets, converted to pixel art. Target look: chunky, bold-outlined, bright, cozy pixel art.
-   - Render pixel-perfect: nearest-neighbor scaling, integer zoom levels only in Rendered view, imageSmoothingEnabled = false.
-   - The world uses one base tile size (set in Settings, e.g. 32x32). Asset sizes are measured in tiles (a tree might be 1x2 tiles, a house 3x3).
-
-   Asset Library tab
-   - Import a single PNG, several PNGs, or a sprite sheet.
-   - Sheet importer: the sheet is on a plain white background. Auto-detect each separate object, remove the background, trim, then let the Arbiter name, tag and set the tile size (w x h) of each piece. Save each as its own asset.
-   - Pixelize on import (optional, on by default; skip it for sheets that are already pixel art): downscale to the chosen tile size with nearest-neighbor, reduce to a limited palette, keep a clean dark outline, and show a before/after preview so the Arbiter can adjust the pixel scale before saving.
-   - Tags come from file or piece names: every word is a tag, numbers ignored, plurals singular ("grassland tree 01" = [grassland, tree]; "any" fits every biome). Tags stay editable.
-   - Each asset stores its source sheet name, tags, size in tiles, and whether it already includes its own shadow.
-   - Source sheets live in references/asset-sheets/ and are only used through the importer, never loaded directly by the app.
-
-   How assets are chosen
-   - Region, sub-area, tile and building types list asset needs as tag sets with a density (e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate). Buildings list one tag set per construction stage.
-   - Lookup order for [forest, tree]: all tags matched, then [any, tree], then a simple colored pixel placeholder.
-
-   Missing asset prompts
-   - When a need has no matching asset (or a new biome, sub-area or building type is created), show a non-blocking "Assets needed" prompt listing the missing tag sets. For each:
-     1. "Select from my files": file picker; files are auto-tagged from their names; the Arbiter confirms tags and size.
-     2. "Copy generation prompt": copies a ready prompt to the clipboard in this format, with [SUBJECTS] filled in, and shows the file name to save it as ("sheet [tags].png"):
-        "Sheet: 4 [SUBJECTS]. Follow the style guide."
-        Also include a "Copy style guide" button that copies the full style setup message (stored in Settings, editable) for starting a new chat.
-     3. "Use placeholder for now": the need stays in an "Assets needed" list in the Asset Library until filled.
-
-   Renderer
-   - Pure function of tile data plus a saved seed. No AI, no network.
-   - Water, roads and biome borders are smoothed into curved shapes that stay inside their painted cells, drawn in pixel style (snapped to the pixel grid, same outline color as the assets).
-   - Then it scatters matching assets by density, sorted by y so lower objects draw in front. If an asset has no shadow, add a small pixel shadow under it.
-   - The Arbiter can Reroll, Lock, and move, swap or delete individual props. Locked props are saved.
+   Rendered View
    - Each map tab toggles between Tile view (editing) and Rendered view (playing and screenshots).
+   - Everything in Rendered view is drawn by code. No AI, no network, no required image files.
+   - Pixel look: draw the scene onto a small offscreen canvas at low resolution (e.g. 16 pixels per tile), then scale it up to the screen with nearest-neighbor at integer zoom levels (imageSmoothingEnabled = false). This makes all code-drawn shapes come out as crisp pixel art automatically.
+   - Style: very simple, bright, chunky pixel art with a dark brown outline color (#3b2414 or similar, editable in Settings), matching the Arbiter's stamp assets.
+   - The renderer is a pure function of the tile data plus a saved seed.
+
+   Terrain smoothing
+   - Water, roads, paths and biome borders are smoothed into curved, flowing shapes instead of square stairs, while staying inside their painted cells. A diagonal staircase of water cells becomes a diagonal river.
+   - Water gets a darker outline edge, a few lighter ripple pixels, and a small shore band where it meets land.
+   - Neighboring terrain types blend with a soft, slightly irregular border instead of a hard grid line.
+
+   Procedural details (drawn by code)
+   - Grass tufts, small flowers, pebbles, simple pixel trees (round leafy, tall, pine), bushes and rocks, generated from the seed.
+   - Each tile type has editable density settings, e.g. Grassland: Trees Sparse, Grass tufts Moderate, Flowers Few, Rocks Few. Region and sub-area types can override them.
+   - Details avoid water and roads, and trees keep a small gap from shores.
+   - Objects are sorted by y so lower ones draw in front.
+   - The Arbiter can Reroll the seed, Lock the result, and click any detail to move or delete it. Locked and edited details are saved.
+
+   Stamps (optional assets)
+   - Assets are not used automatically. They are stamps the Arbiter chooses to place by hand.
+   - Asset Library tab: import single PNGs or a sprite sheet on a plain white background. The sheet importer auto-detects each object, removes the background, trims it, and lets the Arbiter name and tag each piece. Tags come from names (every word is a tag, numbers ignored, plurals singular) and stay editable.
+   - Stamp palette in Rendered view: search or filter stamps by tag, click one, then click the map to place it. Placed stamps can be moved, scaled in whole-number steps, flipped, layered above or below, and deleted. Stamps snap to the pixel grid, and also to the tile grid if snapping is on.
+   - Placed stamps are saved per container as decoration objects. They are visual only; they don't change game data unless the Arbiter links a stamp to a building or other record.
+   - Buildings can optionally use a chosen stamp per construction stage. If none is set, the renderer draws a simple code-drawn placeholder for each stage.
 
 After the MVP (do not start without being asked): Harvesting tab, resources and stockpiles UI, Crafting, Training, building connections and automation (always pausable and overridable), Morale and Prosperity, population groups, Units, Armies.
 
