@@ -265,6 +265,16 @@ label {
   color: var(--danger-light);
 }
 
+/* World file sync button (sync/fileSync.js). warn = needs the Arbiter. */
+.file-status {
+  font-size: 12px;
+}
+
+.file-status.warn {
+  color: #e0b050;
+  border-color: #e0b050;
+}
+
 .tab-bar {
   display: flex;
   flex-wrap: wrap;

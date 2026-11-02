@@ -1,5 +1,7 @@
-// Settings tab: world name, current day, Resolution Log options, backup export.
+// Settings tab: world name, current day, Resolution Log options, world file
+// sync, this computer's settings, backup export.
 import { h, formatDate } from './dom.js';
+import { renderFileSettings } from './fileSettings.js';
 import { dispatch } from '../data/store.js';
 import { renameWorld, setCurrentDay } from '../commands/worldCommands.js';
 import { exportWorld } from '../data/exportImport.js';
@@ -69,11 +71,12 @@ export function renderSettingsTab(world) {
         title: 'Logs always show the final value; this also marks it as edited.',
       }),
     ),
+    ...renderFileSettings(),
     h(
       'section',
       { class: 'frame panel' },
       h('h2', {}, 'Backup'),
-      h('p', { class: 'muted' }, 'Downloads the whole world, including its action log, as a JSON file.'),
+      h('p', { class: 'muted' }, 'Downloads the whole world, including its action log, as a JSON file. Import JSON on another computer brings it in once; it does not stay in sync.'),
       h('button', { class: 'btn', onclick: () => exportWorld(world) }, 'Export JSON'),
     ),
     h(

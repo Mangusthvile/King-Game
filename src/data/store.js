@@ -10,6 +10,7 @@ let world = null;
 let saveStatus = 'saved'; // 'saved' | 'saving' | 'error'
 let saveTimer = null;
 const listeners = new Set();
+const changeListeners = new Set();
 
 export function getWorld() {
   return world;
@@ -31,7 +32,26 @@ function notify(kind) {
   for (const listener of listeners) listener(kind);
 }
 
+// Redraws the save labels only (the world file sync calls this when its
+// status changes).
+export function refreshSaveStatus() {
+  notify('save');
+}
+
+// listener(type) is called after every change to the world data, with the
+// command type, or 'undo' / 'redo'. The world file sync uses it to know when
+// to autosave.
+export function onWorldChange(listener) {
+  changeListeners.add(listener);
+  return () => changeListeners.delete(listener);
+}
+
+// Also used to swap in another version of the open world (reloading the
+// world file, restoring a backup). That replaces the data as a whole, so it
+// is not a command; the replaced version is kept as a backup file first.
 export function openWorld(loadedWorld) {
+  clearTimeout(saveTimer);
+  saveTimer = null;
   world = loadedWorld;
   saveStatus = 'saved';
   notify('world');
@@ -56,7 +76,7 @@ export function dispatch(command) {
     time: new Date().toISOString(),
   });
   world.log.redo = []; // a new change makes old redo entries invalid
-  changed();
+  changed(command.type);
 }
 
 // Undo only walks back within the current day. Advance Day (Stage 6) will mark
@@ -75,7 +95,7 @@ export function undo() {
   const entry = world.log.actions.pop();
   createCommand(entry.type, entry.payload).undo(world);
   world.log.redo.push(entry);
-  changed();
+  changed('undo');
 }
 
 export function redo() {
@@ -83,14 +103,15 @@ export function redo() {
   const entry = world.log.redo.pop();
   createCommand(entry.type, entry.payload).do(world);
   world.log.actions.push(entry);
-  changed();
+  changed('redo');
 }
 
 // ---- Autosave ----
 
-function changed() {
+function changed(type) {
   world.meta.modified = new Date().toISOString();
   saveStatus = 'saving';
+  for (const listener of changeListeners) listener(type);
   notify('world');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(runSave, SAVE_DELAY_MS);

@@ -8,15 +8,29 @@ import { getWorld, openWorld, closeWorld, subscribe, undo, redo } from './data/s
 import { renderWorldList } from './ui/worldListScreen.js';
 import { renderWorldScreen, updateSaveStatus } from './ui/worldScreen.js';
 import { setNavigationListener } from './ui/navigation.js';
+import { attachFileSync, closeFileSync, setSyncCloseHandler } from './sync/fileSync.js';
 
 const root = document.getElementById('app');
+
+// Opening a world also connects it to its world file, if it has one.
+function open(world) {
+  openWorld(world);
+  attachFileSync(world);
+}
+
+// Leaving a world saves it to its file and clears the "open on" marker.
+async function back() {
+  await closeFileSync();
+  await closeWorld();
+}
+setSyncCloseHandler(() => closeWorld()); // "Back to worlds" in the open-elsewhere warning
 
 function render() {
   const world = getWorld();
   if (world) {
-    renderWorldScreen(root, world, { onBack: () => closeWorld() });
+    renderWorldScreen(root, world, { onBack: back });
   } else {
-    renderWorldList(root, { onOpen: openWorld });
+    renderWorldList(root, { onOpen: open });
   }
 }
 

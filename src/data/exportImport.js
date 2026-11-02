@@ -17,7 +17,7 @@ export function exportWorld(world) {
 }
 
 // Checks only what the app needs to open the world. Anything else is kept as-is.
-function validate(world) {
+export function validate(world) {
   if (!world || typeof world !== 'object') throw new Error('File is not a world.');
   if (typeof world.schemaVersion !== 'number') throw new Error('Missing schemaVersion.');
   if (!world.meta || !world.meta.id || !world.meta.name) throw new Error('Missing meta.');
@@ -36,6 +36,7 @@ export async function importWorldFile(file) {
     throw new Error('File is not valid JSON.');
   }
   validate(world);
+  delete world.sync; // a world file's save bookkeeping (sync/worldFile.js), not world data
   world = migrateWorld(world);
 
   if (await worldExists(world.meta.id)) {

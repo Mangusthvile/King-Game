@@ -6,6 +6,8 @@ import { renderSettingsTab } from './settingsTab.js';
 import { renderLogTab } from './logTab.js';
 import { getSystemTabs } from '../systems/registry.js';
 import { getNavigation, navigate } from './navigation.js';
+import { getSyncState, checkNow, saveFileNow } from '../sync/fileSync.js';
+import { getDeviceSettings } from '../sync/deviceSettings.js';
 
 // Built-in tabs. Tabs without a render function are placeholders until a
 // system in /src/systems provides a tab with the same id.
@@ -29,6 +31,38 @@ const TABS = [
 
 const SAVE_TEXT = { saved: 'Saved', saving: 'Saving...', error: 'Save failed!' };
 
+// The world file button (sync/fileSync.js statuses). 'off' hides it.
+const FILE_TEXT = {
+  unsupported: 'File: browser unsupported',
+  permission: 'File: allow access',
+  synced: 'File saved',
+  pending: 'File: changes waiting',
+  saving: 'File: saving...',
+  paused: 'File changed elsewhere!',
+  missing: 'File not found!',
+  error: 'File save failed!',
+};
+const FILE_WARN = ['permission', 'paused', 'missing', 'error'];
+
+// What clicking the file button does for each status.
+function fileButtonClick() {
+  const { status } = getSyncState();
+  if (status === 'permission') checkNow(true);
+  else if (status === 'pending' || status === 'error') saveFileNow();
+  else if (status === 'synced' || status === 'paused') checkNow();
+  else navigate({ tab: 'settings' });
+}
+
+function fileButtonTitle(sync) {
+  const parts = [];
+  if (sync.link) parts.push(`World file: ${sync.link.fileName}`);
+  if (sync.fileSync?.lastSavedAt) parts.push(`Last saved by ${sync.fileSync.lastSavedBy} at ${new Date(sync.fileSync.lastSavedAt).toLocaleString()}`);
+  if (sync.message) parts.push(sync.message);
+  if (sync.status === 'pending' && !getDeviceSettings().autosave) parts.push('Autosave is off: click to save to the file.');
+  else if (sync.status === 'synced') parts.push('Click to check for changes from other computers.');
+  return parts.join('\n');
+}
+
 export function renderWorldScreen(root, world, { onBack }) {
   // The open tab lives in navigation.js so map tabs can switch it (entering
   // a Region opens the Region Map tab).
@@ -45,6 +79,7 @@ export function renderWorldScreen(root, world, { onBack }) {
     h('button', { class: 'btn small', disabled: !canUndo(), onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'),
     h('button', { class: 'btn small', disabled: !canRedo(), onclick: redo, title: 'Redo (Ctrl+Y)' }, 'Redo'),
     h('span', { class: 'save-status' }),
+    h('button', { class: 'btn small file-status', onclick: fileButtonClick }),
   );
   updateSaveStatus(topBar);
 
@@ -92,6 +127,13 @@ export function updateSaveStatus(scope = document) {
   const status = getSaveStatus();
   label.className = `save-status ${status}`;
   label.textContent = SAVE_TEXT[status];
+
+  const fileButton = scope.querySelector('.file-status');
+  const sync = getSyncState();
+  fileButton.hidden = sync.status === 'off';
+  fileButton.className = FILE_WARN.includes(sync.status) ? 'btn small file-status warn' : 'btn small file-status';
+  fileButton.textContent = FILE_TEXT[sync.status] ?? '';
+  fileButton.title = fileButtonTitle(sync);
 }
 
 function placeholder(tab) {
