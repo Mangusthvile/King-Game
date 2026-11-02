@@ -38,6 +38,7 @@ const COLORS = {
 //              kinds that draw their own placeholder (buildings). A sprite still wins.
 //   ghost:  { x, y, w, h, ok } preview of a place or move
 //   stroke: Map of cell key -> tile id (or null) for the brush stroke in progress
+//   paintSelection: optional { x, y, w, h, ok } the Ctrl+drag box around paint (paintBlock.js)
 export function drawMap(ctx, width, height, world, container, view) {
   const cam = view.camera;
   ctx.imageSmoothingEnabled = false; // pixel art
@@ -81,7 +82,23 @@ export function drawMap(ctx, width, height, world, container, view) {
     const g = view.ghost;
     fillCells(ctx, cam, g.x, g.y, g.w, g.h, g.ok ? COLORS.ghostOk : COLORS.ghostBad);
   }
+  if (view.paintSelection) drawPaintSelection(ctx, view.paintSelection, cam);
   if (view.hoverLabel) drawTooltip(ctx, view.hoverLabel, cam, width);
+}
+
+// A dashed box, black under the color so it shows on any paint.
+function drawPaintSelection(ctx, sel, cam) {
+  const a = cellToScreen(cam, sel.x, sel.y);
+  const b = cellToScreen(cam, sel.x + sel.w, sel.y + sel.h);
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = '#000';
+  ctx.strokeRect(a.x + 1, a.y + 1, b.x - a.x - 2, b.y - a.y - 2);
+  ctx.lineDashOffset = 5;
+  ctx.strokeStyle = sel.ok ? COLORS.selected : COLORS.ghostBad;
+  ctx.strokeRect(a.x + 1, a.y + 1, b.x - a.x - 2, b.y - a.y - 2);
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
 }
 
 function overlapsRange(obj, r) {

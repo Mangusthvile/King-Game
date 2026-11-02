@@ -10,9 +10,9 @@ import { notifyPlaced } from './objectKinds.js';
 
 // key = keyboard shortcut. W, A, S and D are kept free for panning.
 export const TOOLS = [
-  { id: 'select', label: 'Select', key: 'v', hint: 'Click to select, drag to move. Drag empty space to pan.' },
+  { id: 'select', label: 'Select', key: 'v', hint: 'Click to select, drag to move. Drag empty space to pan. Ctrl+drag to select paint.' },
   { id: 'pan', label: 'Pan', key: 'h', hint: 'Drag to move the view.' },
-  { id: 'paint', label: 'Paint', key: 'b', hint: 'Click or drag to paint tiles.' },
+  { id: 'paint', label: 'Paint', key: 'b', hint: 'Click or drag to paint tiles. Ctrl+drag to select paint and move it.' },
   { id: 'erase', label: 'Erase', key: 'e', hint: 'Click or drag to erase tiles.' },
   { id: 'place', label: 'Place', key: 'p', hint: 'Click to place at default size, or drag to draw its size.' },
   { id: 'remove', label: 'Remove', key: 'x', hint: 'Click an object to remove it.' },

@@ -20,10 +20,12 @@ import { renderToolbar } from './mapToolbar.js';
 import { renderMapDetail } from './mapPanels.js';
 import { confirmRemoval } from './containerTree.js';
 import { enterContainer } from '../ui/navigation.js';
+import { clearPaintSelection, eraseSelectedPaint, selectionOutline, selectionHint } from './paintBlock.js';
 
 // Kept outside the view so they survive redraws of the screen.
 // placeTypeIds: the Region / Biome type chosen for each placeable.
-const state = { tool: 'select', tileTypeId: null, placeableId: null, placeTypeIds: {}, selectedId: null };
+// paintSelection: the Ctrl+drag box around paint (paintBlock.js).
+const state = { tool: 'select', tileTypeId: null, placeableId: null, placeTypeIds: {}, selectedId: null, paintSelection: null };
 const selections = new Map(); // containerId -> selected object id, so each map keeps its selection
 
 // Selects an object on a map before that map is opened (the Buildings
@@ -127,6 +129,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       view.requestDraw();
     },
     removeSelected() {
+      if (eraseSelectedPaint(view)) return; // Delete with a paint selection erases its paint
       if (!state.selectedId || !confirmRemoval(world, state.selectedId)) return;
       const id = state.selectedId;
       state.selectedId = null;
@@ -175,7 +178,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
         view.ghost = null;
         view.stroke = null;
         view.requestDraw();
-      } else {
+      } else if (!clearPaintSelection(view)) {
         view.select(null);
       }
     },
@@ -199,6 +202,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       hoverCell: view.hoverCell,
       ghost: view.ghost,
       stroke: view.stroke,
+      paintSelection: selectionOutline(view),
       objectName: (obj) => objectName(world, obj),
       // Each map's placeables.json decides how a kind is drawn there.
       displayOf: (obj) => placeableFor(world, placeables, obj)?.display ?? 'block',
@@ -221,7 +225,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     });
     const cell = view.hoverCell ? `Cell ${view.hoverCell.x}, ${view.hoverCell.y}` : 'Cell -';
     const tool = TOOLS.find((t) => t.id === state.tool);
-    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${view.notice ?? tool.hint}`;
+    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${view.notice ?? selectionHint(view) ?? tool.hint}`;
     status.classList.toggle('notice', !!view.notice);
   }
 

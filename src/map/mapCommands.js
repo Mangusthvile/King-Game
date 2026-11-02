@@ -9,6 +9,7 @@ import { objectKind } from './objectKinds.js';
 // ---- Paint / erase tiles ----
 // One command per brush stroke, so a whole drag undoes in one step.
 // cells: [{ key, oldTile, newTile }], a tile of null means "no tile".
+// label: optional Log text (moving a block of paint, see paintBlock.js).
 
 function setTile(tiles, key, tileId) {
   if (tileId === null) delete tiles[key];
@@ -17,9 +18,10 @@ function setTile(tiles, key, tileId) {
 
 registerCommand('paintTiles', {
   label: (p) =>
-    p.cells[0]?.newTile === null
+    p.label ??
+    (p.cells[0]?.newTile === null
       ? `Erased ${p.cells.length} tile(s)`
-      : `Painted ${p.cells.length} tile(s) with ${p.tileName}`,
+      : `Painted ${p.cells.length} tile(s) with ${p.tileName}`),
   doFn: (world, p) => {
     const tiles = world.containers[p.containerId].tiles;
     for (const c of p.cells) setTile(tiles, c.key, c.newTile);
@@ -32,7 +34,7 @@ registerCommand('paintTiles', {
 
 // stroke: Map of cell key -> new tile id (or null to erase).
 // Returns null if nothing would change.
-export function paintTiles(world, containerId, stroke, tileName = '') {
+export function paintTiles(world, containerId, stroke, tileName = '', label = undefined) {
   const tiles = world.containers[containerId].tiles;
   const cells = [];
   for (const [key, newTile] of stroke) {
@@ -40,7 +42,7 @@ export function paintTiles(world, containerId, stroke, tileName = '') {
     if (oldTile !== newTile) cells.push({ key, oldTile, newTile });
   }
   if (cells.length === 0) return null;
-  return createCommand('paintTiles', { containerId, cells, tileName });
+  return createCommand('paintTiles', { containerId, cells, tileName, label });
 }
 
 // ---- Place / remove objects ----
