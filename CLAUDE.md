@@ -209,6 +209,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
    - Shape-following features (water, roads, region borders, board frame) are drawn in code with a hand-drawn line library (Rough.js or perfect-freehand), smoothed but staying inside their painted cells.
    - Then it scatters matching assets by density.
    - A shared style layer applies to everything: paper texture, palette tint, consistent outline color, soft shadow blob under props, so assets from different sources look unified. Target look: soft watercolor, wobbly ink outlines, pastel, cozy (inspired by Stacklands, but no assets from that game).
+   - If an asset already includes its own shadow (tag it "shadow" or detect it on import), the style layer does not add another shadow blob under it.
    - The Arbiter can Reroll the seed, Lock the result, and move, swap or delete individual props. Locked props are saved.
    - Each map tab toggles between Tile view (editing) and Rendered view (playing and screenshots).
 
