@@ -2,7 +2,7 @@
 // Danger Level and notes. regionInfo.js, biomeInfo.js and areaInfo.js add the rest.
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
-import { textField, selectField, fieldSetter } from './fields.js';
+import { textField, selectField, checkboxField, fieldSetter } from './fields.js';
 import { typesFor, changeType } from '../map/containerTypes.js';
 import dangerTable from '../rules/tables/dangerLevels.json';
 
@@ -19,6 +19,18 @@ export function nameAndType(world, c, typeLabel = 'Type') {
       (typeId) => typeId !== c.typeId && dispatch(changeType(world, c, typeId)),
       { key: `${c.id}.typeId`, missingLabel: () => '(deleted type)' },
     ),
+  ];
+}
+
+// Discovered or not, and the name Resolution Logs use while it isn't.
+export function discoveryFields(world, c) {
+  const setName = fieldSetter(world, 'containers', c.id, 'undiscoveredName');
+  return [
+    ...checkboxField('Discovered', c.discovered ?? true, fieldSetter(world, 'containers', c.id, 'discovered'), {
+      key: `${c.id}.discovered`,
+      title: 'Undiscovered places are shown in logs by their undiscovered name',
+    }),
+    ...textField('Undiscovered name', c.undiscoveredName ?? '', (v) => setName(v.trim()), { key: `${c.id}.undiscoveredName`, placeholder: '???' }),
   ];
 }
 

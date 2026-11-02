@@ -4,7 +4,7 @@
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { setField } from '../commands/recordCommands.js';
-import { nameAndType, descriptionField, dangerField, notesField } from './containerFields.js';
+import { nameAndType, discoveryFields, descriptionField, dangerField, notesField } from './containerFields.js';
 import { resourcesEditor } from './resourcesEditor.js';
 
 export function renderAreaInfo(world, area) {
@@ -13,6 +13,7 @@ export function renderAreaInfo(world, area) {
   const inherited = `(same as Biome: ${biome?.dangerLevel || 'not set'})`;
   return [
     ...nameAndType(world, area, 'Area type (focus)'),
+    ...discoveryFields(world, area),
     ...descriptionField(world, area),
     ...dangerField(world, area, 'Environmental Danger Level', inherited),
     h('label', {}, 'Resources'),

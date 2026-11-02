@@ -131,7 +131,7 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 - theories, skills, traits, conditions, recipes.
 
-**containers:** every World, Region, Biome and Area. Fields: id, kind (`world` | `region` | `biome` | `area`), parentId, typeId, name, description, dangerLevel (Biomes and Areas; for an Area, empty means "same as its Biome"; Regions have none), species, civilizations and mapScale (Regions), residents notes, sparse tile map, list of placed object ids, for Biomes and Areas a list of resource availabilities `{ resourceTypeId, availability, notes }`, and for Areas assignedFollowerIds.
+**containers:** every World, Region, Biome and Area. Fields: id, kind (`world` | `region` | `biome` | `area`), parentId, typeId, name, description, dangerLevel (Biomes and Areas; for an Area, empty means "same as its Biome"; Regions have none), species, civilizations and mapScale (Regions), residents notes, sparse tile map, list of placed object ids, for Biomes and Areas a list of resource availabilities `{ resourceTypeId, availability, notes, known }`, and for Areas assignedFollowerIds. Regions, Biomes and Areas also have `discovered` (true or false) and `undiscoveredName` (default "???"), used by Resolution Logs for places the followers haven't discovered. A resource's `known` flag says whether it has been found; logs say "Known Resource Found" and hide unknown ones.
 
 **placedObjects:** id, containerId, kind (`region` | `biome` | `area` | `building` | `marker`), refId (the region, biome, area or building it represents), x, y, w, h, spriteKey, label.
 
@@ -146,6 +146,22 @@ Every instance record (containers, buildings, followers, projects, and items whe
 **log:** the action log (see Commands) plus a full world snapshot saved at the start of every day.
 
 Rules tables (Harvest availability ladders, Environmental Danger table, Work Die by Tier, Project sizes and Event table, Crafting tables, Point Conversion table) are stored as JSON in `/src/rules/tables/`, never hard-coded in logic, so the Arbiter can change a number without touching code.
+
+## Resolution Logs (required for every roll system)
+
+- Every resolution method (Project, Harvest, Crafting, Training, and any future one) produces a text log of the roll, formatted like the Arbiter's own write-ups. The format reference is `references/roll-log-examples.md` (to be added by the Arbiter); match its wording, order, separator lines and roll notation as closely as possible.
+
+- Each log lists: who took part; the location (shown as `[???]` followed by "(Location Name Not Discovered)" if the place is undiscovered, using its undiscoveredName); the Danger Level; what was attempted; the Speed spent and dice (for example +4d20); equipment and storage effects; every individual roll with its result; totals; and events.
+
+- After rolling, the log appears in a panel with a "Copy" button. The Arbiter can edit the text before copying.
+
+- Every log is also saved to that day's Day Log. The Log tab shows each day's full Day Log in order, with "Copy whole day" so the Arbiter can paste it straight into the day's write-up. The Arbiter can add free-text narration between entries.
+
+- Log templates live in editable template files (one per resolution method) with placeholders, so the Arbiter can change wording later without code changes.
+
+- If the Arbiter edits a result (overrides a roll or yield), the log shows the final value. An optional setting adds a small "(edited)" note.
+
+- Stage 5 (Projects) is the first stage that must implement this.
 
 ## Commands, undo and time
 
@@ -187,7 +203,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 4. **Followers.** Followers tab with roster and detail panel, every field editable. Import the current roster (see Seed Data).
 
-5. **Projects.** Create a Project on a building site, assign followers, choose Speed, roll Work Dice per RULES.md, roll the Event, show the proposed result, Arbiter accepts, edits or rerolls.
+5. **Projects.** Create a Project on a building site, assign followers, choose Speed, roll Work Dice per RULES.md, roll the Event, show the proposed result, Arbiter accepts, edits or rerolls. First stage that must produce Resolution Logs (see that section) and the Day Log in the Log tab.
 
 6. **Time.** Speed tracking, task records, Advance Day with proposals, undo, redo, reverse day.
 
@@ -251,6 +267,7 @@ The first test world should recreate the current campaign so the app is tested a
 - [x] Stage 1: World Map canvas. Shared map engine in `src/map` (camera, sparse grid, renderer, tools, panels) usable by any container. Tools: select/move, pan (drag, right/middle drag, WASD), zoom at cursor, paint and erase tiles (one undo step per stroke), place Region or Marker, remove, duplicate, edit properties (name, position, size, color, sprite key). Editable tile types. Generic `customFields` editor on every placed object. System registry (`src/systems/registry.js`) with World Map as the first system. Schema v2 (migration 1 to 2 adds customFields, object color, default tile types).
 - [x] Stage 2: Region Map and Biome Map systems (`src/systems/regionMap`, `src/systems/biomeMap`) on the shared map engine. Navigation state (`src/ui/navigation.js`) holds the open tab, Region and Biome; enter with double-click, Enter key or the Enter button; breadcrumb on every map; cameras saved per container in localStorage (view state, not world data); each map keeps its own selection. Region info panel (name, type, description, species as shared `definitions.species`, civilizations, Biomes here, notes, Region Map scale; no Danger Level) and Biome info panel (Environmental Danger Level, resources as shared `definitions.resourceTypes` with Availability, residents, notes); with nothing selected the Region and Biome Maps show their own container's info. Bounded Region Map (`src/map/regionFrame.js`): the Region's World Map footprint scaled up by its mapScale, with the World Map tiles drawn scaled up as the background and everything outside the edge shaded and blocked. Areas on the Biome Map: containers of kind `area`, drawn as outlined zones; info panel with area type (focus), Danger Level inherited from the Biome unless overridden, resources, assigned followers (empty until Stage 4), notes. Danger and Availability ladders are rules tables in `src/rules/tables/`. Editable Region, Biome and Area types (name, color, default fields copied on when a type is set). Settlement placeable = Biome with the Settlement type, drawn as a block. Two occupancy layers: Regions, Biomes and Areas are zones, Settlements and markers are solid; each only blocks its own layer, so Settlements and markers can sit inside Biomes and Regions. Removing a Region, Biome or Area warns what is inside and removes and restores all of it in one undo step. Generic `batch` command for one-step multi-changes. Schema v5 (migration 2 to 3 adds typeId, speciesIds, civilizations and starter types; 3 to 4 renames Sub-Areas to Biomes in data and the undo log, adds Area types and assignedFollowerIds; 4 to 5 adds mapScale).
 - [x] Stage 3: Buildings system (`src/systems/buildings`). Shared map engine hook `src/map/objectKinds.js`: a system registers a kind of placed object backed by its own record (create, duplicate, linked records, name, draw, info panel, re-link on footprint change) and can add placeables to a kind of map, so the Biome Map gets "Building" without the biomeMap system changing. Place/remove payloads carry `linked` records, so removing a building, or a Biome or Region holding buildings, undoes in one step. A building is a placed object (kind `building`, solid layer) plus a `buildings` record (type, name, areaId, constructionProgress 0-100, forcedStage, projectId for Stage 5, storage counts, properties as key/value, stageStamps for Stage 9, notes, customFields). Placing it links it to the Area covering most of its cells; moving, rotating or resizing re-links; the panel can change the link. Rotate (R or button) turns non-square footprints around their center with overlap and edge checks (`setFootprint` command). Placeholder visuals per stage: Empty Site dashed outline, Foundation hatched, Under Construction partly filled, Completed solid, plus a progress bar; color from the type's category. Stage = highest threshold at or below progress (`stages.js`, thresholds per type, defaults in `tables/constructionStages.json`), or a forced stage. Buildings tab: building type editor (name, category, default footprint, stage thresholds, default properties, custom fields), category editor (name, color), list of all buildings with Show. Duplicates start with empty storage. Schema v6 (migration 5 to 6 adds starter building categories).
+- [x] Discovery data (for Resolution Logs): Regions, Biomes and Areas have `discovered` and `undiscoveredName` ("???"); resources listed in Biomes and Areas have `known`. Checkboxes in the info panels. Schema v7 (migration 6 to 7: existing places start discovered, existing resources known).
 - [ ] Stage 4
 - [ ] Stage 5
 - [ ] Stage 6
@@ -281,3 +298,5 @@ The first test world should recreate the current campaign so the app is tested a
 - Equipment and tool bonuses for Projects and Harvests; carry limits with storage equipment.
 
 - Specific Boon and Setback options for Project Events.
+
+- Harvest carry limit without storage equipment (seen as 6 per Speed for Emerald Puff Fruits): is it per resource, or a general rule?

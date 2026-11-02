@@ -1,6 +1,6 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
+import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_UNDISCOVERED_NAME, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
 
 // migrations[n] turns a version n world into a version n + 1 world.
@@ -96,6 +96,18 @@ const migrations = {
     if (Object.keys(defs.buildingCategories ?? {}).length === 0) defs.buildingCategories = defaultBuildingCategories();
     world.buildings ??= {};
     world.schemaVersion = 6;
+    return world;
+  },
+
+  // 6 -> 7: discovery, for Resolution Logs. Everything already on the map
+  // starts discovered, and every listed resource starts known.
+  6: (world) => {
+    for (const c of Object.values(world.containers)) {
+      c.discovered ??= true;
+      c.undiscoveredName ??= DEFAULT_UNDISCOVERED_NAME;
+      for (const r of c.resources ?? []) r.known ??= true;
+    }
+    world.schemaVersion = 7;
     return world;
   },
 };

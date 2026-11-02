@@ -29,6 +29,12 @@ export function selectField(label, value, options, onValue, { key, missingLabel 
   return [h('label', {}, label), select];
 }
 
+// A labelled checkbox.
+export function checkboxField(label, checked, onValue, { key, title = '' } = {}) {
+  const box = h('input', { type: 'checkbox', checked: !!checked, 'data-key': key, onchange: (e) => onValue(e.target.checked) });
+  return [h('label', { class: 'check-label', title }, box, ' ', label)];
+}
+
 // A list of removable chips plus a box to add one more.
 //   items: [{ label, title, onRemove }]
 //   suggestions: names offered while typing (an HTML datalist)

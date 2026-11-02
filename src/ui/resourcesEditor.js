@@ -19,7 +19,8 @@ function availabilitySelect(value, onValue, key) {
   return select;
 }
 
-// Each entry is { resourceTypeId, availability, notes }. Resource types are
+// Each entry is { resourceTypeId, availability, notes, known }. known = the
+// followers have found it (Resolution Logs hide unknown resources). Resource types are
 // shared definitions, so renaming one here renames it everywhere.
 export function resourcesEditor(world, record) {
   const types = world.definitions.resourceTypes;
@@ -52,7 +53,17 @@ export function resourcesEditor(world, record) {
         'data-key': `${key}.notes`,
         onchange: (e) => updateEntry(i, { notes: e.target.value }),
       }),
-      h('button', { class: 'btn small danger', title: 'Remove resource', onclick: () => dispatch(setList(list.filter((_, j) => j !== i))) }, 'x'),
+      h(
+        'div',
+        { class: 'row resource-end' },
+        h(
+          'label',
+          { class: 'check-label small', title: 'Known: the followers have found this resource' },
+          h('input', { type: 'checkbox', checked: r.known ?? true, 'data-key': `${key}.known`, onchange: (e) => updateEntry(i, { known: e.target.checked }) }),
+          ' Known',
+        ),
+        h('button', { class: 'btn small danger', title: 'Remove resource', onclick: () => dispatch(setList(list.filter((_, j) => j !== i))) }, 'x'),
+      ),
     );
   });
 
@@ -72,7 +83,7 @@ export function resourcesEditor(world, record) {
     dispatch(
       batch(`Added resource "${name}" to "${record.name}"`, [
         existing ? null : addRecord('definitions.resourceTypes', type),
-        setList([...list, { resourceTypeId: type.id, availability, notes: '' }]),
+        setList([...list, { resourceTypeId: type.id, availability, notes: '', known: true }]),
       ]),
     );
   };

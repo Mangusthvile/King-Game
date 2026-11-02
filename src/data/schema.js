@@ -7,10 +7,13 @@ import biomeTypeList from './defaults/biomeTypes.json';
 import areaTypeList from './defaults/areaTypes.json';
 import buildingCategoryList from './defaults/buildingCategories.json';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 // Regions: how many Region Map cells one World Map cell becomes (map/regionFrame.js).
 export const DEFAULT_MAP_SCALE = 10;
+
+// What Resolution Logs call a Region, Biome or Area that isn't discovered yet.
+export const DEFAULT_UNDISCOVERED_NAME = '???';
 
 // Collections are plain objects keyed by record id. Plain objects (not Map)
 // so the whole world can be saved to IndexedDB and exported as JSON as-is.
@@ -73,6 +76,10 @@ export function createContainer({ kind, parentId = null, name }) {
     name,
     typeId: '', // a regionTypes, biomeTypes or areaTypes id ('' = no type)
     description: '',
+    // Regions, Biomes and Areas: has it been discovered? Resolution Logs
+    // show an undiscovered place as [undiscoveredName] (Location Name Not Discovered).
+    discovered: true,
+    undiscoveredName: DEFAULT_UNDISCOVERED_NAME,
     // Biomes and Areas: an Environmental Danger Level from
     // rules/tables/dangerLevels.json. '' = not set; for an Area, '' means
     // "same as its Biome". Regions have no Danger Level of their own.
@@ -83,7 +90,7 @@ export function createContainer({ kind, parentId = null, name }) {
     residentsNotes: '',
     tiles: {}, // sparse: { "x,y": tileTypeId }, only painted cells are stored
     placedObjectIds: [],
-    resources: [], // biomes and areas: { resourceTypeId, availability, notes }
+    resources: [], // biomes and areas: { resourceTypeId, availability, notes, known }
     assignedFollowerIds: [], // areas: followers assigned to work there
     notes: '',
     customFields: {}, // Arbiter-made fields: { [fieldId]: { name, type, value } }

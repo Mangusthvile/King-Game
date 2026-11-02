@@ -781,3 +781,21 @@ details > summary {
   color: var(--frame-light);
   font-weight: normal;
 }
+
+/* ---- Discovery flags ---- */
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.check-label input[type='checkbox'] {
+  margin: 0;
+}
+
+.row.resource-end {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 4px;
+}
