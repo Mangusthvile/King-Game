@@ -1,1 +1,6 @@
-Raw AI-generated sprite sheets for the Stage 9 Asset Library. Each file is named 'sheet [tags].png' (for example 'sheet grassland tree.png'); the words after 'sheet' become the suggested tags when imported. Only approved sheets go here; overwrite a sheet when redoing it. Do not use these files in the app until Stage 9 is built. Do not put purchased or third-party assets (such as Roll20 packs) in this repo.
+This folder is no longer used for AI-generated sprite sheets. Stage 9 now uses pixel art from downloaded asset packs instead (see Stage 9 in CLAUDE.md):
+
+- Free assets with permissive licenses (CC0 or similar) go in /src/assets/packs/<pack-name>/.
+- Purchased or restrictive-license assets go in /assets-private/, which is never pushed to GitHub, or are imported straight into the Asset Library.
+
+Do not add new files here.

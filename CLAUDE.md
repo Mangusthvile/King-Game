@@ -185,33 +185,38 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
 
-9. **Rendered View and Asset Library.**
+9. **Rendered View and Asset Library (pixel art packs).**
 
-   Asset Library
-   - An Asset Library tab to upload, preview, rename, tag and delete PNG doodle assets. Assets are stored with the world in IndexedDB; default assets can also live in /src/assets/doodles.
-   - Tags come from the file name: every word is a tag, numbers are ignored, plurals become singular. "grassland tree 01.png" = tags [grassland, tree]. "any" means it fits every biome. Tags can be edited in the app afterward.
-   - Sheet importer: upload a sprite sheet on a plain background. The app auto-detects each separate object, removes the background, trims it, lets the Arbiter name and tag each piece, then saves each as its own asset.
-   - Source sprite sheets are stored in references/asset-sheets/ and are imported through the sheet importer, never loaded directly by the app.
+   Art direction
+   - Pixel art from downloaded asset packs (free or purchased), not AI-generated art. The world uses ONE base tile size (16x16 or 32x32, set in Settings); assets in another size are flagged on import.
+   - Render pixel-perfect: nearest-neighbor scaling, integer zoom levels only in Rendered view, imageSmoothingEnabled = false.
+
+   Asset storage and licenses
+   - Free assets with permissive licenses (CC0 or similar) may live in /src/assets/packs/<pack-name>/ and be committed.
+   - Purchased or restrictive-license assets live in /assets-private/, which must be listed in .gitignore and never pushed to GitHub. They can also be imported straight into IndexedDB from the Asset Library.
+   - Every asset stores: source pack name, author, source URL, license, and tags. The Asset Library shows this.
+
+   Asset Library tab
+   - Import a single PNG, a folder of PNGs, or a tileset sheet.
+   - Tileset slicer: choose tile size, margin and spacing; the sheet is cut into a grid; the Arbiter selects tiles (or groups of tiles for multi-tile objects like a 2x3 tree or a 4x4 house) and names and tags them.
+   - Tags come from file or piece names: every word is a tag, numbers ignored, plurals singular ("grassland tree 01" = [grassland, tree]; "any" fits every biome). Tags stay editable.
+   - Autotile sets: the Arbiter can register a group of tiles as a terrain set for smooth edges (support at least the 16-tile 2-corner Wang layout and the 47-tile blob layout; RPG Maker A2 layout if simple).
 
    How assets are chosen
-   - Tile, region, sub-area and building types each list the asset needs they draw from, as tag sets with a density, e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate. Buildings list one tag set per construction stage, e.g. [construction, site], [construction, scaffold], [house].
-   - Lookup order for a need like [forest, tree]: assets with all those tags, then [any, tree], then a simple code-drawn fallback doodle.
+   - Tile types map to a terrain set (or a plain tile); region, sub-area and building types list asset needs as tag sets with a density (e.g. Grassland: [grassland, tree] Sparse, [any, grass] Moderate). Buildings list one tag set per construction stage.
+   - Lookup order for [forest, tree]: all tags matched, then [any, tree], then a simple colored placeholder.
 
    Missing asset prompts
-   - Whenever a need has no matching asset (including when the fallback is in use, or when the Arbiter creates a new biome, sub-area or building type), show a non-blocking "Assets needed" prompt listing the missing tag sets. For each, offer:
-     1. "Select from my files": file picker; the chosen files are auto-tagged from their names (the Arbiter can adjust tags before saving).
-     2. "Copy generation prompt": copies a ready-made sheet prompt to the clipboard, filled in with the subject and the house style (template below), and shows the file name to save the results as.
-     3. "Use fallback for now": dismiss; the need stays listed in an "Assets needed" list in the Asset Library tab until filled.
-   - Generation prompt template:
-     "A sprite sheet of 4 separate [SUBJECT], evenly spaced in a loose grid with lots of empty space between them, not touching or overlapping. Hand-drawn doodle style like a cozy indie card game: soft watercolor fill in muted pastel colors, slightly wobbly dark brown-black ink outline, simple shapes, minimal detail, small soft shadow underneath each. Top-down three-quarter view. Plain flat white background, no text, no labels, no border."
+   - When a need has no matching asset (or a new biome, sub-area or building type is created), show a non-blocking "Assets needed" prompt listing the missing tag sets. For each:
+     1. "Select from my files": file picker; files are auto-tagged from their names; the Arbiter confirms tags, pack, author, URL and license.
+     2. "Copy search terms": copies suggested search phrases to the clipboard (e.g. "top down pixel forest tree 16x16") plus the reminder to check the license.
+     3. "Use placeholder for now": the need stays in an "Assets needed" list in the Asset Library until filled.
 
    Renderer
-   - Pure function of tile data plus a saved seed. No AI and no network at render time.
-   - Shape-following features (water, roads, region borders, board frame) are drawn in code with a hand-drawn line library (Rough.js or perfect-freehand), smoothed but staying inside their painted cells.
-   - Then it scatters matching assets by density.
-   - A shared style layer applies to everything: paper texture, palette tint, consistent outline color, soft shadow blob under props, so assets from different sources look unified. Target look: soft watercolor, wobbly ink outlines, pastel, cozy (inspired by Stacklands, but no assets from that game).
-   - If an asset already includes its own shadow (tag it "shadow" or detect it on import), the style layer does not add another shadow blob under it.
-   - The Arbiter can Reroll the seed, Lock the result, and move, swap or delete individual props. Locked props are saved.
+   - Pure function of tile data plus a saved seed. No AI, no network.
+   - Terrain uses autotiling so water, roads and biome borders get proper edges and corners instead of hard squares.
+   - Then it scatters matching props by density, sorted by y so lower objects draw in front.
+   - The Arbiter can Reroll, Lock, and move, swap or delete individual props. Locked props are saved.
    - Each map tab toggles between Tile view (editing) and Rendered view (playing and screenshots).
 
 After the MVP (do not start without being asked): Harvesting tab, resources and stockpiles UI, Crafting, Training, building connections and automation (always pausable and overridable), Morale and Prosperity, population groups, Units, Armies.

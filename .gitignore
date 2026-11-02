@@ -1,3 +1,6 @@
 node_modules/
 dist/
 references/desktop.ini
+
+# Purchased or restrictive-license art packs: never commit (see Stage 9 in CLAUDE.md)
+/assets-private/
