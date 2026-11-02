@@ -61,6 +61,12 @@ export function memberTile({ name, color, lines = [], warn = false }) {
   );
 }
 
+// A small "i" that shows a help text when hovered (or focused with Tab).
+export function infoTip(text) {
+  if (!text) return null;
+  return h('span', { class: 'info-tip', tabIndex: 0, 'aria-label': text, 'data-tip': text }, 'i');
+}
+
 // A current / required bar.
 export function progressBar(current, required) {
   const percent = required > 0 ? Math.max(0, Math.min(100, (current / required) * 100)) : 0;

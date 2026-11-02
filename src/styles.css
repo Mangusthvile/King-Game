@@ -1938,3 +1938,63 @@ input.setup-tool {
   border-color: var(--tag-border);
   color: var(--tag-border);
 }
+
+/* A hover help icon: "i" in a circle; its text pops up above it. */
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--panel);
+  background: var(--tag-border);
+  border-radius: 50%;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.info-tip:hover::after,
+.info-tip:focus::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: -6px; /* opens to the left, so it stays inside the log pane */
+  z-index: 20;
+  width: max-content;
+  max-width: 280px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 1.35;
+  white-space: normal;
+  color: var(--text);
+  background: #0d0d0d;
+  border: 2px solid var(--tag-border);
+}
+
+.log-prompt .suggestions {
+  gap: 4px;
+}
+
+/* In a log question, the help text spans the question box (anchored to it,
+   not to the small "i"), so it always fits inside the log pane. */
+.log-prompt {
+  position: relative;
+}
+
+.log-prompt .info-tip {
+  position: static;
+}
+
+.log-prompt .info-tip:hover::after,
+.log-prompt .info-tip:focus::after {
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 4px);
+  width: auto;
+  max-width: none;
+}
