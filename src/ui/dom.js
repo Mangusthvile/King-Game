@@ -32,3 +32,17 @@ function appendChildren(el, children) {
 export function formatDate(iso) {
   return new Date(iso).toLocaleString();
 }
+
+// Every edit redraws the screen, which replaces all elements. Without this,
+// finishing one field by clicking another (Description, then Notes) would
+// lose that click. Fields with a data-key get the focus back after a redraw.
+let pressedKey = null;
+window.addEventListener('pointerdown', (e) => (pressedKey = e.target.closest?.('[data-key]')?.dataset.key ?? null), true);
+window.addEventListener('pointerup', () => (pressedKey = null), true);
+
+export function restoreFocus(root) {
+  if (!pressedKey) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active.isConnected) return;
+  root.querySelector(`[data-key="${CSS.escape(pressedKey)}"]`)?.focus();
+}

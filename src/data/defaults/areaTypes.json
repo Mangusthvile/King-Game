@@ -1,0 +1,7 @@
+[
+  { "id": "areatype_mine", "name": "Mine", "color": "#9a8f82", "defaultFields": {}, "customFields": {} },
+  { "id": "areatype_farm", "name": "Farm", "color": "#c9b27a", "defaultFields": {}, "customFields": {} },
+  { "id": "areatype_building_site", "name": "Building Site", "color": "#d98a4a", "defaultFields": {}, "customFields": {} },
+  { "id": "areatype_harvest_zone", "name": "Harvest Zone", "color": "#5fbf55", "defaultFields": {}, "customFields": {} },
+  { "id": "areatype_district", "name": "District", "color": "#6a8fd9", "defaultFields": {}, "customFields": {} }
+]

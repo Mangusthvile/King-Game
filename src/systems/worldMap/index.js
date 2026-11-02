@@ -1,8 +1,12 @@
 // World Map system: the largest-scale map, showing the root World container.
 // It uses the shared map engine in /src/map; this file only says which
-// container to show and what can be placed on it.
+// container to show, what can be placed on it, and which panels it uses.
 import '../../map/mapCommands.js'; // registers the map command types
 import { mountMapView } from '../../map/mapView.js';
+import { h } from '../../ui/dom.js';
+import { renderBreadcrumb } from '../../ui/breadcrumb.js';
+import { renderRegionInfo } from '../../ui/regionInfo.js';
+import { renderTypeEditor } from '../../ui/typeEditor.js';
 import placeables from './placeables.json';
 
 export default {
@@ -18,6 +22,12 @@ export default {
           containerId: world.meta.rootContainerId,
           placeables,
           detailPanel,
+          header: renderBreadcrumb(world),
+          infoPanels: { region: renderRegionInfo },
+          idlePanel: () => [
+            h('h2', {}, world.containers[world.meta.rootContainerId].name),
+            renderTypeEditor(world, 'region', 'Region Types'),
+          ],
         }),
     },
   ],

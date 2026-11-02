@@ -1,0 +1,71 @@
+// Fields that Regions, Biomes and Areas share: name, type, description,
+// Danger Level and notes. regionInfo.js, biomeInfo.js and areaInfo.js add the rest.
+import { h } from './dom.js';
+import { dispatch } from '../data/store.js';
+import { textField, selectField, fieldSetter } from './fields.js';
+import { typesFor, changeType } from '../map/containerTypes.js';
+import dangerTable from '../rules/tables/dangerLevels.json';
+
+// typeLabel: what the type is called for this kind (an Area's type is its focus).
+export function nameAndType(world, c, typeLabel = 'Type') {
+  const types = Object.values(typesFor(world, c.kind));
+  const setName = fieldSetter(world, 'containers', c.id, 'name');
+  return [
+    ...textField('Name', c.name, (v) => v.trim() && setName(v.trim()), { key: `${c.id}.name` }),
+    ...selectField(
+      typeLabel,
+      c.typeId,
+      [{ value: '', label: '(no type)' }, ...types.map((t) => ({ value: t.id, label: t.name }))],
+      (typeId) => typeId !== c.typeId && dispatch(changeType(world, c, typeId)),
+      { key: `${c.id}.typeId`, missingLabel: () => '(deleted type)' },
+    ),
+  ];
+}
+
+export function descriptionField(world, c) {
+  return textField('Description', c.description, fieldSetter(world, 'containers', c.id, 'description'), {
+    key: `${c.id}.description`,
+    multiline: true,
+  });
+}
+
+// The levels come from the Environmental Damage Table in RULES.md.
+// unsetLabel: what '' means for this record, e.g. an Area's "(same as Biome: High)".
+export function dangerField(world, c, label, unsetLabel = '(not set)') {
+  return selectField(
+    label,
+    c.dangerLevel,
+    [{ value: '', label: unsetLabel }, ...dangerTable.levels.map((l) => ({ value: l, label: l }))],
+    fieldSetter(world, 'containers', c.id, 'dangerLevel'),
+    { key: `${c.id}.dangerLevel`, missingLabel: (v) => v }, // older free-text values stay as they were
+  );
+}
+
+export function notesField(world, c) {
+  return textField('Notes', c.notes, fieldSetter(world, 'containers', c.id, 'notes'), {
+    key: `${c.id}.notes`,
+    multiline: true,
+  });
+}
+
+// A list of the Regions or Biomes placed on a container's map, each with
+// an Open button. Used for "Biomes here" in the Region panel.
+export function childList(world, c, onOpen) {
+  const children = c.placedObjectIds
+    .map((id) => world.containers[world.placedObjects[id]?.refId])
+    .filter((child) => child && child.parentId === c.id);
+  if (children.length === 0) return h('p', { class: 'muted small' }, 'None placed yet.');
+  return h(
+    'ul',
+    { class: 'child-list' },
+    children.map((child) =>
+      h(
+        'li',
+        {},
+        h('span', {}, child.name),
+        h('span', { class: 'muted small' }, typesFor(world, child.kind)[child.typeId]?.name ?? ''),
+        h('button', { class: 'btn small', onclick: () => onOpen(child.id) }, 'Open'),
+      ),
+    ),
+  );
+}

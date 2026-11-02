@@ -16,9 +16,14 @@ const COLORS = {
   ghostOk: 'rgba(95, 191, 85, 0.45)',
   ghostBad: 'rgba(194, 74, 74, 0.55)',
   eraseMark: 'rgba(0, 0, 0, 0.6)',
+  outside: 'rgba(0, 0, 0, 0.6)', // beyond the edge of a bounded map
+  edge: '#d9b37a',
 };
 
-// view: { camera, selectedId, hoverCell, ghost, stroke, objectName(obj), displayOf(obj) }
+// view: { camera, selectedId, hoverCell, ghost, stroke, objectName(obj), displayOf(obj), isZone(obj) }
+//   isZone:    zones (Areas) are drawn first, underneath everything on top of them
+//   bounds:    optional { minX, minY, maxX, maxY } edges of a bounded map (Region Map)
+//   backdrop:  optional [{ x, y, size, tileId }] big squares drawn under the map's own tiles
 //   displayOf: 'block' (filled square) or 'outline' (border and name only)
 //   ghost:  { x, y, w, h, ok } preview of a place or move
 //   stroke: Map of cell key -> tile id (or null) for the brush stroke in progress
@@ -29,11 +34,16 @@ export function drawMap(ctx, width, height, world, container, view) {
   ctx.fillRect(0, 0, width, height);
 
   const range = visibleRange(cam, width, height);
+  for (const b of view.backdrop ?? []) drawTile(ctx, world, b.x, b.y, b.tileId, cam, b.size);
   drawTiles(ctx, world, container.tiles, range, cam);
   if (view.stroke) drawStroke(ctx, world, view.stroke, cam);
   drawGrid(ctx, range, cam, width, height);
+  if (view.bounds) drawOutside(ctx, view.bounds, cam, width, height);
 
-  for (const obj of objectsIn(world, container)) {
+  const objects = objectsIn(world, container);
+  const isZone = view.isZone ?? (() => false);
+  const ordered = [...objects.filter(isZone), ...objects.filter((o) => !isZone(o))];
+  for (const obj of ordered) {
     if (!overlapsRange(obj, range)) continue;
     const draw = view.displayOf(obj) === 'outline' ? drawOutlineObject : drawObject;
     draw(ctx, obj, view.objectName(obj), cam, obj.id === view.selectedId);
@@ -63,14 +73,30 @@ function tileColor(world, tileId) {
   return world.definitions.tileTypes[tileId]?.color ?? COLORS.unknownTile;
 }
 
-function drawTile(ctx, world, x, y, tileId, cam) {
+// size: how many cells wide the tile is drawn (1, or mapScale for a backdrop square).
+function drawTile(ctx, world, x, y, tileId, cam, size = 1) {
   const sprite = getSprite(world.definitions.tileTypes[tileId]?.spriteKey);
   if (sprite) {
     const p = cellToScreen(cam, x, y);
-    ctx.drawImage(sprite, p.x, p.y, cam.zoom, cam.zoom);
+    ctx.drawImage(sprite, p.x, p.y, cam.zoom * size, cam.zoom * size);
   } else {
-    fillCells(ctx, cam, x, y, 1, 1, tileColor(world, tileId));
+    fillCells(ctx, cam, x, y, size, size, tileColor(world, tileId));
   }
+}
+
+// Shades everything beyond a bounded map's edges and outlines the edge.
+function drawOutside(ctx, bounds, cam, width, height) {
+  const a = cellToScreen(cam, bounds.minX, bounds.minY);
+  const b = cellToScreen(cam, bounds.maxX, bounds.maxY);
+  const clamp = (n) => Math.max(0, n);
+  ctx.fillStyle = COLORS.outside;
+  ctx.fillRect(0, 0, width, clamp(a.y)); // above
+  ctx.fillRect(0, b.y, width, clamp(height - b.y)); // below
+  ctx.fillRect(0, a.y, clamp(a.x), b.y - a.y); // left
+  ctx.fillRect(b.x, a.y, clamp(width - b.x), b.y - a.y); // right
+  ctx.strokeStyle = COLORS.edge;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(a.x - 1, a.y - 1, b.x - a.x + 2, b.y - a.y + 2);
 }
 
 function drawTiles(ctx, world, tiles, range, cam) {

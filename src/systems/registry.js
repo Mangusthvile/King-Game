@@ -9,8 +9,10 @@
 // A tab whose id matches a built-in placeholder tab (for example 'world')
 // takes that tab's place; any other tab is added to the end of the tab bar.
 import worldMap from './worldMap/index.js';
+import regionMap from './regionMap/index.js';
+import biomeMap from './biomeMap/index.js';
 
-export const systems = [worldMap];
+export const systems = [worldMap, regionMap, biomeMap];
 
 export function getSystemTabs() {
   return systems.flatMap((system) => system.tabs ?? []);

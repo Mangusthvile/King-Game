@@ -69,3 +69,23 @@ export function removeRecord(world, path, id) {
     index: Object.keys(collection).indexOf(id),
   });
 }
+
+// ---- batch: several commands that undo and redo as ONE step ----
+// Each inner command is built before the batch runs, so two inner commands
+// must not change the same field (the second would remember the wrong old value).
+
+registerCommand('batch', {
+  label: (p) => p.label,
+  doFn: (world, p) => {
+    for (const c of p.commands) createCommand(c.type, c.payload).do(world);
+  },
+  undoFn: (world, p) => {
+    for (const c of [...p.commands].reverse()) createCommand(c.type, c.payload).undo(world);
+  },
+});
+
+// commands may contain nulls (skipped), so callers can add steps conditionally.
+export function batch(label, commands) {
+  const steps = commands.filter(Boolean).map((c) => ({ type: c.type, payload: c.payload }));
+  return createCommand('batch', { label, commands: steps });
+}

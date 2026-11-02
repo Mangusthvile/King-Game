@@ -6,10 +6,16 @@ import { dispatch } from '../data/store.js';
 import { newId } from '../data/ids.js';
 import { setField, addRecord, removeRecord } from '../commands/recordCommands.js';
 import { renderCustomFields } from '../ui/customFieldsEditor.js';
-import { isAreaFree } from './grid.js';
+import { isSpaceFree } from './grid.js';
+import { isEnterable } from '../ui/navigation.js';
 import { moveObject } from './mapCommands.js';
 import { objectName, recordFor } from './placement.js';
+import { kindName } from './containerTree.js';
 import { spriteKeys, spriteExists } from './sprites.js';
+
+// Remembered between redraws: is "Map placement" / "Controls" expanded?
+let placementOpen = false;
+let controlsOpen = false;
 
 export function renderMapDetail(view) {
   const obj = view.world.placedObjects[view.state.selectedId];
@@ -24,6 +30,9 @@ function objectPanel(view, obj) {
   const { world } = view;
   const rec = recordFor(world, obj);
   const name = objectName(world, obj);
+  // A Region, Biome or Area: its info panel comes from the map's system.
+  const container = obj.refId && world.containers[obj.refId];
+  const info = container && view.infoPanels[container.kind];
   const message = h('p', { class: 'message error small' });
 
   const wholeNumber = (value, min) => {
@@ -33,7 +42,8 @@ function objectPanel(view, obj) {
 
   const setPosition = (x, y) => {
     if (x === null || y === null) return (message.textContent = 'Position must be whole numbers.');
-    if (!isAreaFree(view.occupancy, x, y, obj.w, obj.h, obj.id)) return (message.textContent = 'Another object is in the way.');
+    if (!view.inBounds(x, y, obj.w, obj.h)) return (message.textContent = 'That is outside the edge of the map.');
+    if (!isSpaceFree(view.layerOf(obj), x, y, obj.w, obj.h, obj.id)) return (message.textContent = 'Another object is in the way.');
     dispatch(moveObject(world, obj.id, x, y, name));
   };
   const setSize = (field, value) => {
@@ -41,25 +51,14 @@ function objectPanel(view, obj) {
     if (n === null) return (message.textContent = 'Size must be a whole number of at least 1.');
     const w = field === 'w' ? n : obj.w;
     const hgt = field === 'h' ? n : obj.h;
-    if (!isAreaFree(view.occupancy, obj.x, obj.y, w, hgt, obj.id)) return (message.textContent = 'Not enough room to grow there.');
+    if (!view.inBounds(obj.x, obj.y, w, hgt)) return (message.textContent = 'That would go past the edge of the map.');
+    if (!isSpaceFree(view.layerOf(obj), obj.x, obj.y, w, hgt, obj.id)) return (message.textContent = 'Not enough room to grow there.');
     dispatch(setField(world, 'placedObjects', obj.id, field, n, name));
   };
 
   const numberInput = (value, onchange) => h('input', { type: 'number', step: 1, value, onchange: (e) => onchange(e.target.value) });
 
-  return [
-    h('h2', {}, 'Details'),
-    h('span', { class: 'label-tag kind-tag' }, obj.kind),
-    h('label', {}, 'Name'),
-    h('input', {
-      type: 'text',
-      value: name,
-      class: 'wide',
-      onchange: (e) => {
-        const value = e.target.value.trim();
-        if (value) dispatch(setField(world, rec.path, rec.id, rec.nameField, value, name));
-      },
-    }),
+  const placement = [
     h(
       'div',
       { class: 'field-grid' },
@@ -84,13 +83,50 @@ function objectPanel(view, obj) {
       ? h('p', { class: 'message error small' }, `No file src/assets/sprites/${obj.spriteKey}.png, so a plain shape is shown.`)
       : null,
     message,
-    h(
-      'div',
-      { class: 'row' },
-      h('button', { class: 'btn small', title: 'Ctrl+D', onclick: () => view.duplicateSelected() }, 'Duplicate'),
-      h('button', { class: 'btn small danger', title: 'Delete key', onclick: () => view.removeSelected() }, 'Remove'),
-    ),
-    obj.kind === 'region' ? h('p', { class: 'muted small' }, 'Entering a Region and its info panel come in Stage 2.') : null,
+  ];
+
+  const actions = h(
+    'div',
+    { class: 'row actions' },
+    container && isEnterable(container.kind)
+      ? h('button', { class: 'btn small primary', title: 'Or double-click it, or press Enter', onclick: () => view.enterSelected() }, `Enter ${kindName(container.kind)}`)
+      : null,
+    h('button', { class: 'btn small', title: 'Ctrl+D', onclick: () => view.duplicateSelected() }, 'Duplicate'),
+    h('button', { class: 'btn small danger', title: 'Delete key', onclick: () => view.removeSelected() }, 'Remove'),
+  );
+
+  if (info) {
+    const details = h(
+      'details',
+      { class: 'placement', open: placementOpen },
+      h('summary', { class: 'small muted' }, 'Map placement (position, size, color, sprite)'),
+      placement,
+    );
+    details.addEventListener('toggle', () => (placementOpen = details.open));
+    return [
+      h('h2', {}, kindName(container.kind)),
+      actions,
+      ...info(world, container),
+      details,
+      renderCustomFields(world, rec.path, rec.id),
+    ];
+  }
+
+  return [
+    h('h2', {}, 'Details'),
+    h('span', { class: 'label-tag kind-tag' }, obj.kind),
+    h('label', {}, 'Name'),
+    h('input', {
+      type: 'text',
+      value: name,
+      class: 'wide',
+      onchange: (e) => {
+        const value = e.target.value.trim();
+        if (value) dispatch(setField(world, rec.path, rec.id, rec.nameField, value, name));
+      },
+    }),
+    ...placement,
+    actions,
     renderCustomFields(world, rec.path, rec.id),
   ];
 }
@@ -179,6 +215,27 @@ function deleteTileType(world, tile) {
 function helpPanel(view) {
   const c = view.container;
   const line = (keys, text) => h('li', {}, h('span', { class: 'key-hint' }, keys), ' ', text);
+  const controls = h(
+    'ul',
+    { class: 'help-list small' },
+    line('WASD / arrows', 'pan'),
+    line('Right or middle drag', 'pan'),
+    line('Wheel', 'zoom at cursor'),
+    line('V H B E P X', 'tools'),
+    line('Delete', 'remove selected'),
+    line('Ctrl+D', 'duplicate selected'),
+    line('Esc', 'cancel / deselect'),
+    line('Double-click / Enter', 'open a Region or Biome'),
+    line('Ctrl+Z / Ctrl+Y', 'undo / redo'),
+  );
+
+  // The map's system can show its own panel (for example the Region's info
+  // and the type editor); the controls then fold away below it.
+  if (view.idlePanel) {
+    const details = h('details', { class: 'controls-help', open: controlsOpen }, h('summary', { class: 'small muted' }, 'Controls'), controls);
+    details.addEventListener('toggle', () => (controlsOpen = details.open));
+    return [...view.idlePanel(view), details];
+  }
   return [
     h('h2', {}, c.name),
     h(
@@ -187,17 +244,6 @@ function helpPanel(view) {
       `${c.placedObjectIds.length} object(s), ${Object.keys(c.tiles).length} painted cell(s).`,
     ),
     h('h3', {}, 'Controls'),
-    h(
-      'ul',
-      { class: 'help-list small' },
-      line('WASD / arrows', 'pan'),
-      line('Right or middle drag', 'pan'),
-      line('Wheel', 'zoom at cursor'),
-      line('V H B E P X', 'tools'),
-      line('Delete', 'remove selected'),
-      line('Ctrl+D', 'duplicate selected'),
-      line('Esc', 'cancel / deselect'),
-      line('Ctrl+Z / Ctrl+Y', 'undo / redo'),
-    ),
+    controls,
   ];
 }

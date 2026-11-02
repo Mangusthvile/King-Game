@@ -141,6 +141,25 @@ select {
   min-width: 0;
 }
 
+textarea {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  background: #0d0d0d;
+  border: 2px solid var(--frame);
+  padding: 6px 8px;
+}
+
+input.wide,
+select.wide {
+  width: 100%;
+}
+
+textarea:focus,
+select:focus,
 input:focus {
   outline: 2px solid var(--tag-border);
 }
@@ -291,7 +310,7 @@ label {
 }
 
 .detail-panel {
-  width: 280px;
+  width: 300px;
   padding: 14px;
   margin: 8px;
   overflow: auto;
@@ -446,10 +465,6 @@ h3 {
   text-transform: capitalize;
 }
 
-input.wide {
-  width: 100%;
-}
-
 .field-grid {
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -531,6 +546,152 @@ input[type='color'] {
 .help-list .key-hint {
   margin: 0;
   color: var(--tag-border);
+}
+
+/* ---- Stage 2: breadcrumb, info panels, type editor ---- */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: #15110e;
+  border-bottom: 2px solid var(--frame);
+}
+
+.crumb {
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--tag-border);
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.crumb.current {
+  color: var(--text);
+  text-decoration: none;
+  cursor: default;
+}
+
+.crumb-sep {
+  color: var(--muted);
+}
+
+.row.actions {
+  margin: 4px 0 2px;
+}
+
+details > summary {
+  cursor: pointer;
+  margin: 12px 0 4px;
+  user-select: none;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 2px 1px 8px;
+  font-size: 12px;
+  background: var(--tag);
+  border: 1px solid var(--tag-border);
+}
+
+.chip-x {
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.chip-x:hover {
+  color: var(--danger-light);
+}
+
+.row.chip-add {
+  flex-wrap: nowrap;
+}
+
+.row.chip-add input {
+  flex: 1;
+  width: 100%;
+}
+
+/* Two lines per resource: name | availability, then notes | remove. */
+.resource-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.resource-row input,
+.resource-row select {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.resource-row.add {
+  border-bottom: none;
+}
+
+.resource-row.add datalist {
+  display: none;
+}
+
+.child-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+}
+
+.child-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.type-row {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--panel-inner);
+}
+
+.type-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 4px;
+  align-items: center;
+}
+
+.type-head input[type='text'] {
+  width: 100%;
+}
+
+.type-fields > summary {
+  margin: 4px 0;
+}
+
+.type-editor > .btn {
+  margin-top: 8px;
 }
 
 @media (max-width: 700px) {

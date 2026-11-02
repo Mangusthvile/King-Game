@@ -2,9 +2,10 @@
 // (see mapView.js) and the cell under the cursor. Tools only build commands
 // and hand them to dispatch; they never change the world themselves.
 import { dispatch } from '../data/store.js';
-import { cellKey, isAreaFree, lineCells } from './grid.js';
+import { cellKey, isSpaceFree, lineCells, objectAtCell } from './grid.js';
 import { paintTiles, removeObject, moveObject } from './mapCommands.js';
-import { newPlacement, objectName } from './placement.js';
+import { newPlacement, objectName, placementTypeId } from './placement.js';
+import { confirmRemoval } from './containerTree.js';
 
 // key = keyboard shortcut. W, A, S and D are kept free for panning.
 export const TOOLS = [
@@ -16,7 +17,7 @@ export const TOOLS = [
   { id: 'remove', label: 'Remove', key: 'x', hint: 'Click an object to remove it.' },
 ];
 
-const objectAt = (view, cell) => view.occupancy.get(cellKey(cell.x, cell.y));
+const objectAt = (view, cell) => objectAtCell(view.occupancy, cell.x, cell.y);
 
 // ---- Select and move ----
 
@@ -38,7 +39,7 @@ const select = {
     const y = cell.y - view.drag.grabY;
     const moved = x !== obj.x || y !== obj.y;
     view.ghost = moved
-      ? { x, y, w: obj.w, h: obj.h, ok: isAreaFree(view.occupancy, x, y, obj.w, obj.h, obj.id) }
+      ? { x, y, w: obj.w, h: obj.h, ok: isSpaceFree(view.layerOf(obj), x, y, obj.w, obj.h, obj.id) && view.inBounds(x, y, obj.w, obj.h) }
       : null;
   },
   up(view) {
@@ -59,13 +60,16 @@ function brushTile(view) {
 const brush = {
   down(view, cell) {
     if (view.state.tool === 'paint' && !view.state.tileTypeId) return; // no tile type chosen
-    view.stroke = new Map([[cellKey(cell.x, cell.y), brushTile(view)]]);
+    // Cells outside the map's edges (Region Map) are skipped.
+    view.stroke = new Map(view.inBounds(cell.x, cell.y) ? [[cellKey(cell.x, cell.y), brushTile(view)]] : []);
     view.drag = { type: 'stroke', last: cell };
   },
   move(view, cell) {
     const tile = brushTile(view);
     const { last } = view.drag;
-    for (const c of lineCells(last.x, last.y, cell.x, cell.y)) view.stroke.set(cellKey(c.x, c.y), tile);
+    for (const c of lineCells(last.x, last.y, cell.x, cell.y)) {
+      if (view.inBounds(c.x, c.y)) view.stroke.set(cellKey(c.x, c.y), tile);
+    }
     view.drag.last = cell;
   },
   up(view) {
@@ -90,7 +94,8 @@ function placeGhost(view, p, start, end) {
   const y = dragged ? Math.min(start.y, end.y) : start.y;
   const w = dragged ? Math.abs(end.x - start.x) + 1 : p.w;
   const h = dragged ? Math.abs(end.y - start.y) + 1 : p.h;
-  return { x, y, w, h, ok: isAreaFree(view.occupancy, x, y, w, h) };
+  const layer = p.layer === 'zone' ? view.occupancy.zone : view.occupancy.solid;
+  return { x, y, w, h, ok: isSpaceFree(layer, x, y, w, h) && view.inBounds(x, y, w, h) };
 }
 
 const place = {
@@ -111,7 +116,8 @@ const place = {
     const p = currentPlaceable(view);
     const g = view.ghost;
     if (!p || !g || !g.ok) return;
-    const command = newPlacement(view.world, view.container.id, { ...p, w: g.w, h: g.h }, g.x, g.y);
+    const typeId = placementTypeId(view.world, view.state, p);
+    const command = newPlacement(view.world, view.container.id, { ...p, w: g.w, h: g.h }, g.x, g.y, typeId);
     view.state.selectedId = command.payload.object.id; // select what was just placed
     dispatch(command);
   },
@@ -122,7 +128,8 @@ const place = {
 const remove = {
   down(view, cell) {
     const id = objectAt(view, cell);
-    if (!id) return;
+    if (!id || !confirmRemoval(view.world, id)) return;
+    view.drag = null; // the confirm dialog may swallow the mouse release
     if (view.state.selectedId === id) view.state.selectedId = null;
     dispatch(removeObject(view.world, id));
   },

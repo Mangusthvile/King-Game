@@ -1,0 +1,4 @@
+[
+  { "id": "biometype_wilderness", "name": "Wilderness", "color": "#7fb069", "defaultFields": {}, "customFields": {} },
+  { "id": "biometype_settlement", "name": "Settlement", "color": "#d9b37a", "defaultFields": {}, "customFields": {} }
+]

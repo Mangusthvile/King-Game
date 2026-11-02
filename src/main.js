@@ -7,6 +7,7 @@ import './systems/registry.js'; // every game system and its commands
 import { getWorld, openWorld, closeWorld, subscribe, undo, redo } from './data/store.js';
 import { renderWorldList } from './ui/worldListScreen.js';
 import { renderWorldScreen, updateSaveStatus } from './ui/worldScreen.js';
+import { setNavigationListener } from './ui/navigation.js';
 
 const root = document.getElementById('app');
 
@@ -21,6 +22,7 @@ function render() {
 
 // A world change redraws the screen; a save-status change only updates its label.
 subscribe((kind) => (kind === 'save' ? updateSaveStatus() : render()));
+setNavigationListener(render); // changing tab, or entering a Region / Biome
 
 // Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) for undo and redo, except while typing.
 window.addEventListener('keydown', (e) => {

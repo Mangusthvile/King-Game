@@ -1,0 +1,4 @@
+{
+  "description": "Environmental Danger Levels, from the Environmental Damage Table in RULES.md (Harvesting Resolution Method).",
+  "levels": ["Safe", "Low", "Moderate", "High", "Extreme", "Lethal"]
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "biome",
+    "label": "Biome",
+    "kind": "biome",
+    "createsContainer": "biome",
+    "defaultName": "New Biome",
+    "w": 5,
+    "h": 4,
+    "color": "#7fb069",
+    "display": "outline",
+    "layer": "zone"
+  },
+  {
+    "id": "settlement",
+    "label": "Settlement",
+    "kind": "biome",
+    "createsContainer": "biome",
+    "fixedTypeId": "biometype_settlement",
+    "defaultName": "New Settlement",
+    "w": 8,
+    "h": 8,
+    "color": "#d9b37a"
+  },
+  {
+    "id": "marker",
+    "label": "Marker",
+    "kind": "marker",
+    "defaultName": "Marker",
+    "w": 1,
+    "h": 1,
+    "color": "#d9b37a"
+  }
+]

@@ -1,0 +1,5 @@
+[
+  { "id": "regiontype_wilds", "name": "Wilds", "color": "#5fbf55", "defaultFields": {}, "customFields": {} },
+  { "id": "regiontype_territory", "name": "Territory", "color": "#e8c66a", "defaultFields": {}, "customFields": {} },
+  { "id": "regiontype_landmark", "name": "Landmark", "color": "#c24a4a", "defaultFields": {}, "customFields": {} }
+]

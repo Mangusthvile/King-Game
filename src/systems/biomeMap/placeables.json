@@ -1,0 +1,23 @@
+[
+  {
+    "id": "area",
+    "label": "Area",
+    "kind": "area",
+    "createsContainer": "area",
+    "defaultName": "New Area",
+    "w": 4,
+    "h": 3,
+    "color": "#9a8f82",
+    "display": "outline",
+    "layer": "zone"
+  },
+  {
+    "id": "marker",
+    "label": "Marker",
+    "kind": "marker",
+    "defaultName": "Marker",
+    "w": 1,
+    "h": 1,
+    "color": "#d9b37a"
+  }
+]

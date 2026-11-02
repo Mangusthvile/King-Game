@@ -1,14 +1,17 @@
 // Commands for Arbiter-made custom fields. Every instance record has a
 // customFields object: { [fieldId]: { name, type, value } }
 // where type is 'text' | 'number' | 'boolean'.
+// The same commands also edit a type's defaultFields (same shape): pass
+// key = 'defaultFields'. Payloads without a key mean 'customFields'.
 import { registerCommand, createCommand } from './registry.js';
 import { getCollection, insertAt } from './recordCommands.js';
 import { newId } from '../data/ids.js';
 
 function fieldsOf(world, p) {
   const record = getCollection(world, p.path)[p.id];
-  record.customFields ??= {}; // older records may not have the object yet
-  return record.customFields;
+  const key = p.key ?? 'customFields';
+  record[key] ??= {}; // older records may not have the object yet
+  return record[key];
 }
 
 registerCommand('addCustomField', {
@@ -46,26 +49,27 @@ registerCommand('removeCustomField', {
 
 // ---- Helpers for the UI ----
 
-export function addCustomField(path, id, name, type = 'text') {
+export function addCustomField(path, id, name, type = 'text', key = 'customFields') {
   const field = { name, type, value: defaultValue(type) };
-  return createCommand('addCustomField', { path, id, fieldId: newId('field'), field });
+  return createCommand('addCustomField', { path, id, key, fieldId: newId('field'), field });
 }
 
-export function updateCustomField(world, path, id, fieldId, changes) {
-  const oldField = getCollection(world, path)[id].customFields[fieldId];
+export function updateCustomField(world, path, id, fieldId, changes, key = 'customFields') {
+  const oldField = getCollection(world, path)[id][key][fieldId];
   const newField = { ...oldField, ...changes };
   // Changing the type converts the value so it stays valid.
   if (changes.type && changes.type !== oldField.type) {
     newField.value = convertValue(oldField.value, changes.type);
   }
-  return createCommand('updateCustomField', { path, id, fieldId, oldField, newField });
+  return createCommand('updateCustomField', { path, id, key, fieldId, oldField, newField });
 }
 
-export function removeCustomField(world, path, id, fieldId) {
-  const fields = getCollection(world, path)[id].customFields;
+export function removeCustomField(world, path, id, fieldId, key = 'customFields') {
+  const fields = getCollection(world, path)[id][key];
   return createCommand('removeCustomField', {
     path,
     id,
+    key,
     fieldId,
     field: structuredClone(fields[fieldId]),
     index: Object.keys(fields).indexOf(fieldId),

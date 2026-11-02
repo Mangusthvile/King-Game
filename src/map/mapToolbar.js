@@ -2,6 +2,8 @@
 // current tool, and zoom controls.
 import { h } from '../ui/dom.js';
 import { TOOLS } from './tools.js';
+import { typesFor } from './containerTypes.js';
+import { placementTypeId } from './placement.js';
 
 export function renderToolbar(view) {
   const { state } = view;
@@ -66,9 +68,32 @@ function picker(view) {
           p.label,
         ),
       ),
+      typePicker(view),
     );
   }
   return null;
+}
+
+// Type dropdown for a placeable that creates a Region or Biome.
+function typePicker(view) {
+  const { state, world } = view;
+  const p = view.placeables.find((x) => x.id === state.placeableId);
+  if (!p?.createsContainer || p.fixedTypeId) return null;
+  const types = Object.values(typesFor(world, p.createsContainer));
+  const select = h(
+    'select',
+    {
+      title: 'Type for the new one (edit types in the side panel when nothing is selected)',
+      onchange: (e) => {
+        state.placeTypeIds[p.id] = e.target.value;
+        view.refreshUi();
+      },
+    },
+    h('option', { value: '' }, '(no type)'),
+    types.map((t) => h('option', { value: t.id }, t.name)),
+  );
+  select.value = placementTypeId(world, state, p);
+  return select;
 }
 
 function zoomControls(view) {

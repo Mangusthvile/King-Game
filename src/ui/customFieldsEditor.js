@@ -20,9 +20,10 @@ function typeSelect(value, onchange) {
 }
 
 // path + id name the record, for example ('containers', regionId).
-export function renderCustomFields(world, path, id) {
-  const fields = getCollection(world, path)[id].customFields ?? {};
-  const update = (fieldId, changes) => dispatch(updateCustomField(world, path, id, fieldId, changes));
+// key = 'defaultFields' edits a type's default fields instead.
+export function renderCustomFields(world, path, id, { key = 'customFields', title = 'Custom fields' } = {}) {
+  const fields = getCollection(world, path)[id][key] ?? {};
+  const update = (fieldId, changes) => dispatch(updateCustomField(world, path, id, fieldId, changes, key));
 
   const rows = Object.entries(fields).map(([fieldId, field]) =>
     h(
@@ -41,7 +42,7 @@ export function renderCustomFields(world, path, id) {
         {
           class: 'btn small danger',
           title: 'Remove field',
-          onclick: () => dispatch(removeCustomField(world, path, id, fieldId)),
+          onclick: () => dispatch(removeCustomField(world, path, id, fieldId, key)),
         },
         'x',
       ),
@@ -57,7 +58,7 @@ export function renderCustomFields(world, path, id) {
       onsubmit: (e) => {
         e.preventDefault();
         const name = nameInput.value.trim();
-        if (name) dispatch(addCustomField(path, id, name, newType.value));
+        if (name) dispatch(addCustomField(path, id, name, newType.value, key));
       },
     },
     nameInput,
@@ -68,7 +69,7 @@ export function renderCustomFields(world, path, id) {
   return h(
     'div',
     { class: 'custom-fields' },
-    h('h3', {}, 'Custom fields'),
+    h('h3', {}, title),
     rows.length ? rows : h('p', { class: 'muted small' }, 'None yet.'),
     addForm,
   );

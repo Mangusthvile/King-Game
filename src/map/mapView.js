@@ -1,32 +1,40 @@
 // The interactive map: a canvas plus toolbar and status line, for any one
-// container (World, Region or Sub-Area). Holds only view state (camera, tool,
+// container (World, Region or Biome). Holds only view state (camera, tool,
 // selection, the drag in progress); world changes go through commands.
 import { h } from '../ui/dom.js';
 import { dispatch } from '../data/store.js';
 import { centeredCamera, screenToCell, panBy, zoomAt } from './camera.js';
-import { buildOccupancy } from './grid.js';
+import { buildOccupancy, objectAtCell, fitsBounds } from './grid.js';
 import { drawMap } from './renderer.js';
 import { onSpriteLoad } from './sprites.js';
 import { TOOLS, toolHandlers } from './tools.js';
+import { getCamera, setCamera } from './cameraStore.js';
+import { getActiveView, setActiveView } from './mapKeyboard.js';
 import { removeObject } from './mapCommands.js';
-import { duplicatePlacement, objectName } from './placement.js';
+import { duplicatePlacement, objectName, placeableFor } from './placement.js';
 import { renderToolbar } from './mapToolbar.js';
 import { renderMapDetail } from './mapPanels.js';
+import { confirmRemoval } from './containerTree.js';
+import { enterContainer } from '../ui/navigation.js';
 
-const PAN_SPEED = 600; // screen pixels per second for WASD / arrow keys
-
-// Kept outside the view so they survive redraws of the screen. Every
-// container remembers its own camera.
-const cameras = new Map(); // containerId -> { x, y, zoom }
-const state = { tool: 'select', tileTypeId: null, placeableId: null, selectedId: null };
-
-let activeView = null; // the map currently on screen, for keyboard shortcuts
+// Kept outside the view so they survive redraws of the screen.
+// placeTypeIds: the Region / Biome type chosen for each placeable.
+const state = { tool: 'select', tileTypeId: null, placeableId: null, placeTypeIds: {}, selectedId: null };
+const selections = new Map(); // containerId -> selected object id, so each map keeps its selection
 
 // detailPanel: the right-hand panel element this view fills in.
 // placeables: what the Place tool can put on this map (from a JSON table).
-export function mountMapView({ world, containerId, placeables, detailPanel }) {
-  activeView?.destroy();
+// header:     optional element shown above the toolbar (the breadcrumb).
+// infoPanels: { [containerKind]: (world, container) => nodes } the info shown
+//             when a Region or Biome object is selected.
+// idlePanel:  optional (view) => nodes shown when nothing is selected.
+// frame:      optional { bounds, backdrop } for a map with edges (the Region
+//             Map, see regionFrame.js). Nothing can be painted or placed
+//             outside bounds; backdrop is drawn underneath the map.
+export function mountMapView({ world, containerId, placeables, detailPanel, header = null, infoPanels = {}, idlePanel = null, frame = null }) {
+  getActiveView()?.destroy();
   const container = world.containers[containerId];
+  state.selectedId = selections.get(containerId) ?? null;
   fixStaleState(world, containerId, placeables);
 
   const canvas = h('canvas', { class: 'map-canvas' });
@@ -34,28 +42,38 @@ export function mountMapView({ world, containerId, placeables, detailPanel }) {
   const toolbar = h('div', { class: 'map-toolbar' });
   const wrap = h('div', { class: 'map-canvas-wrap' }, canvas);
   const status = h('div', { class: 'map-status small' });
-  const root = h('div', { class: 'map-view' }, toolbar, wrap, status);
+  const root = h('div', { class: 'map-view' }, header, toolbar, wrap, status);
 
-  let frame = 0;
+  // Zones (Regions, Biomes, Areas) are outlines that other objects can sit inside.
+  const isZone = (obj) => placeableFor(world, placeables, obj)?.layer === 'zone';
+  const occupancy = buildOccupancy(world, container, isZone);
+
+  let drawRequest = 0; // pending requestAnimationFrame id
   const view = {
     world,
     container,
     placeables,
+    infoPanels,
+    idlePanel,
     state,
     canvas,
-    occupancy: buildOccupancy(world, container),
+    occupancy,
+    // The occupancy layer an object blocks others in.
+    layerOf: (obj) => (isZone(obj) ? occupancy.zone : occupancy.solid),
+    // True if a footprint is inside the map's edges (always, on unbounded maps).
+    inBounds: (x, y, w = 1, h = 1) => fitsBounds(frame?.bounds, x, y, w, h),
     drag: null, // { type: 'pan' | 'move' | 'stroke', ... } while the mouse is held
     hoverCell: null,
     ghost: null,
     stroke: null,
     get camera() {
-      return cameras.get(containerId);
+      return getCamera(containerId);
     },
     set camera(cam) {
-      cameras.set(containerId, cam);
+      setCamera(containerId, cam);
     },
     requestDraw() {
-      if (!frame) frame = requestAnimationFrame(() => ((frame = 0), draw()));
+      if (!drawRequest) drawRequest = requestAnimationFrame(() => ((drawRequest = 0), draw()));
     },
     refreshUi() {
       // filter(Boolean) drops empty parts (replaceChildren would print "null").
@@ -88,14 +106,22 @@ export function mountMapView({ world, containerId, placeables, detailPanel }) {
       view.requestDraw();
     },
     removeSelected() {
-      if (!state.selectedId) return;
+      if (!state.selectedId || !confirmRemoval(world, state.selectedId)) return;
       const id = state.selectedId;
       state.selectedId = null;
       dispatch(removeObject(world, id));
     },
+    // Opens the map inside a Region or Biome object (next map tab).
+    enter(id) {
+      const refId = world.placedObjects[id]?.refId;
+      if (refId && world.containers[refId]) enterContainer(world, refId);
+    },
+    enterSelected() {
+      if (state.selectedId) view.enter(state.selectedId);
+    },
     duplicateSelected() {
       if (!state.selectedId) return;
-      const command = duplicatePlacement(world, state.selectedId);
+      const command = duplicatePlacement(world, state.selectedId, view.layerOf(world.placedObjects[state.selectedId]), view.inBounds);
       if (!command) return;
       state.selectedId = command.payload.object.id;
       dispatch(command);
@@ -111,10 +137,11 @@ export function mountMapView({ world, containerId, placeables, detailPanel }) {
       }
     },
     destroy() {
+      selections.set(containerId, state.selectedId);
       resizeObserver.disconnect();
       stopSpriteListener();
-      cancelAnimationFrame(frame);
-      if (activeView === view) activeView = null;
+      cancelAnimationFrame(drawRequest);
+      if (getActiveView() === view) setActiveView(null);
     },
   };
 
@@ -128,7 +155,10 @@ export function mountMapView({ world, containerId, placeables, detailPanel }) {
       stroke: view.stroke,
       objectName: (obj) => objectName(world, obj),
       // Each map's placeables.json decides how a kind is drawn there.
-      displayOf: (obj) => placeables.find((p) => p.kind === obj.kind)?.display ?? 'block',
+      displayOf: (obj) => placeableFor(world, placeables, obj)?.display ?? 'block',
+      isZone,
+      bounds: frame?.bounds,
+      backdrop: frame?.backdrop,
     });
     const cell = view.hoverCell ? `Cell ${view.hoverCell.x}, ${view.hoverCell.y}` : 'Cell -';
     const tool = TOOLS.find((t) => t.id === state.tool);
@@ -150,7 +180,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel }) {
 
   attachPointerEvents(view, canvas);
   view.refreshUi();
-  activeView = view;
+  setActiveView(view);
   return root;
 }
 
@@ -227,75 +257,13 @@ function attachPointerEvents(view, canvas) {
     { passive: false },
   );
 
+  // Double-click a Region or Biome to enter it.
+  canvas.addEventListener('dblclick', (e) => {
+    if (view.state.tool !== 'select') return;
+    const { cell } = local(e);
+    const id = objectAtCell(view.occupancy, cell.x, cell.y);
+    if (id) view.enter(id);
+  });
+
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-}
-
-// ---- Keyboard (registered once for the whole app) ----
-
-const PAN_KEYS = {
-  w: [0, -1], a: [-1, 0], s: [0, 1], d: [1, 0],
-  arrowup: [0, -1], arrowleft: [-1, 0], arrowdown: [0, 1], arrowright: [1, 0],
-};
-const heldKeys = new Set();
-let panLoopRunning = false;
-
-function liveView() {
-  return activeView && activeView.canvas.isConnected ? activeView : null;
-}
-
-window.addEventListener('keydown', (e) => {
-  const view = liveView();
-  if (!view || e.target.matches?.('input, textarea, select')) return;
-  const key = e.key.toLowerCase();
-
-  if (e.ctrlKey || e.metaKey) {
-    if (key === 'd') {
-      e.preventDefault(); // otherwise the browser bookmarks the page
-      view.duplicateSelected();
-    }
-    return; // Ctrl+Z / Ctrl+Y are handled in main.js
-  }
-  if (PAN_KEYS[key]) {
-    e.preventDefault();
-    heldKeys.add(key);
-    startPanLoop();
-  } else if (key === 'delete' || key === 'backspace') {
-    e.preventDefault();
-    view.removeSelected();
-  } else if (key === 'escape') {
-    view.cancel();
-  } else {
-    const tool = TOOLS.find((t) => t.key === key);
-    if (tool) view.setTool(tool.id);
-  }
-});
-
-window.addEventListener('keyup', (e) => heldKeys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => heldKeys.clear());
-
-// Pans smoothly every frame while a pan key is held.
-function startPanLoop() {
-  if (panLoopRunning) return;
-  panLoopRunning = true;
-  let last = performance.now();
-  const step = (now) => {
-    const view = liveView();
-    if (!view || heldKeys.size === 0) {
-      panLoopRunning = false;
-      return;
-    }
-    const seconds = Math.min(0.1, (now - last) / 1000);
-    last = now;
-    let dx = 0;
-    let dy = 0;
-    for (const key of heldKeys) {
-      dx += PAN_KEYS[key][0];
-      dy += PAN_KEYS[key][1];
-    }
-    // panBy moves the content, so move it opposite to the direction we look.
-    view.camera = panBy(view.camera, -dx * PAN_SPEED * seconds, -dy * PAN_SPEED * seconds);
-    view.requestDraw();
-    requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
 }

@@ -25,26 +25,47 @@ export function objectsIn(world, container) {
 
 // Occupancy index: cell key -> objectId, for every cell an object covers.
 // It is rebuilt from the world data, never saved, so it can't go out of date.
-export function buildOccupancy(world, container) {
-  const occupancy = new Map();
+// There are two layers, and objects only block others in the same layer:
+//   zone:  outlined zones other things can sit inside (Regions, Biomes, Areas)
+//   solid: things placed in them (Settlements, markers, later buildings)
+// So two Biomes can't overlap, but a Settlement can sit inside a Biome.
+// isZone(obj) says which layer an object is in.
+export function buildOccupancy(world, container, isZone = () => false) {
+  const occupancy = { solid: new Map(), zone: new Map() };
   for (const obj of objectsIn(world, container)) {
-    for (const key of footprintKeys(obj.x, obj.y, obj.w, obj.h)) occupancy.set(key, obj.id);
+    const layer = isZone(obj) ? occupancy.zone : occupancy.solid;
+    for (const key of footprintKeys(obj.x, obj.y, obj.w, obj.h)) layer.set(key, obj.id);
   }
   return occupancy;
 }
 
-// True if no other object covers any cell of this footprint.
+// The object under a cell. A solid object wins over the zone it sits in.
+export function objectAtCell(occupancy, x, y) {
+  const key = cellKey(x, y);
+  return occupancy.solid.get(key) ?? occupancy.zone.get(key);
+}
+
+// True if no other object in this layer covers any cell of this footprint.
+// layer: occupancy.solid or occupancy.zone.
 // ignoreId lets an object overlap its own old position while moving.
-export function isAreaFree(occupancy, x, y, w, h, ignoreId = null) {
+export function isSpaceFree(layer, x, y, w, h, ignoreId = null) {
   return footprintKeys(x, y, w, h).every((key) => {
-    const owner = occupancy.get(key);
+    const owner = layer.get(key);
     return owner === undefined || owner === ignoreId;
   });
 }
 
 // Finds the nearest free spot for a footprint, searching outward in square
 // rings around (x, y). Used by Duplicate so the copy doesn't land on top.
-export function findFreeSpot(occupancy, x, y, w, h, maxRadius = 200) {
+// True if a footprint lies fully inside bounds { minX, minY, maxX, maxY }
+// (max exclusive). No bounds = an unbounded map, so always true.
+export function fitsBounds(bounds, x, y, w, h) {
+  if (!bounds) return true;
+  return x >= bounds.minX && y >= bounds.minY && x + w <= bounds.maxX && y + h <= bounds.maxY;
+}
+
+// fits(x, y, w, h): extra test a spot must pass, e.g. staying inside the Region.
+export function findFreeSpot(layer, x, y, w, h, fits = () => true, maxRadius = 200) {
   // First try right beside the original: right, below, left, above.
   const beside = [
     [x + w, y],
@@ -53,13 +74,13 @@ export function findFreeSpot(occupancy, x, y, w, h, maxRadius = 200) {
     [x, y - h],
   ];
   for (const [bx, by] of beside) {
-    if (isAreaFree(occupancy, bx, by, w, h)) return { x: bx, y: by };
+    if (isSpaceFree(layer, bx, by, w, h) && fits(bx, by, w, h)) return { x: bx, y: by };
   }
   for (let r = 1; r <= maxRadius; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; // ring edge only
-        if (isAreaFree(occupancy, x + dx, y + dy, w, h)) return { x: x + dx, y: y + dy };
+        if (isSpaceFree(layer, x + dx, y + dy, w, h) && fits(x + dx, y + dy, w, h)) return { x: x + dx, y: y + dy };
       }
     }
   }

@@ -32,7 +32,7 @@ These override convenience. If a task seems to require breaking one, stop and as
 
 - New game systems will be added often. Each system (Harvesting, Crafting, Morale, Notes, etc.) is a self-contained module in `/src/systems/<name>/` with its own data slice, commands, rules tables, tab and panels. It registers itself in one central registry file. Adding a system should not require editing other systems.
 
-- Every record (follower, region, sub-area, building, project, item) has a `customFields` object. The Arbiter can add, rename and remove custom fields and stats in the app with no code, so a new rule can be tracked before it is ever automated.
+- Every record (follower, region, biome, area, building, project, item) has a `customFields` object. The Arbiter can add, rename and remove custom fields and stats in the app with no code, so a new rule can be tracked before it is ever automated.
 
 - Every schema change increments `schemaVersion` and adds a migration in `src/data/migrations.js`, so old saves always load after an update.
 
@@ -81,15 +81,25 @@ Modules talk through the world store and commands. UI never edits data directly;
 
 ## The map: three map tabs
 
-The map is three separate tabs, each with its own sparse, effectively infinite square grid. They are linked by IDs, not by one continuous zoom.
+The map is three separate tabs (World Map, Region Map, Biome Map), each with its own sparse, effectively infinite square grid. They are linked by IDs, not by one continuous zoom.
 
-**World Map.** The largest scale. Holds Regions: biomes, territories and other large features (for example Kie's Grove, the Central Grasslands, the Barrenlands, the Tower of Apocalypse). Selecting a Region shows an info panel: description, Environmental Danger Level, species that live there, civilizations or cities that reside there, and notes.
+Terminology (largest to smallest):
 
-**Region Map.** Opened by entering a Region. Breaks it into Sub-Areas, for example the ten Gardens of Kie's Grove, plus a single large block for each settlement or city. Selecting a Sub-Area shows its resources (each with an Availability rating), its residents (followers, creatures, NPCs present), its Danger Level and notes.
+- **Region:** a major, large area containing multiple Biomes (for example Kie's Grove).
+- **Biome:** a medium-size area with its own resources (for example one of the Gardens of Kie's Grove). A Biome with the type "Settlement" is a town or camp. A small Region can hold a single Biome covering all of it (the Central Grasslands Region holds one Biome, the Grasslands): they cover the same ground but are separate records on separate tabs, each with its own information.
+- **Area:** a smaller zone with a specific focus (a mine, a building site, a harvest zone, a farm, a district).
 
-**Local Map.** Opened by entering a Sub-Area. The detailed view: individual buildings, construction sites, harvesting zones, roads, storage, and later the explicit connections between them (logistics and automation links). Selecting an object shows its full details and actions.
+**World Map.** The largest scale. Holds Regions (for example Kie's Grove, the Central Grasslands, the Barrenlands, the Tower of Apocalypse). Selecting a Region shows an info panel: description, species that live there, civilizations or cities that reside there, and notes. Regions have no Danger Level of their own: danger belongs to each Biome.
 
-Navigation: double-click (or an Enter button) on a Region or Sub-Area opens the next tab focused on it. A breadcrumb (World > Kie's Grove > Jade Garden) and the tab bar move back up. Each tab remembers its own camera position per container.
+**Region Map.** Opened by entering a Region. Breaks it into Biomes, for example the ten Gardens of Kie's Grove, plus a single large block for each Settlement Biome. Unlike the other two maps it is bounded: it covers exactly the Region's footprint on the World Map, with each World Map cell scaled up to mapScale x mapScale Region Map cells (editable per Region, default 10), so a Region only has room for so many Biomes. The World Map tiles under the Region are drawn scaled up as its background; the Region Map's own paint goes on top. This is one-way on purpose: painting the Region Map never changes the World Map (the Arbiter paints each map; the World Map stays the big picture). Nothing can be painted or placed outside the edge. From Stage 9 the background uses the rendered terrain. Selecting a Biome shows its resources (each with an Availability rating), its residents (followers, creatures, NPCs present), its Environmental Danger Level and notes.
+
+**Biome Map.** Opened by entering a Biome. The detailed view: Areas, individual buildings, construction sites, roads, storage, and later the explicit connections between them (logistics and automation links). Areas are outlined zones with a multi-cell footprint; other objects (buildings, markers) can sit inside them. Selecting an Area shows its area type (focus), description, Danger Level (defaults to the Biome's, can be overridden), resources with Availability, assigned followers and notes. Selecting any object shows its full details and actions.
+
+Zones and solid objects: on every map, Regions, Biomes and Areas are zones (outlines) and everything else (Settlements, markers, buildings) is solid. Zones can't overlap other zones and solid objects can't overlap other solid objects, but a solid object can sit inside a zone, for example a Settlement inside a Biome or a marker inside a Region. Which layer a placeable uses is set by `"layer": "zone"` in its placeables.json.
+
+Navigation: double-click (or an Enter button) on a Region or Biome opens the next tab focused on it. A breadcrumb (World > Kie's Grove > Jade Garden) and the tab bar move back up. Each tab remembers its own camera position per container.
+
+Future option (do not build until asked): Areas are already containers, so one could become enterable (for example the inside of a mine) by adding `'area'` to the enterable kinds in `src/ui/navigation.js` and adding a map tab for it.
 
 ### Grid rules (all three tabs)
 
@@ -113,7 +123,7 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 **definitions:**
 
-- regionTypes, subAreaTypes, buildingTypes (default footprint, construction stage thresholds, sprite key), tileTypes (paint colors and textures).
+- regionTypes, biomeTypes, areaTypes (an Area's focus: Mine, Farm, Building Site, Harvest Zone, District...), buildingTypes (default footprint, construction stage thresholds, sprite key), tileTypes (paint colors and textures).
 
 - resourceTypes: name, description, tags (for example `[Wood]`, `[Food]`, `[Medical Herb]`, `[Special]`).
 
@@ -121,11 +131,11 @@ Every instance record (containers, buildings, followers, projects, and items whe
 
 - theories, skills, traits, conditions, recipes.
 
-**containers:** every World, Region and Sub-Area. Fields: id, kind (`world` | `region` | `subArea`), parentId, name, description, dangerLevel, residents notes, sparse tile map, list of placed object ids, and for Sub-Areas a list of resource availabilities `{ resourceTypeId, availability, notes }`.
+**containers:** every World, Region, Biome and Area. Fields: id, kind (`world` | `region` | `biome` | `area`), parentId, typeId, name, description, dangerLevel (Biomes and Areas; for an Area, empty means "same as its Biome"; Regions have none), species, civilizations and mapScale (Regions), residents notes, sparse tile map, list of placed object ids, for Biomes and Areas a list of resource availabilities `{ resourceTypeId, availability, notes }`, and for Areas assignedFollowerIds.
 
-**placedObjects:** id, containerId, kind (`region` | `subArea` | `building` | `harvestZone` | `marker`), refId (the region, sub-area or building it represents), x, y, w, h, spriteKey, label.
+**placedObjects:** id, containerId, kind (`region` | `biome` | `area` | `building` | `marker`), refId (the region, biome, area or building it represents), x, y, w, h, spriteKey, label.
 
-**buildings:** id, buildingTypeId, name, constructionState, projectId (optional), storage (resource counts), properties (free-form key/value the Arbiter can add), notes.
+**buildings:** id, buildingTypeId, name, areaId (optional: the Area it belongs to; empty means it stands alone on the Biome Map), constructionState, projectId (optional), storage (resource counts), properties (free-form key/value the Arbiter can add), notes.
 
 **followers:** id, name, speciesId, attributes, speedMax, speedRemaining, hunger `{ current, max }`, thirst `{ current, max }`, theories `[{ name, percent }]`, skills `[{ name, tier, level }]`, traits (Pacts are stored as Traits), conditions (for example a broken arm at -3 to all tasks), inventory, equipment, locationContainerId, currentAssignment, bio, notes, alive or dead plus a death log entry.
 
@@ -157,7 +167,7 @@ Speed is how much activity an individual can perform per day. Assigning a follow
 
 - Pixel-art inspired, game-like rather than spreadsheet-like. Compact, readable, icon-driven. Reference screenshots are in `/references` (Kingdom Maker Inc., Starmancer, Orb of Creation, Kingdom Two Crowns).
 
-- Layout: main canvas in the center, management tabs across the top (World Map, Region Map, Local Map, Followers, Projects, Resources, Log, Settings), contextual detail panel on the right when something is selected.
+- Layout: main canvas in the center, management tabs across the top (World Map, Region Map, Biome Map, Followers, Projects, Resources, Log, Settings), contextual detail panel on the right when something is selected.
 
 - Arbiter-only fields are flagged. A Player View mode hides Arbiter-only controls and information for screenshot export.
 
@@ -171,9 +181,9 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 1. **World Map canvas.** Sparse grid, pan, zoom, paint tiles, place, remove, select, move, duplicate.
 
-2. **Region and Local Maps.** Regions and Sub-Areas as enterable objects, the three map tabs, breadcrumb, info panels, editable definitions for region and sub-area types.
+2. **Region and Biome Maps.** Regions and Biomes as enterable objects, Areas as zones on the Biome Map, the three map tabs, breadcrumb, info panels, editable definitions for region, biome and area types.
 
-3. **Buildings.** Multi-cell buildings on the Local Map, building type editor, placeholder sprites, editable properties, construction stage visuals (Empty Site, Foundation, Under Construction, Completed) driven by editable percentage thresholds.
+3. **Buildings.** Multi-cell buildings on the Biome Map, either inside an Area (areaId, for example the Communal Sleeping Hole on a Building Site Area) or standing alone on the Biome Map, building type editor, placeholder sprites, editable properties, construction stage visuals (Empty Site, Foundation, Under Construction, Completed) driven by editable percentage thresholds.
 
 4. **Followers.** Followers tab with roster and detail panel, every field editable. Import the current roster (see Seed Data).
 
@@ -183,7 +193,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
 7. **Persistence and sharing polish.** Multiple worlds, Player View screenshot mode.
 
-8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, sub-areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
+8. **Notes.** A Notes tab for long-form game notes (rules drafts, lore, session logs, world state). Markdown text, titles, tags, folders, search. Any note can link to followers, regions, biomes, areas, buildings and projects, and those records show their linked notes. Import from Markdown or plain text files so notes can be moved over from UpNote.
 
 9. **Rendered View (procedural pixel terrain) and Stamps.**
 
@@ -201,7 +211,7 @@ Build one stage at a time. Each stage must run and be manually testable before s
 
    Procedural details (drawn by code)
    - Grass tufts, small flowers, pebbles, simple pixel trees (round leafy, tall, pine), bushes and rocks, generated from the seed.
-   - Each tile type has editable density settings, e.g. Grassland: Trees Sparse, Grass tufts Moderate, Flowers Few, Rocks Few. Region and sub-area types can override them.
+   - Each tile type has editable density settings, e.g. Grassland: Trees Sparse, Grass tufts Moderate, Flowers Few, Rocks Few. Region, biome and area types can override them.
    - Details avoid water and roads, and trees keep a small gap from shores.
    - Objects are sorted by y so lower ones draw in front.
    - The Arbiter can Reroll the seed, Lock the result, and click any detail to move or delete it. Locked and edited details are saved.
@@ -217,7 +227,11 @@ After the MVP (do not start without being asked): Harvesting tab, resources and 
 
 ## Seed data
 
-The first test world should recreate the current campaign so the app is tested against real data: Day 8, 15 living Baseliner followers (Speed 1, Hunger 5/5, Thirst 3/3), the Communal Sleeping Hole Project at 30 of 75 Workload, and Regions for the Central Grasslands, Kie's Grove (with the Jade Garden and its resources), the Ruined Forge of Creation and the Tower of Apocalypse. The Arbiter will provide the roster and world notes as text files.
+The first test world should recreate the current campaign so the app is tested against real data: Day 8, 15 living Baseliner followers (Speed 1, Hunger 5/5, Thirst 3/3), the Communal Sleeping Hole Project at 30 of 75 Workload, and the map:
+
+- Regions on the World Map: the Central Grasslands, Kie's Grove, the Ruined Forge of Creation and the Tower of Apocalypse.
+- Biomes on the Region Maps: the Jade Garden (in Kie's Grove) with its resources; the Grasslands, a single Biome covering the whole Central Grasslands Region.
+- Areas on the Biome Maps: a Building Site Area holding the Communal Sleeping Hole building and its Project (the Arbiter will say which Biome it is in). The Arbiter will provide the roster and world notes as text files.
 
 ## Working agreement for the AI
 
@@ -235,7 +249,7 @@ The first test world should recreate the current campaign so the app is tested a
 
 - [x] Stage 0: world schema (v1), IndexedDB save/load with autosave, world list (create, open, delete), JSON export/import (an import never overwrites: a clashing id becomes a copy), command registry with undo/redo (Ctrl+Z / Ctrl+Y), Log and Settings tabs (rename world, set day). Map, Followers, Projects and Resources tabs are placeholders.
 - [x] Stage 1: World Map canvas. Shared map engine in `src/map` (camera, sparse grid, renderer, tools, panels) usable by any container. Tools: select/move, pan (drag, right/middle drag, WASD), zoom at cursor, paint and erase tiles (one undo step per stroke), place Region or Marker, remove, duplicate, edit properties (name, position, size, color, sprite key). Editable tile types. Generic `customFields` editor on every placed object. System registry (`src/systems/registry.js`) with World Map as the first system. Schema v2 (migration 1 to 2 adds customFields, object color, default tile types).
-- [ ] Stage 2
+- [x] Stage 2: Region Map and Biome Map systems (`src/systems/regionMap`, `src/systems/biomeMap`) on the shared map engine. Navigation state (`src/ui/navigation.js`) holds the open tab, Region and Biome; enter with double-click, Enter key or the Enter button; breadcrumb on every map; cameras saved per container in localStorage (view state, not world data); each map keeps its own selection. Region info panel (name, type, description, species as shared `definitions.species`, civilizations, Biomes here, notes, Region Map scale; no Danger Level) and Biome info panel (Environmental Danger Level, resources as shared `definitions.resourceTypes` with Availability, residents, notes); with nothing selected the Region and Biome Maps show their own container's info. Bounded Region Map (`src/map/regionFrame.js`): the Region's World Map footprint scaled up by its mapScale, with the World Map tiles drawn scaled up as the background and everything outside the edge shaded and blocked. Areas on the Biome Map: containers of kind `area`, drawn as outlined zones; info panel with area type (focus), Danger Level inherited from the Biome unless overridden, resources, assigned followers (empty until Stage 4), notes. Danger and Availability ladders are rules tables in `src/rules/tables/`. Editable Region, Biome and Area types (name, color, default fields copied on when a type is set). Settlement placeable = Biome with the Settlement type, drawn as a block. Two occupancy layers: Regions, Biomes and Areas are zones, Settlements and markers are solid; each only blocks its own layer, so Settlements and markers can sit inside Biomes and Regions. Removing a Region, Biome or Area warns what is inside and removes and restores all of it in one undo step. Generic `batch` command for one-step multi-changes. Schema v5 (migration 2 to 3 adds typeId, speciesIds, civilizations and starter types; 3 to 4 renames Sub-Areas to Biomes in data and the undo log, adds Area types and assignedFollowerIds; 4 to 5 adds mapScale).
 - [ ] Stage 3
 - [ ] Stage 4
 - [ ] Stage 5

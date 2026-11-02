@@ -1,0 +1,4 @@
+{
+  "description": "Resource Availability ratings, from the Harvest Availability Tables in RULES.md (Harvesting Resolution Method).",
+  "levels": ["Overflowing", "Abundant", "Common", "Uncommon", "Scarce", "Rare", "Trace"]
+}

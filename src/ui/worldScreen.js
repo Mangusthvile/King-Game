@@ -1,17 +1,18 @@
 // The main screen for an open world: top bar, management tabs, content area
 // and the right-hand detail panel.
-import { h } from './dom.js';
+import { h, restoreFocus } from './dom.js';
 import { canUndo, canRedo, undo, redo, getSaveStatus } from '../data/store.js';
 import { renderSettingsTab } from './settingsTab.js';
 import { renderLogTab } from './logTab.js';
 import { getSystemTabs } from '../systems/registry.js';
+import { getNavigation, navigate } from './navigation.js';
 
 // Built-in tabs. Tabs without a render function are placeholders until a
 // system in /src/systems provides a tab with the same id.
 const BASE_TABS = [
   { id: 'world', label: 'World Map', stage: 1 },
   { id: 'region', label: 'Region Map', stage: 2 },
-  { id: 'local', label: 'Local Map', stage: 2 },
+  { id: 'biome', label: 'Biome Map', stage: 2 },
   { id: 'followers', label: 'Followers', stage: 4 },
   { id: 'projects', label: 'Projects', stage: 5 },
   { id: 'resources', label: 'Resources', stage: null }, // after the MVP
@@ -25,13 +26,13 @@ const TABS = [
   ...systemTabs.filter((s) => !BASE_TABS.some((t) => t.id === s.id)),
 ];
 
-// Remembered between re-renders so the tab doesn't reset after every change.
-let activeTab = 'world';
-
 const SAVE_TEXT = { saved: 'Saved', saving: 'Saving...', error: 'Save failed!' };
 
 export function renderWorldScreen(root, world, { onBack }) {
-  const tab = TABS.find((t) => t.id === activeTab);
+  // The open tab lives in navigation.js so map tabs can switch it (entering
+  // a Region opens the Region Map tab).
+  const activeTab = getNavigation(world).tab;
+  const tab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
 
   const topBar = h(
     'header',
@@ -53,11 +54,8 @@ export function renderWorldScreen(root, world, { onBack }) {
       h(
         'button',
         {
-          class: t.id === activeTab ? 'tab active' : 'tab',
-          onclick: () => {
-            activeTab = t.id;
-            renderWorldScreen(root, world, { onBack });
-          },
+          class: t.id === tab.id ? 'tab active' : 'tab',
+          onclick: () => navigate({ tab: t.id }),
         },
         t.label,
       ),
@@ -83,6 +81,7 @@ export function renderWorldScreen(root, world, { onBack }) {
       h('div', { class: 'main-area' }, h('main', { class: 'content' }, content), detailPanel),
     ),
   );
+  restoreFocus(root);
 }
 
 // Refreshes only the save label, without redrawing the rest of the screen.
