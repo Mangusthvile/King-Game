@@ -17,7 +17,8 @@ import { removeObject, setFootprint } from './mapCommands.js';
 import { duplicatePlacement, objectName, placeableFor, withFootprint } from './placement.js';
 import { objectKind, extraPlaceables, mapBadge } from './objectKinds.js';
 import { childPreview } from './childPreview.js';
-import { renderToolbar } from './mapToolbar.js';
+import { renderToolbar, READ_ONLY_TOOLS } from './mapToolbar.js';
+import { pvActive } from '../ui/playerView.js';
 import { renderMapDetail } from './mapPanels.js';
 import { confirmRemoval } from './containerTree.js';
 import { enterContainer } from '../ui/navigation.js';
@@ -56,6 +57,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
   placeables = [...placeables, ...extraPlaceables(container.kind)];
   state.selectedId = selections.get(containerId) ?? null;
   fixStaleState(world, containerId, placeables);
+  if (pvActive(world) && !READ_ONLY_TOOLS.includes(state.tool)) state.tool = 'select';
 
   const canvas = h('canvas', { class: 'map-canvas' });
   const ctx = canvas.getContext('2d');
@@ -89,6 +91,10 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     ghost: null,
     stroke: null,
     notice: null, // a short message shown in the status line
+    // Player View: nothing on the map can be changed (select and pan only).
+    get readOnly() {
+      return pvActive(world);
+    },
     get camera() {
       return getCamera(containerId);
     },
@@ -112,6 +118,7 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       view.requestDraw();
     },
     setTool(id) {
+      if (view.readOnly && !READ_ONLY_TOOLS.includes(id)) return;
       state.tool = id;
       view.ghost = null;
       view.refreshUi();
@@ -192,13 +199,13 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
     },
   };
 
-  function draw() {
-    if (!view.camera || canvas.width === 0) return;
+  // What drawMap needs, for the screen or for a screenshot (map/mapShot.js).
+  function drawOptions(camera) {
     // The name of whatever is under the cursor, shown beside it.
     const hoverId = !view.drag && view.hoverCell && objectAtCell(occupancy, view.hoverCell.x, view.hoverCell.y);
     const hoverObj = hoverId && world.placedObjects[hoverId];
-    drawMap(ctx, canvas.width, canvas.height, world, container, {
-      camera: view.camera,
+    return {
+      camera,
       selectedId: state.selectedId,
       hoverCell: view.hoverCell,
       ghost: view.ghost,
@@ -225,10 +232,24 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
       bounds: frame?.bounds,
       backdrop: frame?.backdrop,
       board: frame?.board,
-    });
+    };
+  }
+
+  // A screenshot: the map drawn onto another canvas with its own camera,
+  // without the cursor, tool previews or selection (map/mapShot.js).
+  view.frameBounds = frame?.bounds ?? null;
+  view.drawShot = (shotCtx, width, height, camera, { hideGrid = false } = {}) => {
+    const options = { ...drawOptions(camera), selectedId: null, hoverCell: null, ghost: null, stroke: null, paintSelection: null, hoverLabel: null, hideGrid };
+    drawMap(shotCtx, width, height, world, container, options);
+  };
+
+  function draw() {
+    if (!view.camera || canvas.width === 0) return;
+    drawMap(ctx, canvas.width, canvas.height, world, container, drawOptions(view.camera));
     const cell = view.hoverCell ? `Cell ${view.hoverCell.x}, ${view.hoverCell.y}` : 'Cell -';
     const tool = TOOLS.find((t) => t.id === state.tool);
-    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${view.notice ?? selectionHint(view) ?? tool.hint}`;
+    const hint = view.readOnly ? 'Player View (read-only): click to select, drag to pan.' : selectionHint(view) ?? tool.hint;
+    status.textContent = `${cell}   |   Zoom ${view.camera.zoom}px   |   ${view.notice ?? hint}`;
     status.classList.toggle('notice', !!view.notice);
   }
 

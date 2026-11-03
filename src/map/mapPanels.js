@@ -13,6 +13,7 @@ import { objectName, recordFor, withFootprint } from './placement.js';
 import { objectKind } from './objectKinds.js';
 import { kindName } from './containerTree.js';
 import { spriteKeys, spriteExists } from './sprites.js';
+import { placeName } from '../ui/playerView.js';
 
 // Remembered between redraws: is "Map placement" / "Controls" expanded?
 let placementOpen = false;
@@ -96,9 +97,10 @@ function objectPanel(view, obj) {
     container && isEnterable(container.kind)
       ? h('button', { class: 'btn small primary', title: 'Or double-click it, or press Enter', onclick: () => view.enterSelected() }, `Enter ${kindName(container.kind)}`)
       : null,
-    obj.w !== obj.h ? h('button', { class: 'btn small', title: 'Quarter turn (R)', onclick: () => view.rotateSelected() }, 'Rotate') : null,
-    h('button', { class: 'btn small', title: 'Ctrl+D', onclick: () => view.duplicateSelected() }, 'Duplicate'),
-    h('button', { class: 'btn small danger', title: 'Delete key', onclick: () => view.removeSelected() }, 'Remove'),
+    // Player View is read-only: only Enter.
+    !view.readOnly && obj.w !== obj.h ? h('button', { class: 'btn small', title: 'Quarter turn (R)', onclick: () => view.rotateSelected() }, 'Rotate') : null,
+    view.readOnly ? null : h('button', { class: 'btn small', title: 'Ctrl+D', onclick: () => view.duplicateSelected() }, 'Duplicate'),
+    view.readOnly ? null : h('button', { class: 'btn small danger', title: 'Delete key', onclick: () => view.removeSelected() }, 'Remove'),
   );
 
   if (info) {
@@ -113,7 +115,7 @@ function objectPanel(view, obj) {
       h('h2', {}, title),
       actions,
       ...info(),
-      details,
+      view.readOnly ? null : details,
       renderCustomFields(world, rec.path, rec.id),
     ];
   }
@@ -131,7 +133,7 @@ function objectPanel(view, obj) {
         if (value) dispatch(setField(world, rec.path, rec.id, rec.nameField, value, name));
       },
     }),
-    ...placement,
+    ...(view.readOnly ? [] : placement),
     actions,
     renderCustomFields(world, rec.path, rec.id),
   ];
@@ -253,10 +255,10 @@ function helpPanel(view) {
   if (view.idlePanel) {
     const details = h('details', { class: 'controls-help', open: controlsOpen }, h('summary', { class: 'small muted' }, 'Controls'), controls);
     details.addEventListener('toggle', () => (controlsOpen = details.open));
-    return [...view.idlePanel(view), details];
+    return [...view.idlePanel(view), view.readOnly ? null : details];
   }
   return [
-    h('h2', {}, c.name),
+    h('h2', {}, placeName(view.world, c)),
     h(
       'p',
       { class: 'muted small' },

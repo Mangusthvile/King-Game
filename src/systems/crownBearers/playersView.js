@@ -8,6 +8,7 @@ import { createPlayer, factionList } from '../../data/factions.js';
 import { createConnection } from '../../data/crownBearers.js';
 import { connectivityLevel } from '../../rules/connectivity.js';
 import { askConnectivity } from './crownDialogs.js';
+import { eyeSection, canSeeFaction, pvActive } from '../../ui/playerView.js';
 
 function connectionRow(world, p, link, index) {
   const bearer = world.crownBearers?.[link.crownBearerId];
@@ -26,12 +27,18 @@ function connectionRow(world, p, link, index) {
       h('button', { class: 'btn tiny danger', onclick: remove }, 'x'),
     ),
     h('p', { class: 'muted small connectivity-text' }, connectivityLevel(world, link.connectivity)?.description ?? ''),
+    // Arbiter-only by default (Player View).
     history.length
-      ? h(
-          'details',
-          {},
-          h('summary', { class: 'small' }, `Connectivity history (${history.length})`),
-          h('ul', { class: 'wizard-list small' }, history.map((x) => h('li', {}, `Day ${x.day}: ${x.oldLevel ?? '-'} -> ${x.newLevel}${x.reason ? ` (${x.reason})` : ''}`))),
+      ? eyeSection(
+          world,
+          `${p.id}.connectivityHistory`,
+          h(
+            'details',
+            {},
+            h('summary', { class: 'small' }, `Connectivity history (${history.length})`),
+            h('ul', { class: 'wizard-list small' }, history.map((x) => h('li', {}, `Day ${x.day}: ${x.oldLevel ?? '-'} -> ${x.newLevel}${x.reason ? ` (${x.reason})` : ''}`))),
+          ),
+          'Connectivity history',
         )
       : null,
   );
@@ -64,7 +71,8 @@ function playerRow(world, p) {
 }
 
 export function renderPlayers(world) {
-  const players = Object.values(world.players ?? {});
+  // Player View: only the players of the faction shown.
+  const players = Object.values(world.players ?? {}).filter((p) => !pvActive(world) || (p.factionIds ?? []).some((id) => canSeeFaction(world, id)));
   const name = h('input', { type: 'text', placeholder: 'Player name' });
   const add = (e) => {
     e.preventDefault();

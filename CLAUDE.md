@@ -153,7 +153,7 @@ One world (campaign) is one JSON document with a `schemaVersion`. Every record h
 
 Every instance record (containers, buildings, followers, projects, and items when they are added) also has a `customFields` object: Arbiter-made fields and stats, added, renamed and removed in the app. Each field stores its name, value type and value. These are not repeated in the field lists below.
 
-**meta:** name, currentDay, schemaVersion, created and modified dates.
+**meta:** name, currentDay, schemaVersion, created and modified dates, settings (markEdited, snapshotsKept, arbiterOnlyFields, factionReview).
 
 **definitions:**
 
@@ -202,6 +202,8 @@ Every instance record (containers, buildings, followers, projects, and items whe
 **stockpiles:** records `{ name, ownerFactionId, placeId ('' = the faction's main stockpile), counts: { resourceTypeId: count }, notes }` (`src/systems/resources/stockpileModel.js`). Each faction has a main stockpile and may keep more at places. Minimal (counts set by hand, eaten at Advance Day) until the Resources stage.
 
 **Factions and ownership.** Characters have one current faction (plus their history); stockpiles, buildings, Projects and simple tasks have an owner faction; Regions, Biomes and Areas may be claimed. Changing a character's faction, a building's owner, or moving resources between factions (trade, gift, theft, loss) is a transfer command (`src/systems/factions/transfers.js`) that logs a Day Log entry for both factions. The Day number is shared by the whole world.
+
+**fieldVisibility:** Player View choices made with the eye toggle next to a field: `{ [fieldKey]: true (Arbiter-only) | false (shown to players) }`, keyed by the field's key (`"character_1.notes"`, the same `data-key` the field helpers use). A key not listed follows `meta.settings.arbiterOnlyFields` (default `notes`, `customFields`, `combat`, `connectivityHistory`, from `src/data/defaults/arbiterOnlyFields.json`), matched against the parts of the key after the record id. Changed only with the `setFieldVisibility` command. See `src/ui/playerView.js`.
 
 **log:** the action log (see Commands) plus end-of-day snapshots: the whole world (without its log) saved by Advance Day just before the day changes, the newest `meta.settings.snapshotsKept` kept (default 30), see `src/data/snapshots.js`.
 
@@ -276,18 +278,19 @@ Assigning a character to a task spends Stamina from staminaRemaining. Every task
   3. People: Roster (Living, Death Log) | Crown Bearers (Bearers, Connectivity, Vessels) | Progression (Theories & Skills)
   4. Chronicle: Day Log (By Day, Copy Day) | Notes (Stage 8) | History (undo and redo action list, Reverse Day, Set Day, day snapshots)
   5. Codex (Arbiter only, hidden in Player View): Library (Species, Body Types, Skills, Traits, Conditions, Equipment, Resource Types) | World Types (Region, Biome, Area, Building, Tile Types) | Rules (Rule Tables, Log Templates, Open Rules) | Assets (Stage 9)
-  6. System: Worlds (Open, Save File, Import/Export, Backups) | Display (Theme, Player View) | Preferences (Device Name, Autosave, Snapshots)
+  6. System: Worlds (Open, Save File, Import/Export, Backups, Storage) | Display (Theme, Player View) | Preferences (Device Name, Autosave, Snapshots)
 - Always visible outside the tabs:
-  - Top bar: world name, Day N, Advance Day button (opens Realm > Today > Advance Day), faction selector, Player View toggle, undo and redo (plus the save and world file status).
+  - Top bar: world name, Day N, Advance Day button (opens Realm > Today > Advance Day), faction selector, Player View toggle, screenshot (camera) button, undo and redo (plus the save and world file status).
   - Right panel: details of the current selection, on any tab.
   - Bottom quick bar (`src/ui/quickBar.js`): up to 6 pinned shortcuts the Arbiter chooses (a screen, a Project, a character, an Area), saved per world on this computer (localStorage). Systems add pin kinds with `registerPinKind`.
 - Planned future placements (not built yet): Recipes and Crafting under Realm > Resources; Morale, Territory and Tech Tree under Realm > Factions; Skill Tree under People > Progression; Military (Units, Armies, Combat) as a new sub-tab under People; Harvesting and Training as Task types under Realm > Today.
 
-- Arbiter-only fields are flagged. A Player View mode hides Arbiter-only controls and information for screenshot export.
+- Arbiter-only fields: every field built with the shared field helpers (`src/ui/fields.js`: textField, selectField, checkboxField, chipList) has an eye toggle in its label (👁 shown to players, ◌ Arbiter-only), and whole sections use `eyeSection` (custom fields, combat profile, Connectivity history). New screens must build record fields with these helpers and a `key` of `recordId.field`, so Player View works with no extra code. Defaults are editable in System > Display > Player View.
 
 - Faction selector (top bar, `src/ui/factionSelector.js`): one faction, or "All factions" (Arbiter only). The Characters, Today, Resources, Projects and Log tabs show the selected faction by default (under All factions, grouped or labelled by faction). It is view state per computer (localStorage), not world data. New records (characters, buildings, Projects, tasks) start owned by the selected faction.
 
-- Player View (top bar): only the selected faction's own information ("All factions" is not offered) and no Arbiter-only controls (elements with the `arbiter-only` class are hidden), for screenshots to players.
+- Player View (top bar, `src/ui/playerView.js`): a "Player View: [faction]" banner; only the selected faction's own characters, resources, buildings, Projects, Day Log, factions, players and Crown Bearers ("All factions" is not offered; `canSeeFaction`); undiscovered Regions, Biomes and Areas shown as `[undiscoveredName]` (`placeName`, `undiscoveredPanel`); unknown resources hidden; Arbiter-only fields and the Codex hidden; read-only: the store refuses every command, undo and redo (`setCommandGuard`), the screen disables fields and hides edit buttons (`lockPlayerView`, kept up by a MutationObserver), and maps allow only Select and Pan. Elements with the `arbiter-only` class are hidden.
+- Screenshots (camera button, `src/ui/screenshot.js`): the map view (drawn from the data by `src/map/mapShot.js`, cropped to the view, the map's edge or the selected outline, grid optional), the side panel, a Task Card, the main screen or the whole screen (copied by the built-in `src/ui/domCapture.js`, no dependency). Always in Player View for the selected faction unless "Include Arbiter info" is ticked (Player View is switched on for a moment with `setPlayerViewOverride`, not saved). Optional caption (world name, Day N, faction) and 1x / 2x / 3x nearest-neighbor scale. File names like `Apollyon_Day8_JadeGarden.png` (`src/ui/shotName.js`).
 
 - Keep the UI simple. New systems get their own sub-tab, sub-sub-tab or panel inside the existing main tabs (see Navigation), not more buttons on existing screens.
 
@@ -423,40 +426,51 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 - [x] Stage 6.5: Factions. Schema v16 (migration 15 to 16: starter factions Apollyon (Player), Vulture Pack (NPC) and Unaligned, Hostile to each other both ways, reusing a faction with the same name; characters get a faction from their old team (Ally: Apollyon, Enemy: Vulture Pack, other: Unaligned) and a history line; `teamId` and the Teams library are removed; stockpiles become records (the kingdom stockpile is Apollyon's main one); buildings, Projects, tasks, Day Log entries and the Start of Day record go to Apollyon; containers get `claimFactionId`; `meta.settings.factionReview` shows the owner review; an undo wall on the old action log). Shared model `src/data/factions.js` with `defaults/factions.json` and `defaults/stances.json`. Factions system (`src/systems/factions`): Factions tab (faction list and panel with relations, end-of-day settings, Player fields, delete only when it owns nothing; relations table; players), `transfers.js` (resources: trade with optional return, gift, theft, loss; building; character, each one undo step logging both factions), `migrationReview.js` (owner pickers per record with Set all; Done or Later). Top bar faction selector and Player View (`src/ui/factionSelector.js`); task cards follow Player View too. Characters: faction on the sheet is a move with a reason (`factionSection.js`) and an editable faction history; the roster filter is the selector; the seed import maps teams to factions; Factions left Characters > Libraries. Buildings and Projects: owner faction (a building owner change is a transfer). Claims: "Claimed by" in the Region, Biome and Area panels and a dashed faction border on the map (`claimOf` in `mapView.js` / `renderer.js`). Resources: per-faction stockpiles, new stockpile (main or at a place), transfer form. Today: per faction (readiness grouped by faction under All), tasks have an owner faction, Start of Day per Player faction. Advance Day: Meal and Needs per faction with trackNeeds (own stockpiles only), Stamina reset per faction with usesStamina, conditions count down for all, summary and one "Day N ended" entry per faction. Log tab: filters to the selected faction, labels entries by faction under All; Copy whole day copies the faction's day, or every faction under a heading.
 - [x] Stage 6.6: Crown Bearers and Connectivity. RULES.md gained the Crown Bearers and Connectivity section (word for word from the Arbiter). Schema v17 (migration 16 to 17: `crownBearers`, `crowns`, `definitions.connectivity`, `connections` on players; adds the First Sky King ruling Apollyon with the Crown of Authority (worn by the vessel, no vessel yet), Authority Level copied from the faction, and Connectivity 9 for every player controlling Apollyon, or for a placeholder player "Apollyon's Player" if none). New worlds start with the same. Crown Bearers system (`src/systems/crownBearers`): Crown Bearers tab (Crown Bearers of the selected faction, Crowns, Players moved here from the Factions tab with their Connectivity links, change with a reason, and history, the Connectivity table editor); Crown Bearer panel (vessel portrait and link to the sheet, status, Authority Level, each player's Connectivity with that level's text as a reminder, today's Spark of Change notes and earlier days, Change vessel, editable vessel history, identity fields, divergence notes); Crown panel (attuned Crown Bearer, where it is: worn by the vessel, at a place, held by a character or unknown, with a note). Death hook in `characters/death.js` (`registerDeathHook`): a vessel's death leaves its Crown Bearer without a vessel in the same undo step, then asks where the Crown is. The faction panel shows its Crown Bearer and Authority Level instead of its own. Start of Day shows the faction's Crown Bearer Connectivity (with its reminder) at the top of the panel and in the record's text. `ui/dom.js` only touches `window` in a browser, so Node tests can load UI files.
 - [x] Stage 6.7: Tab structure (navigation only; features unchanged). `src/ui/tabLayout.js` (the layout, limits, `registerPlace`, aliases for the old tab ids), `src/ui/navigation.js` (main / sub / sub-sub path, remembered sub-tabs), `src/ui/worldScreen.js` (top bar with Advance Day, main tab, sub-tab and sub-sub-tab rows, placeholders), `src/ui/quickBar.js` (pins: screens, plus Projects, characters and Areas registered by their systems), keys 1 to 6 in `main.js`. Systems declare `places` instead of `tabs`. Screens split into their places: Today (Overview, Tasks, Advance Day; the time controls moved to Chronicle > History), Projects by status (paused with Active), Resources, Buildings (By Area is new grouping; the list follows the faction selector), Factions, Roster and Death Log, Crown Bearers (Bearers; Connectivity = Players plus the table; Vessels = vessel table plus Crowns), Libraries one per Codex screen (Resource Types gained a library editor; Conditions shown with an in-stasis note), World Types (the existing type editors; the tile type editor is shared with the Paint panel), building types and categories, the seed import in System > Worlds > Import/Export, the Settings tab split into System screens and Log Templates (the "(edited)" option). New small screens: World > Locations (`src/systems/locations`), People > Progression (read-only Skills and Theories, `characters/progressionView.js`), Chronicle > Copy Day, Codex > Rules (read-only rule tables and log templates, Open Rules read from this file; `src/systems/codex`), Chronicle (`src/systems/chronicle`) and System (`src/systems/settings`). `tests/tabLayout.test.js`.
-- [ ] Stage 7
-- [ ] Stage 8
-- [ ] Stage 8.5
-- [ ] Stage 9
+- [x] Stage 7: Persistence and sharing polish (the last MVP stage). Schema v18 (migration 17 to 18 adds `fieldVisibility` and `meta.settings.arbiterOnlyFields`). Player View made complete and safe (`src/ui/playerView.js`, see Interface): eye toggles on every field built with the field helpers (`setFieldVisibility` command, `src/commands/visibilityCommands.js`), Arbiter-only sections (custom fields, combat profile, Connectivity history), defaults editable in System > Display > Player View with "Put all back to the default"; other factions' records hidden (Characters here, Projects here, map badges, building and character panels, factions and relations, players, Crown Bearers, Crowns); undiscovered places as [undiscovered name] on map labels, the breadcrumb, panels and Locations; unknown resources hidden; read-only (store guard with a toast, fields locked, edit buttons hidden, maps Select and Pan only, no undo or redo, type editors hidden); the Player View banner. Screenshots (see Interface). World list: Day, last saved and on which computer, world file, size (`worldSummary` gets `savedBy` and `size`); Duplicate, Rename (through the `renameWorld` command, `store.applyCommand`), Delete after typing the world's name, New world from a template (another world's libraries and rules, `src/data/worldOps.js`). `withNewId` also gives snapshots the new id, so restoring a snapshot in a duplicate or an imported copy never overwrites the original (Import JSON had this bug before). Data safety: `src/data/validate.js` checks a world before and after migrating and lists every problem (`checkedWorld` in `exportImport.js`, used by Import JSON, world files and backups); `tests/migrations.test.js` loads a save from every schema version 1 to 17 (`tests/fixtures/oldSaves.js`) and checks it upgrades and keeps its data; restore previews (`src/data/worldPreview.js`) before restoring a world file backup or a day snapshot (System > Worlds > Backups lists the snapshots too); System > Worlds > Storage shows browser storage used, each world's size, a warning above 80% (also on the world list) and "Ask the browser to keep the data" (`src/ui/storagePanel.js`). README.md for the Arbiter.
+
+Post-MVP stages, in order (do not start without being asked):
+
+- [ ] Stage 8: Notes
+- [ ] Stage 8.5: UI Overhaul (pixel UI kit)
+- [ ] Stage 9: Rendered View and Stamps
+- [ ] Stage 10: Combat (when the Arbiter finalizes the combat rules)
+- [ ] Stage 11: Skill Tree
+- [ ] Stage 12: Tech Tree
+- [ ] After those, the systems listed under "After the MVP" (Harvesting, resources and stockpiles UI, Crafting, Training, building connections and automation, Morale and Prosperity, population groups, Units, Armies), in the order the Arbiter chooses.
 
 ## Open Rules (ask the Arbiter, do not invent)
+
+Grouped by topic. The Codex > Rules > Open Rules screen lists every "- " line below.
+
+### Progression (Skills, Theories, Traits)
 
 - How Skill Level increases, and its maximum (RULES.md implies Lv 10).
 
 - When a Skill tiers up: are the combined Theories or Skills consumed, and what happens to its Level?
 
-- Full attribute list and meaning (seen: Strength, Agility, Intelligence, Charisma, Willpower, Might) and what Body Type means.
+- When a Theory becomes a T1 Skill, is the Theory removed? (RULES.md says it "becomes" the Skill, but T1 to T2 needs 5 Theories at 100%, so some must stay as Theories.) For now a checkbox, on by default.
 
 - Training: table from the d20 teaching quality roll to the number of dice, and the Understanding Roll success ladder.
+
+- Trait and Pact structure.
+
+- Attributes: the app uses the Body Type stats (STR, SPD, TOU, Body Level, Health). Older notes also mention Strength, Agility, Intelligence, Charisma, Willpower and Might: are any of these still used, and how do they map to the Body Type stats?
+
+### Needs, food and Conditions
+
+- Food and Hunger are not in RULES.md yet. Used now, from the Arbiter's Stage 6 brief (in `src/rules/tables/needs.json`): 1 Food per character per day, Food value per unit (default 1), fed = Hunger back to max, unfed = Hunger -1 and the Hungry condition ("-1 to all rolls per day without food"; the days without food are counted on the condition). Add these to RULES.md. Still open: does eating remove Hungry at once (proposed yes, the Arbiter can untick it), and does the -1 grow with each day without food?
 
 - Thirst: how it goes down each day and what happens at 0. Manual for now: the Advance Day Needs step has Drank (max) / -1 / No change per character.
 
 - Death from hunger: what happens at Hunger 0, and after how long. For now Hunger 0 is only flagged "at risk of death"; the Arbiter decides, nothing dies automatically.
 
-- Food and Hunger are not in RULES.md yet. Used now, from the Arbiter's Stage 6 brief (in `src/rules/tables/needs.json`): 1 Food per character per day, Food value per unit (default 1), fed = Hunger back to max, unfed = Hunger -1 and the Hungry condition ("-1 to all rolls per day without food"; the days without food are counted on the condition). Add these to RULES.md. Still open: does eating remove Hungry at once (proposed yes, the Arbiter can untick it), and does the -1 grow with each day without food?
+- Hunger and Thirst for Vultures (left blank on the Vulture species).
 
 - Conditions are in stasis on the stat sheet (no editor until the Combat stage), but Today shows them as badges and Advance Day counts their durations down and adds or removes Hungry. Should the sheet's Conditions editor come back now?
 
 - Conditions and healing: durations, how injuries heal.
 
-- The combat system (in testing by the Arbiter; to be added as its own later stage, Stage 10). Combat values are manual fields until then.
-
-- Hunger and Thirst for Vultures (left blank on the Vulture species).
-
-- When a Theory becomes a T1 Skill, is the Theory removed? (RULES.md says it "becomes" the Skill, but T1 to T2 needs 5 Theories at 100%, so some must stay as Theories.) For now a checkbox, on by default.
-
-- Morale and Prosperity rules.
-
-- Trait and Pact structure.
+### Projects and tools
 
 - How much each tool adds. Settled for Projects: the only modifiers are the relevant Skill's Level bonus on every Work Die (up to +9) and tools that make the task easier, which add to the work an individual does per turn; a tool the Project requires is the baseline and adds nothing. The workday has a manual "Tools" number per participant, added once to their work for the day; in the Equipment and Combat stage, tools become Equipment entries whose bonus stat and description (what the bonus applies to) fill it instead (see Stage 10). Still open: tool bonuses for Harvests, and carry limits with storage equipment.
 
@@ -466,4 +480,12 @@ The rest of the first test world should recreate the current campaign: Day 8, th
 
 - Specific Boon and Setback options for Project Events (the workday offers the examples from each event's RULES.md description as quick picks; the effect is free text).
 
+### Harvesting
+
 - Harvest carry limit without storage equipment (seen as 6 per Stamina for Emerald Puff Fruits): is it per resource, or a general rule?
+
+### Combat, Morale and later systems
+
+- The combat system (in testing by the Arbiter; to be added as its own later stage, Stage 10). Combat values are manual fields until then.
+
+- Morale and Prosperity rules.

@@ -12,6 +12,10 @@ import { getDeviceSettings } from '../sync/deviceSettings.js';
 import { factionSelect, isPlayerView, togglePlayerView } from './factionSelector.js';
 import { renderQuickBar } from './quickBar.js';
 import { reviewPending, renderMigrationReview } from '../systems/factions/migrationReview.js';
+import { lockPlayerView, watchPlayerView } from './playerView.js';
+import { factionName } from '../data/factions.js';
+import { selectedFactionId } from './factionSelector.js';
+import { openScreenshotDialog } from './screenshot.js';
 
 // The main tabs shown: Codex (Arbiter only) is hidden in Player View.
 export const visibleMainTabs = (world) => MAIN_TABS.filter((m) => !(m.arbiterOnly && isPlayerView(world)));
@@ -81,10 +85,12 @@ export function renderWorldScreen(root, world, { onBack }) {
     h('span', { class: 'day-badge' }, `Day ${world.meta.currentDay}`),
     h('button', { class: 'btn small primary arbiter-only', title: 'End the day for the whole world (Realm > Today > Advance Day)', onclick: () => navigate({ main: 'realm', sub: 'today', subsub: 'advanceDay' }) }, 'Advance Day'),
     factionSelect(world),
-    h('button', { class: isPlayerView(world) ? 'btn small active' : 'btn small', title: 'Player View: only the selected faction, no Arbiter controls (for screenshots)', onclick: () => togglePlayerView(world) }, 'Player View'),
+    h('button', { class: isPlayerView(world) ? 'btn small active' : 'btn small', title: 'Player View: only the selected faction, read-only, no Arbiter-only fields or controls (for screenshots)', onclick: () => togglePlayerView(world) }, 'Player View'),
+    h('button', { class: 'btn small screenshot-button', title: 'Screenshot: save a PNG of the map, a panel or the whole screen (in Player View)', onclick: () => openScreenshotDialog(world) }, '📷'),
     h('div', { class: 'spacer' }),
-    h('button', { class: 'btn small', disabled: !canUndo(), onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'),
-    h('button', { class: 'btn small', disabled: !canRedo(), onclick: redo, title: 'Redo (Ctrl+Y)' }, 'Redo'),
+    // Player View is read-only: no undo or redo there.
+    h('button', { class: 'btn small arbiter-only', disabled: !canUndo(), onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'),
+    h('button', { class: 'btn small arbiter-only', disabled: !canRedo(), onclick: redo, title: 'Redo (Ctrl+Y)' }, 'Redo'),
     h('span', { class: 'save-status' }),
     h('button', { class: 'btn small file-status', onclick: fileButtonClick }),
   );
@@ -115,16 +121,24 @@ export function renderWorldScreen(root, world, { onBack }) {
       ? render(world, { detailPanel, path })
       : placeholder(subsub?.label ?? sub.label, planned);
 
+  // A banner so Player View is never mistaken for the Arbiter's view.
+  const banner = isPlayerView(world)
+    ? h('div', { class: 'player-view-banner' }, h('strong', {}, `Player View: ${factionName(world, selectedFactionId(world))}`), h('span', { class: 'small' }, 'Read-only. Arbiter-only fields and other factions are hidden.'), h('button', { class: 'btn tiny', onclick: () => togglePlayerView(world) }, 'Back to Arbiter view'))
+    : null;
+
   root.replaceChildren(
     h(
       'div',
       { class: isPlayerView(world) ? 'world-screen player-view' : 'world-screen' },
       topBar,
+      banner,
       tabs,
       h('div', { class: 'main-area' }, h('main', { class: 'content' }, content), detailPanel),
       renderQuickBar(world),
     ),
   );
+  lockPlayerView(root, world);
+  watchPlayerView(root, world);
   restoreFocus(root);
 }
 

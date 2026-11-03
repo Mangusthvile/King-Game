@@ -1,5 +1,6 @@
 // The character stat sheet in the right-hand panel. Every field is
 // editable and every edit is a command, so it can be undone.
+import { canSeeFaction, pvActive } from '../../ui/playerView.js';
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField, removeRecord, batch } from '../../commands/recordCommands.js';
@@ -20,6 +21,8 @@ import { charactersView as view } from './state.js';
 
 // refresh(): redraws the panel after a view-only change (opening a helper).
 export function renderCharacterPanel(world, c, refresh) {
+  // Player View: another faction's character is not shown.
+  if (!canSeeFaction(world, c.factionId)) return [h('h2', {}, 'Character'), h('p', { class: 'muted small' }, 'This character belongs to another faction.')];
   const set = (field) => fieldSetter(world, 'characters', c.id, field);
   const key = (part) => `${c.id}.${part}`;
   const faction = world.definitions.factions?.[c.factionId];
@@ -56,8 +59,8 @@ export function renderCharacterPanel(world, c, refresh) {
     ...textField('Bio', c.bio, set('bio'), { key: key('bio'), multiline: true }),
     ...textField('Notes', c.notes, set('notes'), { key: key('notes'), multiline: true }),
     renderCustomFields(world, 'characters', c.id),
-    h('h3', {}, 'Life'),
-    c.alive
+    h('h3', { class: 'arbiter-only' }, 'Life'),
+    pvActive(world) ? (c.alive ? null : deathDetails(world, c)) : c.alive
       ? view.helper?.kind === 'death'
         ? deathForm(world, c, closeHelper)
         : h('button', { class: 'btn small danger', onclick: () => ((view.helper = { kind: 'death' }), refresh()) }, 'Mark dead...')

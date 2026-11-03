@@ -23,7 +23,7 @@ export function attachPointerEvents(view, canvas) {
     const { sx, sy, cell } = local(e);
     // Middle or right drag always pans, whatever the tool.
     if (e.button === 1 || e.button === 2 || view.state.tool === 'pan') view.startPan(sx, sy);
-    else if (e.button === 0 && (e.ctrlKey || e.metaKey)) paintBlock.down(view, cell);
+    else if (e.button === 0 && (e.ctrlKey || e.metaKey) && !view.readOnly) paintBlock.down(view, cell);
     else if (e.button === 0) {
       clearPaintSelection(view); // a plain click ends the paint selection
       tool().down?.(view, cell, sx, sy);

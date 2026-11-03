@@ -10,8 +10,9 @@ import speciesList from './defaults/species.json';
 import { defaultFactions } from './factions.js';
 import { addStartingCrownBearer } from './crownBearers.js';
 import { defaultConnectivity } from '../rules/connectivity.js';
+import arbiterOnlyTable from './defaults/arbiterOnlyFields.json';
 
-export const SCHEMA_VERSION = 17;
+export const SCHEMA_VERSION = 18;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.
@@ -69,10 +70,16 @@ export function createSpecies(name) {
 // World settings (Settings tab). markEdited: Resolution Logs add "(edited)"
 // after a value the Arbiter changed by hand. snapshotsKept: how many
 // end-of-day snapshots Reverse Day can go back to (data/snapshots.js).
+// arbiterOnlyFields: the field names hidden in Player View unless the
+// Arbiter shows them (ui/playerView.js; System > Display > Player View).
 export const DEFAULT_SNAPSHOTS_KEPT = 30;
 
+export function defaultArbiterOnlyFields() {
+  return [...arbiterOnlyTable.fields];
+}
+
 export function defaultSettings() {
-  return { markEdited: false, snapshotsKept: DEFAULT_SNAPSHOTS_KEPT };
+  return { markEdited: false, snapshotsKept: DEFAULT_SNAPSHOTS_KEPT, arbiterOnlyFields: defaultArbiterOnlyFields() };
 }
 
 function emptyDefinitions() {
@@ -179,6 +186,10 @@ export function createWorld(name) {
     // { [id]: { id, name, ownerFactionId, placeId ('' = the faction's main
     //   stockpile), counts: { resourceTypeId: count }, notes, customFields } }
     stockpiles: {},
+    // Player View: fields the Arbiter marked with the eye toggle, by field
+    // key ("character_1.notes"): true = Arbiter-only, false = shown to
+    // players. Unlisted fields follow meta.settings.arbiterOnlyFields.
+    fieldVisibility: {},
     log: {
       actions: [], // command entries: { id, type, payload, day, time }
       redo: [], // undone entries that can be redone
@@ -190,11 +201,15 @@ export function createWorld(name) {
 }
 
 // A short summary stored separately so the world list loads fast.
-export function worldSummary(world) {
+// savedBy: this computer's device name; size: the saved world in bytes
+// (both filled in by storage.js when saving).
+export function worldSummary(world, { savedBy = '', size = 0 } = {}) {
   return {
     id: world.meta.id,
     name: world.meta.name,
     currentDay: world.meta.currentDay,
     modified: world.meta.modified,
+    savedBy,
+    size,
   };
 }

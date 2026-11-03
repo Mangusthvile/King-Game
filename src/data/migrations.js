@@ -1,6 +1,6 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_SNAPSHOTS_KEPT, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
+import { SCHEMA_VERSION, defaultArbiterOnlyFields, DEFAULT_MAP_SCALE, DEFAULT_SNAPSHOTS_KEPT, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
 import teamList from './defaults/teams.json'; // the old Teams, for migration 8 -> 9
 import { defaultFactions, factionIdForTeam, createFaction } from './factions.js';
@@ -280,6 +280,17 @@ const migrations = {
     for (const p of Object.values(world.players)) p.connections ??= [];
     addStartingCrownBearer(world);
     world.schemaVersion = 17;
+    return world;
+  },
+
+  // 17 -> 18 (Stage 7, Player View): fields can be marked Arbiter-only with
+  // the eye toggle (fieldVisibility), and the default list of Arbiter-only
+  // fields is a world setting.
+  17: (world) => {
+    world.fieldVisibility ??= {};
+    world.meta.settings ??= defaultSettings();
+    world.meta.settings.arbiterOnlyFields ??= defaultArbiterOnlyFields();
+    world.schemaVersion = 18;
     return world;
   },
 };

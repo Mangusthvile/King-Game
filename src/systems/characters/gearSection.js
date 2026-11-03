@@ -7,6 +7,7 @@ import { setField } from '../../commands/recordCommands.js';
 import { refOptions } from './libraryEditor.js';
 import { listEditor } from './listEditor.js';
 import { COMBAT_FIELDS } from './characterModel.js';
+import { eyeSection } from '../../ui/playerView.js';
 
 let combatOpen = false; // remembered between redraws
 
@@ -71,6 +72,6 @@ export function renderGear(world, c) {
       newItem: () => ({ name: 'Item', quantity: 1, notes: '' }),
       addLabel: '+ Item',
     }),
-    details,
+    eyeSection(world, `${c.id}.combat`, details, 'Combat profile'), // Arbiter-only by default
   ];
 }

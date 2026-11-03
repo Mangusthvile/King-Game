@@ -4,12 +4,12 @@
 // and Restore. The newest N are kept (Settings > This computer).
 import { getWorld, openWorld } from '../data/store.js';
 import { saveWorld } from '../data/storage.js';
-import { migrateWorld } from '../data/migrations.js';
-import { validate } from '../data/exportImport.js';
+import { checkedWorld } from '../data/exportImport.js';
 import { getDeviceSettings } from './deviceSettings.js';
 import { revisionOf, needsBackup, backupFileName, backupsToDelete, listBackups } from './syncNames.js';
 import * as wf from './worldFile.js';
 import { session, run, setStatus, updateLink, readOrReport } from './fileSync.js';
+import { worldPreview } from '../data/worldPreview.js';
 import { askRestore } from './syncPrompts.js';
 
 // Before a save: is a backup of the file (about to be overwritten) due?
@@ -52,13 +52,20 @@ export async function listWorldBackups() {
 // It replaces the world as a whole (not a command); the current file is
 // backed up first, so restoring that backup reverses it.
 export async function restoreBackup(backup) {
-  if (!(await askRestore(backup))) return;
+  // Read and check it first, so the question can show what it holds.
+  let restored;
+  try {
+    restored = checkedWorld(JSON.parse(await wf.readBackup(session.link.dirHandle, backup.name)));
+  } catch (err) {
+    alert(`That backup cannot be restored.
+
+${err.message}`);
+    return;
+  }
+  if (restored.meta.id !== getWorld().meta.id) return alert('That backup is of another world.');
+  if (!(await askRestore(backup, worldPreview(restored)))) return;
   await run(async () => {
     const world = getWorld();
-    const { sync: _ignored, ...data } = JSON.parse(await wf.readBackup(session.link.dirHandle, backup.name));
-    validate(data);
-    const restored = migrateWorld(data);
-    if (restored.meta.id !== world.meta.id) throw new Error('That backup is of another world.');
 
     const file = await readOrReport();
     if (!file) return;

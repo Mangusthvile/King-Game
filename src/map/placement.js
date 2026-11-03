@@ -1,5 +1,6 @@
 // Builds new placed objects (and the records they stand for), and answers
 // small questions about placed objects that both tools and panels need.
+import { placeName } from '../ui/playerView.js';
 import { newId } from '../data/ids.js';
 import { createContainer } from '../data/schema.js';
 import { findFreeSpot } from './grid.js';
@@ -127,6 +128,8 @@ export function placeableFor(world, placeables, obj) {
 
 // The name shown on the map: the represented record's name, or the label.
 export function objectName(world, obj) {
+  const place = obj.refId && world.containers[obj.refId];
+  if (place) return placeName(world, place); // [???] in Player View while undiscovered
   const rec = recordFor(world, obj);
   return getCollection(world, rec.path)[rec.id]?.[rec.nameField] ?? obj.label;
 }

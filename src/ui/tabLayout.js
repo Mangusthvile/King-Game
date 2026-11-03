@@ -92,7 +92,7 @@ export const MAIN_TABS = [
     label: 'System',
     icon: '⚙',
     subs: [
-      sub('worlds', 'Worlds', [['open', 'Open'], ['saveFile', 'Save File'], ['importExport', 'Import/Export'], ['backups', 'Backups']], { alias: 'settings' }),
+      sub('worlds', 'Worlds', [['open', 'Open'], ['saveFile', 'Save File'], ['importExport', 'Import/Export'], ['backups', 'Backups'], ['storage', 'Storage']], { alias: 'settings' }),
       sub('display', 'Display', [['theme', 'Theme', { planned: 'Stage 8.5' }], ['playerView', 'Player View']]),
       sub('preferences', 'Preferences', [['deviceName', 'Device Name'], ['autosave', 'Autosave'], ['snapshots', 'Snapshots']]),
     ],

@@ -4,6 +4,7 @@ import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { getCollection } from '../commands/recordCommands.js';
 import { addCustomField, updateCustomField, removeCustomField } from '../commands/customFieldCommands.js';
+import { eyeSection } from './playerView.js';
 
 const TYPES = [
   { id: 'text', label: 'Text' },
@@ -21,7 +22,13 @@ function typeSelect(value, onchange) {
 
 // path + id name the record, for example ('containers', regionId).
 // key = 'defaultFields' edits a type's default fields instead.
-export function renderCustomFields(world, path, id, { key = 'customFields', title = 'Custom fields' } = {}) {
+// Player View: the whole list is one field ("<id>.customFields"),
+// Arbiter-only by default, with one eye toggle.
+export function renderCustomFields(world, path, id, options = {}) {
+  return eyeSection(world, `${id}.${options.key ?? 'customFields'}`, customFieldsList(world, path, id, options), options.title ?? 'Custom fields') ?? h('div');
+}
+
+function customFieldsList(world, path, id, { key = 'customFields', title = 'Custom fields' } = {}) {
   const fields = getCollection(world, path)[id][key] ?? {};
   const update = (fieldId, changes) => dispatch(updateCustomField(world, path, id, fieldId, changes, key));
 

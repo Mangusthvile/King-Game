@@ -1,5 +1,6 @@
 // Resources with an Availability rating, for any container record that has
 // a resources list (Biomes and Areas).
+import { pvActive } from './playerView.js';
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { newId } from '../data/ids.js';
@@ -29,6 +30,7 @@ export function resourcesEditor(world, record) {
   const updateEntry = (i, changes) => dispatch(setList(list.map((r, j) => (j === i ? { ...r, ...changes } : r))));
 
   const rows = list.map((r, i) => {
+    if (pvActive(world) && r.known === false) return null; // Player View hides resources not found yet
     const type = types[r.resourceTypeId];
     const key = `${record.id}.res.${r.resourceTypeId}`;
     return h(
@@ -91,7 +93,7 @@ export function resourcesEditor(world, record) {
   return h(
     'div',
     { class: 'resources' },
-    rows.length ? rows : h('p', { class: 'muted small' }, 'None yet.'),
+    rows.some(Boolean) ? rows : h('p', { class: 'muted small' }, 'None yet.'),
     h(
       'form',
       { class: 'resource-row add', onsubmit: add },

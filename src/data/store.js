@@ -7,6 +7,9 @@ import { saveWorld } from './storage.js';
 const SAVE_DELAY_MS = 300; // wait briefly so rapid edits become one save
 
 let world = null;
+// commandGuard() returns true when changes are not allowed right now
+// (Player View is read-only, see ui/playerView.js). It tells the Arbiter why.
+let commandGuard = null;
 let saveStatus = 'saved'; // 'saved' | 'saving' | 'error'
 let saveTimer = null;
 const listeners = new Set();
@@ -65,11 +68,18 @@ export async function closeWorld() {
 
 // ---- Commands, undo, redo ----
 
-// A command with dayBoundary: true (Advance Day) is a wall for undo.
-export function dispatch(command) {
-  const day = world.meta.currentDay; // the day the action was taken on
-  command.do(world);
-  world.log.actions.push({
+export function setCommandGuard(guard) {
+  commandGuard = guard;
+}
+
+const blocked = () => !!world && !!commandGuard?.();
+
+// Applies a command to a world that is not the open one (the world list
+// renaming a saved world): the same do() and action log entry as dispatch.
+export function applyCommand(target, command) {
+  const day = target.meta.currentDay; // the day the action was taken on
+  command.do(target);
+  target.log.actions.push({
     id: newId('action'),
     type: command.type,
     payload: command.payload,
@@ -77,7 +87,13 @@ export function dispatch(command) {
     time: new Date().toISOString(),
     ...(command.dayBoundary ? { dayBoundary: true } : {}),
   });
-  world.log.redo = []; // a new change makes old redo entries invalid
+  target.log.redo = []; // a new change makes old redo entries invalid
+}
+
+// A command with dayBoundary: true (Advance Day) is a wall for undo.
+export function dispatch(command) {
+  if (blocked()) return;
+  applyCommand(world, command);
   changed(command.type);
 }
 
@@ -93,7 +109,7 @@ export function canRedo() {
 }
 
 export function undo() {
-  if (!canUndo()) return;
+  if (!canUndo() || blocked()) return;
   const entry = world.log.actions.pop();
   createCommand(entry.type, entry.payload).undo(world);
   world.log.redo.push(entry);
@@ -101,7 +117,7 @@ export function undo() {
 }
 
 export function redo() {
-  if (!canRedo()) return;
+  if (!canRedo() || blocked()) return;
   const entry = world.log.redo.pop();
   createCommand(entry.type, entry.payload).do(world);
   world.log.actions.push(entry);
@@ -112,6 +128,7 @@ export function redo() {
 // restoring a snapshot, data/snapshots.js): it is saved, and the world file
 // is told with `type` ('reverseDay' saves the file at once).
 export function replaceWorld(newWorld, type) {
+  if (blocked()) return;
   world = newWorld;
   changed(type);
 }

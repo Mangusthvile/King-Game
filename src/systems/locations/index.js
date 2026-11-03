@@ -2,6 +2,7 @@
 // searchable list with its discovered flag, so places can be found without
 // opening each map. Selecting one shows its info panel on the right; Open
 // goes to it on its map. Also lets the quick bar pin an Area.
+import { placeName, pvActive } from '../../ui/playerView.js';
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField } from '../../commands/recordCommands.js';
@@ -39,15 +40,18 @@ registerPinKind('area', {
   open: (world, id) => openLocation(world, world.containers[id]),
 });
 
+// Player View: an undiscovered place shows only its undiscovered name.
+const hiddenPlace = (world, c) => pvActive(world) && c.discovered === false;
+
 function locationRow(world, c, refresh) {
   const parent = world.containers[c.parentId];
   const type = world.definitions[`${c.kind}Types`]?.[c.typeId];
   return h(
     'tr',
     { class: c.id === view.selectedId ? 'selected-row' : '' },
-    h('td', {}, h('button', { class: 'link-button', title: 'Show its info', onclick: () => ((view.selectedId = c.id), refresh()) }, c.name)),
-    h('td', { class: 'muted' }, parent && parent.kind !== 'world' ? parent.name : '-'),
-    h('td', {}, type?.name ?? '-'),
+    h('td', {}, h('button', { class: 'link-button', title: 'Show its info', onclick: () => ((view.selectedId = c.id), refresh()) }, placeName(world, c))),
+    h('td', { class: 'muted' }, parent && parent.kind !== 'world' ? placeName(world, parent) : '-'),
+    h('td', {}, hiddenPlace(world, c) ? '-' : type?.name ?? '-'),
     h(
       'td',
       {},
@@ -72,7 +76,7 @@ function renderLocations(world, { detailPanel, path }) {
   const drawList = () => {
     const text = view.search.trim().toLowerCase();
     const all = Object.values(world.containers).filter((c) => c.kind === kind);
-    const shown = all.filter((c) => !text || c.name.toLowerCase().includes(text) || (world.containers[c.parentId]?.name ?? '').toLowerCase().includes(text)).sort((a, b) => a.name.localeCompare(b.name));
+    const shown = all.filter((c) => !text || placeName(world, c).toLowerCase().includes(text) || placeName(world, world.containers[c.parentId]).toLowerCase().includes(text)).sort((a, b) => a.name.localeCompare(b.name));
     list.replaceChildren(
       shown.length
         ? h(

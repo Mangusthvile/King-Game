@@ -13,6 +13,7 @@ import { swatchStyle } from '../../ui/colors.js';
 import { createCrownBearer, createCrown, BEARER_STATUSES } from '../../data/crownBearers.js';
 import { factionColor, factionName } from '../../data/factions.js';
 import { selectedFactionId } from '../../ui/factionSelector.js';
+import { canSeeFaction } from '../../ui/playerView.js';
 import { defaultConnectivity } from '../../rules/connectivity.js';
 import { connectionsOf, crownLocationText } from './crownModel.js';
 import { renderBearerPanel } from './bearerPanel.js';
@@ -43,14 +44,14 @@ function detail(world) {
   const s = view.selected;
   const bearer = s?.kind === 'bearer' && world.crownBearers?.[s.id];
   const crown = s?.kind === 'crown' && world.crowns?.[s.id];
-  if (bearer) return renderBearerPanel(world, bearer);
+  if (bearer && canSeeFaction(world, bearer.factionId)) return renderBearerPanel(world, bearer);
   if (crown) return renderCrownPanel(world, crown);
   return [h('h2', {}, 'Crown Bearers'), h('p', { class: 'muted small' }, 'Players are Crown Bearers (RULES.md). Click a Crown Bearer or a Crown to open it.')];
 }
 
 // Every Crown Bearer's vessel, status and how many vessels they have had.
 function vesselTable(world, refresh) {
-  const list = Object.values(world.crownBearers ?? {});
+  const list = Object.values(world.crownBearers ?? {}).filter((b) => canSeeFaction(world, b.factionId));
   return h(
     'section',
     { class: 'frame panel' },
@@ -119,7 +120,8 @@ function bearerList(world, refresh) {
 }
 
 function crownList(world, refresh) {
-  const list = Object.values(world.crowns ?? {});
+  // Player View: only Crowns attuned to the faction's own Crown Bearers.
+  const list = Object.values(world.crowns ?? {}).filter((c) => canSeeFaction(world, world.crownBearers?.[c.attunedBearerId]?.factionId));
   const add = () => {
     const c = createCrown();
     view.selected = { kind: 'crown', id: c.id };

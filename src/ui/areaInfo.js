@@ -1,6 +1,7 @@
 // Info panel for an Area (a mine, a farm, a building site...): name, area
 // type (its focus), description, Danger Level, resources with Availability,
 // assigned characters, notes. Custom fields are added by the map panel.
+import { undiscoveredPanel } from './playerView.js';
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { setField } from '../commands/recordCommands.js';
@@ -9,6 +10,8 @@ import { resourcesEditor } from './resourcesEditor.js';
 import { infoSections } from './infoSections.js';
 
 export function renderAreaInfo(world, area) {
+  const hidden = undiscoveredPanel(world, area); // Player View: an undiscovered place shows only [???]
+  if (hidden) return hidden;
   // An Area with no Danger Level of its own uses its Biome's.
   const biome = world.containers[area.parentId];
   const inherited = `(same as Biome: ${biome?.dangerLevel || 'not set'})`;

@@ -1,5 +1,6 @@
 // Editor for Region, Biome or Area types: name, color and default fields.
 // Default fields are copied onto a Region, Biome or Area when it gets the type.
+import { pvActive } from './playerView.js';
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { newId } from '../data/ids.js';
@@ -12,6 +13,7 @@ const expanded = new Set();
 
 // kind: 'region' | 'biome' | 'area'.  title: heading text.
 export function renderTypeEditor(world, kind, title) {
+  if (pvActive(world)) return []; // an Arbiter tool, not shown in Player View
   const path = TYPE_PATHS[kind];
   const types = Object.values(typesFor(world, kind));
 

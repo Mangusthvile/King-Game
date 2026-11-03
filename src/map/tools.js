@@ -25,6 +25,12 @@ const objectAt = (view, cell) => objectAtCell(view.occupancy, cell.x, cell.y);
 const select = {
   down(view, cell, sx, sy) {
     const id = objectAt(view, cell);
+    // Player View is read-only: clicking selects, dragging pans.
+    if (view.readOnly) {
+      view.select(id ?? null);
+      view.startPan(sx, sy);
+      return;
+    }
     if (!id) {
       view.select(null);
       view.startPan(sx, sy);

@@ -1,6 +1,7 @@
 // Info panel for a Region: name, type, description, species that live there,
 // civilizations or cities, notes, and the Region Map scale. Regions have no
 // Danger Level of their own: danger belongs to each Biome inside them.
+import { undiscoveredPanel } from './playerView.js';
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { createSpecies } from '../data/schema.js';
@@ -10,6 +11,8 @@ import { claimField, nameAndType, discoveryFields, descriptionField, notesField,
 import { enterContainer } from './navigation.js';
 
 export function renderRegionInfo(world, region) {
+  const hidden = undiscoveredPanel(world, region); // Player View: an undiscovered place shows only [???]
+  if (hidden) return hidden;
   return [
     ...nameAndType(world, region),
     ...claimField(world, region),

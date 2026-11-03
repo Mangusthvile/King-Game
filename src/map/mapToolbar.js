@@ -4,12 +4,15 @@ import { h } from '../ui/dom.js';
 import { TOOLS } from './tools.js';
 import { placementTypeId, typeChoices } from './placement.js';
 
+// Player View is read-only: only Select and Pan.
+export const READ_ONLY_TOOLS = ['select', 'pan'];
+
 export function renderToolbar(view) {
   const { state } = view;
   const tools = h(
     'div',
     { class: 'tool-group' },
-    TOOLS.map((t) =>
+    TOOLS.filter((t) => !view.readOnly || READ_ONLY_TOOLS.includes(t.id)).map((t) =>
       h(
         'button',
         {

@@ -9,6 +9,7 @@ import { setCurrentDay } from '../../commands/worldCommands.js';
 import { migrateWorld } from '../../data/migrations.js';
 import { latestDayEnd, beforeRestoreSnapshot, restoreLosses, restoreSnapshot, snapshotsKept } from '../../data/snapshots.js';
 import { timeView } from './state.js';
+import { worldPreview } from '../../data/worldPreview.js';
 
 function lossText(world, snapshot) {
   const loss = restoreLosses(world, snapshot);
@@ -23,12 +24,16 @@ function lossText(world, snapshot) {
   ];
 }
 
-function restore(world, snapshot) {
+// Also used by System > Worlds > Backups. The preview says what the
+// snapshot holds.
+export function askRestoreSnapshot(world, snapshot) {
   const isUndo = snapshot.kind === 'beforeRestore';
   openDialog({
     title: isUndo ? 'Undo Reverse Day?' : `Reverse to Day ${snapshot.day}?`,
     body: [
       ...lossText(world, snapshot).map((t) => h('p', {}, t)),
+      h('p', { class: 'small' }, 'This snapshot holds:'),
+      h('ul', { class: 'preview-list small' }, worldPreview(snapshot.world).map((line) => h('li', {}, line))),
       h('p', { class: 'muted small' }, 'The world as it is now is kept as a snapshot, so you can take this back with "Undo Reverse Day". Ctrl+Z cannot undo it.'),
     ],
     buttons: [
@@ -75,8 +80,8 @@ export function renderTimeControls(world) {
     h(
       'div',
       { class: 'row' },
-      h('button', { class: 'btn', disabled: !latest, title: latest ? `Go back to ${latest.label}` : 'No snapshot yet: one is saved at every Advance Day', onclick: () => restore(world, latest) }, latest ? `Reverse Day (to Day ${latest.day})` : 'Reverse Day'),
-      undoSnapshot ? h('button', { class: 'btn', title: `Go back to ${undoSnapshot.label}`, onclick: () => restore(world, undoSnapshot) }, 'Undo Reverse Day') : null,
+      h('button', { class: 'btn', disabled: !latest, title: latest ? `Go back to ${latest.label}` : 'No snapshot yet: one is saved at every Advance Day', onclick: () => askRestoreSnapshot(world, latest) }, latest ? `Reverse Day (to Day ${latest.day})` : 'Reverse Day'),
+      undoSnapshot ? h('button', { class: 'btn', title: `Go back to ${undoSnapshot.label}`, onclick: () => askRestoreSnapshot(world, undoSnapshot) }, 'Undo Reverse Day') : null,
       h('div', { class: 'spacer' }),
       setDayForm(world),
     ),
@@ -86,7 +91,7 @@ export function renderTimeControls(world) {
           'details',
           {},
           h('summary', { class: 'small' }, `Snapshots (${dayEnds.length})`),
-          h('ul', { class: 'wizard-list' }, dayEnds.map((s) => h('li', { class: 'row' }, h('span', { class: 'small' }, `${s.label} - ${new Date(s.takenAt).toLocaleString()}`), h('button', { class: 'btn tiny', onclick: () => restore(world, s) }, 'Go back here')))),
+          h('ul', { class: 'wizard-list' }, dayEnds.map((s) => h('li', { class: 'row' }, h('span', { class: 'small' }, `${s.label} - ${new Date(s.takenAt).toLocaleString()}`), h('button', { class: 'btn tiny', onclick: () => askRestoreSnapshot(world, s) }, 'Go back here')))),
         )
       : null,
   );

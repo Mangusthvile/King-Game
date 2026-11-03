@@ -10,8 +10,7 @@
 // Linking or opening a file is in syncActions.js, backups in syncBackups.js.
 import { getWorld, openWorld, onWorldChange, refreshSaveStatus } from '../data/store.js';
 import { saveWorld, getFileLink, putFileLink } from '../data/storage.js';
-import { migrateWorld } from '../data/migrations.js';
-import { validate } from '../data/exportImport.js';
+import { checkedWorld } from '../data/exportImport.js';
 import { getDeviceSettings } from './deviceSettings.js';
 import { revisionOf, fileChangedSince, openElsewhere, backupFileName } from './syncNames.js';
 import * as wf from './worldFile.js';
@@ -201,8 +200,7 @@ export async function reloadTheirs(theirs) {
   const mine = getWorld();
   let world;
   try {
-    validate(theirs.world);
-    world = migrateWorld(theirs.world);
+    world = checkedWorld(theirs.world);
   } catch (err) {
     return setStatus('error', `The world file can't be loaded: ${err.message}`);
   }

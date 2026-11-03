@@ -1,5 +1,6 @@
 // Fields that Regions, Biomes and Areas share: name, type, description,
 // Danger Level and notes. regionInfo.js, biomeInfo.js and areaInfo.js add the rest.
+import { pvActive, placeName } from './playerView.js';
 import { h } from './dom.js';
 import { dispatch } from '../data/store.js';
 import { setField } from '../commands/recordCommands.js';
@@ -34,6 +35,7 @@ export function claimField(world, c) {
 
 // Discovered or not, and the name Resolution Logs use while it isn't.
 export function discoveryFields(world, c) {
+  if (pvActive(world)) return []; // the Arbiter's switch, not for players
   const setName = fieldSetter(world, 'containers', c.id, 'undiscoveredName');
   return [
     ...checkboxField('Discovered', c.discovered ?? true, fieldSetter(world, 'containers', c.id, 'discovered'), {
@@ -108,7 +110,7 @@ export function childList(world, c, onOpen) {
       h(
         'li',
         {},
-        h('span', {}, child.name),
+        h('span', {}, placeName(world, child)),
         h('span', { class: 'muted small' }, typesFor(world, child.kind)[child.typeId]?.name ?? ''),
         h('button', { class: 'btn small', onclick: () => onOpen(child.id) }, 'Open'),
       ),

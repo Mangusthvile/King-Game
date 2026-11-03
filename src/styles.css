@@ -2475,3 +2475,139 @@ input.tiny-input {
 .rule-file > summary {
   cursor: pointer;
 }
+
+/* ---- Player View (Stage 7, ui/playerView.js) ---- */
+
+:root {
+  --player-view: #2d5d8f;
+  --player-view-light: #7fb2e5;
+}
+
+/* The eye toggle next to a field: shown to players, or Arbiter-only. */
+.eye-toggle {
+  font-family: var(--font);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0 3px;
+  margin-left: 2px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.eye-toggle:hover {
+  border-color: var(--frame-light);
+}
+
+.eye-toggle.off {
+  color: var(--muted);
+}
+
+/* A section with one eye toggle in its top right corner. */
+.eye-section {
+  position: relative;
+}
+
+.eye-section > .eye-toggle {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  z-index: 1;
+}
+
+.player-view-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  background: var(--player-view);
+  border-bottom: 2px solid var(--player-view-light);
+  color: var(--text);
+}
+
+/* Player View is read-only: edit, add and delete controls go away. */
+.player-view .content .btn.danger,
+.player-view .detail-panel .btn.danger,
+.player-view .chip-x,
+.player-view .chip-add,
+.player-view .narration-adder,
+.player-view .resource-row.add,
+.player-view .custom-fields form {
+  display: none;
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 56px;
+  z-index: 200;
+  max-width: 360px;
+  padding: 8px 12px;
+  background: var(--panel);
+}
+
+/* ---- Screenshots (ui/screenshot.js) ---- */
+
+.screenshot-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  margin: 8px 0;
+  border: 2px solid var(--frame);
+  background: var(--bg);
+}
+
+.option-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+/* ---- World list (Stage 7) ---- */
+
+.world-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.storage-bar {
+  height: 10px;
+  margin: 6px 0;
+  background: var(--panel-inner);
+  border: 1px solid var(--frame);
+}
+
+.storage-bar > span {
+  display: block;
+  height: 100%;
+  width: var(--fill);
+  background: var(--accent-light);
+}
+
+.storage-bar.warn > span {
+  background: var(--danger-light);
+}
+
+.preview-list {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.error-list {
+  margin: 6px 0;
+  padding-left: 18px;
+  color: var(--danger-light);
+}
+
+/* Read-only fields in Player View look like plain text, not greyed out. */
+.player-view input:disabled,
+.player-view select:disabled,
+.player-view textarea:read-only {
+  opacity: 1;
+  color: var(--text);
+}

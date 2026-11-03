@@ -2,6 +2,7 @@
 // footprint, construction stage and progress, Project (Stage 5), storage,
 // properties and notes. The map panel adds the action buttons, map
 // placement and custom fields around it.
+import { canSeeFaction } from '../../ui/playerView.js';
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField, batch } from '../../commands/recordCommands.js';
@@ -17,6 +18,8 @@ import { transferBuilding } from '../factions/transfers.js';
 export function renderBuildingPanel(world, obj, view) {
   const b = world.buildings[obj.refId];
   if (!b) return [h('p', { class: 'message error small' }, "This building's record is missing.")];
+  // Player View: another faction's building shows only who owns it.
+  if (!canSeeFaction(world, b.ownerFactionId)) return [h('p', {}, h('strong', {}, b.name)), h('p', { class: 'muted small' }, `Belongs to ${factionName(world, b.ownerFactionId) || 'another faction'}.`)];
   const types = world.definitions.buildingTypes;
   const type = types[b.buildingTypeId];
   const category = world.definitions.buildingCategories?.[type?.categoryId];

@@ -30,9 +30,16 @@ function save() {
   }
 }
 
+// A screenshot (ui/screenshot.js) turns Player View on for a moment
+// without saving the choice: override = true / false, or null = the saved one.
+let override = null;
+export function setPlayerViewOverride(value) {
+  override = value;
+}
+
 export function isPlayerView(world) {
   load(world);
-  return state.playerView;
+  return override ?? state.playerView;
 }
 
 // The selected faction id, '' = All factions. Player View never shows All:
@@ -40,7 +47,7 @@ export function isPlayerView(world) {
 export function selectedFactionId(world) {
   load(world);
   if (state.factionId && !getFaction(world, state.factionId)) state.factionId = '';
-  if (!state.factionId && state.playerView) return (factionList(world).find((f) => f.type === 'player') ?? factionList(world)[0])?.id ?? '';
+  if (!state.factionId && isPlayerView(world)) return (factionList(world).find((f) => f.type === 'player') ?? factionList(world)[0])?.id ?? '';
   return state.factionId;
 }
 

@@ -4,6 +4,7 @@
 //   fileLinks:  which world file (sync/fileSync.js) each world is saved to
 import { openDB } from 'idb';
 import { worldSummary } from './schema.js';
+import { getDeviceSettings } from '../sync/deviceSettings.js';
 
 const DB_NAME = 'kings-game-arbiter';
 const DB_VERSION = 2;
@@ -43,15 +44,50 @@ export async function worldExists(id) {
   return (await db.getKey('worldIndex', id)) !== undefined;
 }
 
+// The size of a world as saved, in bytes (about the size of its JSON).
+export function worldSize(world) {
+  return new Blob([JSON.stringify(world)]).size;
+}
+
 export async function saveWorld(world) {
   const db = await getDb();
+  const summary = worldSummary(world, { savedBy: getDeviceSettings().deviceName, size: worldSize(world) });
   const tx = db.transaction(['worldIndex', 'worlds'], 'readwrite');
   // structuredClone so later edits in memory can't leak into the saved copy.
   await Promise.all([
     tx.objectStore('worlds').put(structuredClone(world), world.meta.id),
-    tx.objectStore('worldIndex').put(worldSummary(world)),
+    tx.objectStore('worldIndex').put(summary),
     tx.done,
   ]);
+}
+
+// How much this browser lets the app store, and how much is used:
+// { usage, quota } in bytes, or null if the browser can't tell.
+export async function storageEstimate() {
+  try {
+    const { usage, quota } = await navigator.storage.estimate();
+    return Number.isFinite(usage) && Number.isFinite(quota) && quota > 0 ? { usage, quota } : null;
+  } catch {
+    return null;
+  }
+}
+
+// Asks the browser to keep the saved worlds even when the disk gets full
+// (it may say no). Returns true if storage is now persistent.
+export async function requestPersistentStorage() {
+  try {
+    return (await navigator.storage.persisted()) || (await navigator.storage.persist());
+  } catch {
+    return false;
+  }
+}
+
+export async function isStoragePersistent() {
+  try {
+    return await navigator.storage.persisted();
+  } catch {
+    return false;
+  }
 }
 
 // Deletes the local copy only. A linked world file is left untouched.

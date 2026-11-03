@@ -54,7 +54,7 @@ export function drawMap(ctx, width, height, world, container, view) {
   for (const b of view.backdrop ?? []) drawTile(ctx, world, b.x, b.y, b.tileId, cam, b.size);
   drawTiles(ctx, world, container.tiles, range, cam);
   if (view.stroke) drawStroke(ctx, world, view.stroke, cam);
-  drawGrid(ctx, range, cam, width, height);
+  if (!view.hideGrid) drawGrid(ctx, range, cam, width, height);
   if (view.bounds) drawOutside(ctx, view.bounds, cam, width, height, view.board);
 
   const objects = objectsIn(world, container);

@@ -1,0 +1,4 @@
+{
+  "description": "Fields hidden in Player View unless the Arbiter shows them (the eye toggle next to a field). Matched against the parts of a field's key after the record id, e.g. \"character_1.notes\" or \"character_1.combat\".",
+  "fields": ["notes", "customFields", "combat", "connectivityHistory"]
+}

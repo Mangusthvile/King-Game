@@ -106,10 +106,15 @@ export function askSaveBeforeClose() {
   );
 }
 
-export function askRestore(backup) {
+// preview: lines saying what the backup holds (data/worldPreview.js).
+export function askRestore(backup, preview = []) {
   return ask(
     'Restore backup?',
-    [p(`Restore the backup from ${backup.date.toLocaleString()}${backup.note ? ` (${backup.note})` : ''}?`), p('The current world file is backed up first, so this can be reversed by restoring that backup.', 'muted small')],
+    [
+      p(`Restore the backup from ${backup.date.toLocaleString()}${backup.note ? ` (${backup.note})` : ''}?`),
+      preview.length ? h('ul', { class: 'preview-list small' }, preview.map((line) => h('li', {}, line))) : null,
+      p('The current world file is backed up first, so this can be reversed by restoring that backup.', 'muted small'),
+    ],
     [
       { label: 'Restore', value: true, primary: true },
       { label: 'Cancel', value: false },

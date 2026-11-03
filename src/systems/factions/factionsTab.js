@@ -7,6 +7,7 @@ import { addRecord, setField } from '../../commands/recordCommands.js';
 import { swatchStyle } from '../../ui/colors.js';
 import { FACTION_TYPES, STANCES, createFaction, factionList, factionIcon, stanceOf } from '../../data/factions.js';
 import { renderFactionPanel, ownedCounts } from './factionPanel.js';
+import { canSeeFaction } from '../../ui/playerView.js';
 
 // View state (not saved).
 const view = { selectedId: null };
@@ -16,7 +17,7 @@ export function renderFactionsTab(world, { detailPanel, path }) {
   const refresh = () => {
     const mode = path.endsWith('/relations') ? relationsTable : factionsList;
     root.replaceChildren(mode(world, refresh));
-    const f = world.definitions.factions[view.selectedId];
+    const f = canSeeFaction(world, view.selectedId) ? world.definitions.factions[view.selectedId] : null; // Player View: only its own faction
     detailPanel.replaceChildren(...(f ? renderFactionPanel(world, f) : [h('h2', {}, 'Factions'), h('p', { class: 'muted small' }, 'Click a faction to edit it.')]).flat(Infinity).filter(Boolean));
   };
   refresh();
@@ -35,7 +36,7 @@ function factionsList(world, refresh) {
     view.selectedId = f.id;
     dispatch(addRecord('definitions.factions', f));
   };
-  const rows = factionList(world).map((f) => {
+  const rows = factionList(world).filter((f) => canSeeFaction(world, f.id)).map((f) => {
     const owned = ownedCounts(world, f.id);
     const living = Object.values(world.characters).filter((c) => c.alive && c.factionId === f.id).length;
     return h(
@@ -63,7 +64,7 @@ function relationsTable(world) {
     if (from.id === to.id) return h('td', { class: 'muted' }, '-');
     const select = h(
       'select',
-      { class: `stance-select stance-${stanceOf(world, from.id, to.id)}`, title: `${from.name} toward ${to.name}`, onchange: (e) => dispatch(setField(world, 'definitions.factions', from.id, 'relations', { ...from.relations, [to.id]: e.target.value }, from.name)) },
+      { class: `stance-select stance-${stanceOf(world, from.id, to.id)}`, 'data-key': `${from.id}.relations.${to.id}`, title: `${from.name} toward ${to.name}`, onchange: (e) => dispatch(setField(world, 'definitions.factions', from.id, 'relations', { ...from.relations, [to.id]: e.target.value }, from.name)) },
       STANCES.map((s) => h('option', { value: s.id }, s.name)),
     );
     select.value = stanceOf(world, from.id, to.id);
@@ -82,7 +83,7 @@ function relationsTable(world) {
             'table',
             { class: 'building-table relations-table' },
             h('tr', {}, h('th', {}, 'Toward ->'), list.map((f) => h('th', {}, h('span', { class: 'team-chip', style: swatchStyle(f.color) }, f.name)))),
-            list.map((from) => h('tr', {}, h('th', {}, h('span', { class: 'team-chip', style: swatchStyle(from.color) }, from.name)), list.map((to) => cell(from, to)))),
+            list.filter((from) => canSeeFaction(world, from.id)).map((from) => h('tr', {}, h('th', {}, h('span', { class: 'team-chip', style: swatchStyle(from.color) }, from.name)), list.map((to) => cell(from, to)))),
           ),
         )
       : h('p', { class: 'muted small' }, 'Add a second faction to set relations.'),

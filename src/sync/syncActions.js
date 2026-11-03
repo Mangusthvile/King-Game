@@ -4,8 +4,7 @@
 // and Restore in syncBackups.js.
 import { getWorld, openWorld } from '../data/store.js';
 import { saveWorld, loadWorld, getFileLink, putFileLink, deleteFileLink } from '../data/storage.js';
-import { migrateWorld } from '../data/migrations.js';
-import { validate } from '../data/exportImport.js';
+import { checkedWorld } from '../data/exportImport.js';
 import { newId } from '../data/ids.js';
 import { revisionOf, safeFileName } from './syncNames.js';
 import * as wf from './worldFile.js';
@@ -52,8 +51,7 @@ export async function openWorldFile() {
   if (!handle) return null;
   const file = await wf.readWorldFile(handle);
   if (!file.world) throw new Error(`${handle.name} is empty or is not a world file.`);
-  validate(file.world);
-  const world = migrateWorld(file.world);
+  const world = checkedWorld(file.world);
 
   const local = await loadWorld(world.meta.id);
   const oldLink = await getFileLink(world.meta.id);
@@ -88,8 +86,7 @@ export async function saveMineAsCopy(theirs) {
 
   // The original world's local copy becomes theirs.
   try {
-    validate(theirs.world);
-    const original = migrateWorld(theirs.world);
+    const original = checkedWorld(theirs.world);
     if (original.meta.id === mine.meta.id) {
       await saveWorld(original);
       await updateLink({ knownRevision: revisionOf(theirs.sync), dirty: false });

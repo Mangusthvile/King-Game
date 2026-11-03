@@ -9,6 +9,7 @@ import { registerInfoSection } from '../../ui/infoSections.js';
 import { progressBar } from '../../ui/taskCard.js';
 import { statusName, assignToProject } from './projectModel.js';
 import { selectProject } from './state.js';
+import { canSeeFaction } from '../../ui/playerView.js';
 
 const open = (id) => {
   selectProject(id);
@@ -21,7 +22,7 @@ function projectChip(p) {
 
 export function registerProjectLinks() {
   registerInfoSection('area', (world, area) => {
-    const here = Object.values(world.projects).filter((p) => p.locationContainerId === area.id);
+    const here = Object.values(world.projects).filter((p) => p.locationContainerId === area.id && canSeeFaction(world, p.ownerFactionId));
     return [
       h('label', {}, `Projects here (${here.length})`),
       here.length ? h('div', { class: 'chip-list' }, here.map(projectChip)) : h('p', { class: 'muted small' }, 'No Projects located here.'),
