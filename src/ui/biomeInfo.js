@@ -2,13 +2,14 @@
 // resources with Availability, residents, notes.
 import { h } from './dom.js';
 import { textField, fieldSetter } from './fields.js';
-import { nameAndType, discoveryFields, descriptionField, dangerField, notesField, mapScaleField } from './containerFields.js';
+import { claimField, nameAndType, discoveryFields, descriptionField, dangerField, notesField, mapScaleField } from './containerFields.js';
 import { resourcesEditor } from './resourcesEditor.js';
 import { infoSections } from './infoSections.js';
 
 export function renderBiomeInfo(world, biome) {
   return [
     ...nameAndType(world, biome),
+    ...claimField(world, biome),
     ...discoveryFields(world, biome),
     ...descriptionField(world, biome),
     ...dangerField(world, biome, 'Environmental Danger Level'),

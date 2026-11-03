@@ -129,7 +129,7 @@ describe('migration 11 -> 12 (Projects)', () => {
     expect(w.schemaVersion).toBeGreaterThanOrEqual(12);
     expect(w.projects).toEqual({});
     expect(w.dayLogs).toEqual({});
-    expect(w.meta.settings).toEqual({ markEdited: false });
+    expect(w.meta.settings).toMatchObject({ markEdited: false }); // later migrations add more settings
     expect(w.characters.a.assignmentProjectId).toBe('');
   });
 });

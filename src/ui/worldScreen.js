@@ -1,33 +1,20 @@
-// The main screen for an open world: top bar, management tabs, content area
-// and the right-hand detail panel.
+// The main screen for an open world (CLAUDE.md, Interface > Navigation):
+// the top bar, the main tabs, the sub-tab row, the sub-sub-tab row, the
+// content, the right-hand detail panel and the bottom quick bar. Where each
+// screen lives is in tabLayout.js; systems fill the slots (systems/registry.js).
 import { h, restoreFocus } from './dom.js';
 import { canUndo, canRedo, undo, redo, getSaveStatus } from '../data/store.js';
-import { renderSettingsTab } from './settingsTab.js';
-import { renderLogTab } from './logTab.js';
-import { getSystemTabs } from '../systems/registry.js';
-import { getNavigation, navigate } from './navigation.js';
+import '../systems/registry.js'; // every system registers its places
+import { MAIN_TABS, subTab, placeRender } from './tabLayout.js';
+import { getNavigation, navigate, currentPath } from './navigation.js';
 import { getSyncState, checkNow, saveFileNow } from '../sync/fileSync.js';
 import { getDeviceSettings } from '../sync/deviceSettings.js';
+import { factionSelect, isPlayerView, togglePlayerView } from './factionSelector.js';
+import { renderQuickBar } from './quickBar.js';
+import { reviewPending, renderMigrationReview } from '../systems/factions/migrationReview.js';
 
-// Built-in tabs. Tabs without a render function are placeholders until a
-// system in /src/systems provides a tab with the same id.
-const BASE_TABS = [
-  { id: 'world', label: 'World Map', stage: 1 },
-  { id: 'region', label: 'Region Map', stage: 2 },
-  { id: 'biome', label: 'Biome Map', stage: 2 },
-  { id: 'buildings', label: 'Buildings', stage: 3 },
-  { id: 'characters', label: 'Characters', stage: 4 },
-  { id: 'projects', label: 'Projects', stage: 5 },
-  { id: 'resources', label: 'Resources', stage: null }, // after the MVP
-  { id: 'log', label: 'Log', render: renderLogTab },
-  { id: 'settings', label: 'Settings', render: renderSettingsTab },
-];
-
-const systemTabs = getSystemTabs();
-const TABS = [
-  ...BASE_TABS.map((t) => systemTabs.find((s) => s.id === t.id) ?? t),
-  ...systemTabs.filter((s) => !BASE_TABS.some((t) => t.id === s.id)),
-];
+// The main tabs shown: Codex (Arbiter only) is hidden in Player View.
+export const visibleMainTabs = (world) => MAIN_TABS.filter((m) => !(m.arbiterOnly && isPlayerView(world)));
 
 const SAVE_TEXT = { saved: 'Saved', saving: 'Saving...', error: 'Save failed!' };
 
@@ -63,11 +50,28 @@ function fileButtonTitle(sync) {
   return parts.join('\n');
 }
 
+// A row of tab buttons (main, sub or sub-sub).
+function tabRow(cls, items, activeId, onPick) {
+  return h(
+    'nav',
+    { class: `${cls}-row` },
+    items.map((t) => h('button', { class: t.id === activeId ? `${cls} active` : cls, title: t.title ?? '', onclick: () => onPick(t.id) }, t.icon ? h('span', { class: 'tab-icon' }, t.icon) : null, h('span', {}, t.label))),
+  );
+}
+
+// An empty slot: a planned screen, or one no system has filled yet.
+function placeholder(label, planned) {
+  return h('div', { class: 'placeholder' }, h('span', { class: 'label-tag' }, label), h('p', { class: 'muted' }, `Coming in a later stage${planned ? ` (${planned})` : ''}.`));
+}
+
 export function renderWorldScreen(root, world, { onBack }) {
-  // The open tab lives in navigation.js so map tabs can switch it (entering
-  // a Region opens the Region Map tab).
-  const activeTab = getNavigation(world).tab;
-  const tab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
+  // Player View never shows Codex: fall back to Realm.
+  if (getNavigation(world).main === 'codex' && isPlayerView(world)) navigate({ main: 'realm' });
+  const nav = getNavigation(world);
+  const main = MAIN_TABS.find((m) => m.id === nav.main);
+  const sub = subTab(nav.main, nav.sub);
+  const subsub = sub.subsubs.find((x) => x.id === nav.subsub);
+  const path = currentPath();
 
   const topBar = h(
     'header',
@@ -75,6 +79,9 @@ export function renderWorldScreen(root, world, { onBack }) {
     h('button', { class: 'btn small', onclick: onBack }, '< Worlds'),
     h('span', { class: 'label-tag' }, world.meta.name),
     h('span', { class: 'day-badge' }, `Day ${world.meta.currentDay}`),
+    h('button', { class: 'btn small primary arbiter-only', title: 'End the day for the whole world (Realm > Today > Advance Day)', onclick: () => navigate({ main: 'realm', sub: 'today', subsub: 'advanceDay' }) }, 'Advance Day'),
+    factionSelect(world),
+    h('button', { class: isPlayerView(world) ? 'btn small active' : 'btn small', title: 'Player View: only the selected faction, no Arbiter controls (for screenshots)', onclick: () => togglePlayerView(world) }, 'Player View'),
     h('div', { class: 'spacer' }),
     h('button', { class: 'btn small', disabled: !canUndo(), onclick: undo, title: 'Undo (Ctrl+Z)' }, 'Undo'),
     h('button', { class: 'btn small', disabled: !canRedo(), onclick: redo, title: 'Redo (Ctrl+Y)' }, 'Redo'),
@@ -83,38 +90,39 @@ export function renderWorldScreen(root, world, { onBack }) {
   );
   updateSaveStatus(topBar);
 
-  const tabBar = h(
-    'nav',
-    { class: 'tab-bar' },
-    TABS.map((t) =>
-      h(
-        'button',
-        {
-          class: t.id === tab.id ? 'tab active' : 'tab',
-          onclick: () => navigate({ tab: t.id }),
-        },
-        t.label,
-      ),
-    ),
+  const mains = visibleMainTabs(world).map((m, i) => ({ ...m, title: `${m.label} (${MAIN_TABS.indexOf(m) + 1})` }));
+  const tabs = h(
+    'div',
+    { class: 'tab-area' },
+    tabRow('main-tab', mains, main.id, (id) => navigate({ main: id })),
+    tabRow('sub-tab', main.subs, sub.id, (id) => navigate({ sub: id })),
+    sub.subsubs.length ? tabRow('subsub-tab', sub.subsubs, nav.subsub, (id) => navigate({ subsub: id })) : null,
   );
 
   const detailPanel = h(
     'aside',
     { class: 'detail-panel frame' },
     h('h2', {}, 'Details'),
-    h('p', { class: 'muted' }, 'Select something on a map to see it here.'),
+    h('p', { class: 'muted small' }, 'Select something to see it here.'),
   );
 
-  // Tabs may fill the detail panel themselves (the maps do).
-  const content = tab.render ? tab.render(world, { detailPanel }) : placeholder(tab);
+  // After the migration to factions, the owner review comes first.
+  const render = placeRender(path);
+  const planned = subsub?.planned ?? sub.planned;
+  const content = reviewPending(world)
+    ? renderMigrationReview(world, { detailPanel })
+    : render && !planned
+      ? render(world, { detailPanel, path })
+      : placeholder(subsub?.label ?? sub.label, planned);
 
   root.replaceChildren(
     h(
       'div',
-      { class: 'world-screen' },
+      { class: isPlayerView(world) ? 'world-screen player-view' : 'world-screen' },
       topBar,
-      tabBar,
+      tabs,
       h('div', { class: 'main-area' }, h('main', { class: 'content' }, content), detailPanel),
+      renderQuickBar(world),
     ),
   );
   restoreFocus(root);
@@ -134,14 +142,4 @@ export function updateSaveStatus(scope = document) {
   fileButton.className = FILE_WARN.includes(sync.status) ? 'btn small file-status warn' : 'btn small file-status';
   fileButton.textContent = FILE_TEXT[sync.status] ?? '';
   fileButton.title = fileButtonTitle(sync);
-}
-
-function placeholder(tab) {
-  const when = tab.stage ? `Coming in Stage ${tab.stage}.` : 'Comes after the MVP.';
-  return h(
-    'div',
-    { class: 'placeholder' },
-    h('span', { class: 'label-tag' }, tab.label),
-    h('p', { class: 'muted' }, when),
-  );
 }

@@ -1,0 +1,46 @@
+==============================
+Day {{day}} Ended: {{factionName}}
+==============================
+{{#hasMeal}}
+Meal: {{eaterCount}} ate, {{needed}} Food needed, {{provided}} Food eaten
+{{#eaten}}
+- {{count}} {{name}} from the {{stockpile}} stockpile ({{food}} Food)
+{{/eaten}}
+{{^eaten}}
+- Nothing was eaten.
+{{/eaten}}
+{{/hasMeal}}
+{{#hasUnfed}}
+
+Did not eat:
+{{#unfed}}
+- {{name}}: Hunger {{before}} -> {{after}}, Hungry ({{daysText}}){{riskText}}
+{{/unfed}}
+{{/hasUnfed}}
+{{#hasThirst}}
+
+Thirst:
+{{#thirst}}
+- {{name}}: {{before}} -> {{after}}
+{{/thirst}}
+{{/hasThirst}}
+{{#hasConditions}}
+
+Conditions:
+{{#conditionLines}}
+- {{item}}
+{{/conditionLines}}
+{{/hasConditions}}
+{{#hasUnspent}}
+
+Unspent Stamina: {{unspentText}}
+{{/hasUnspent}}
+{{#staminaCount}}
+Stamina restored for {{staminaCount}} character(s).
+{{/staminaCount}}
+{{#notes}}
+
+Notes: {{notes}}
+{{/notes}}
+
+Day {{nextDay}} begins.

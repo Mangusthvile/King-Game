@@ -6,6 +6,7 @@ import { setField } from '../commands/recordCommands.js';
 import { textField, selectField, checkboxField, fieldSetter } from './fields.js';
 import { typesFor, changeType } from '../map/containerTypes.js';
 import dangerTable from '../rules/tables/dangerLevels.json';
+import { factionOptions } from '../data/factions.js';
 
 // typeLabel: what the type is called for this kind (an Area's type is its focus).
 export function nameAndType(world, c, typeLabel = 'Type') {
@@ -21,6 +22,14 @@ export function nameAndType(world, c, typeLabel = 'Type') {
       { key: `${c.id}.typeId`, missingLabel: () => '(deleted type)' },
     ),
   ];
+}
+
+// The faction that claims it (optional). The map draws its border.
+export function claimField(world, c) {
+  return selectField('Claimed by', c.claimFactionId ?? '', [{ value: '', label: '(unclaimed)' }, ...factionOptions(world)], fieldSetter(world, 'containers', c.id, 'claimFactionId'), {
+    key: `${c.id}.claim`,
+    missingLabel: () => '(deleted faction)',
+  });
 }
 
 // Discovered or not, and the name Resolution Logs use while it isn't.

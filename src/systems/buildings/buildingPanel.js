@@ -10,6 +10,9 @@ import { navigate } from '../../ui/navigation.js';
 import { infoSections } from '../../ui/infoSections.js';
 import { STAGES, stageName, stageForProgress, shownStage } from './stages.js';
 import { keyValueEditor, storageEditor } from './listEditors.js';
+import { openDialog } from '../../ui/dialog.js';
+import { factionOptions, factionName } from '../../data/factions.js';
+import { transferBuilding } from '../factions/transfers.js';
 
 export function renderBuildingPanel(world, obj, view) {
   const b = world.buildings[obj.refId];
@@ -36,8 +39,9 @@ export function renderBuildingPanel(world, obj, view) {
       'div',
       { class: 'row small' },
       h('span', { class: 'muted' }, `Category: ${category?.name ?? 'none'}`),
-      h('button', { class: 'btn small', onclick: () => navigate({ tab: 'buildings' }) }, 'Edit types'),
+      h('button', { class: 'btn small', onclick: () => navigate({ main: 'codex', sub: 'worldTypes', subsub: 'building' }) }, 'Edit types'),
     ),
+    ...ownerField(world, b),
     ...selectField(
       'Area',
       b.areaId,
@@ -114,4 +118,24 @@ export function changeBuildingType(world, b, typeId) {
     setField(world, 'buildings', b.id, 'buildingTypeId', typeId, b.name),
     missing.length ? setField(world, 'buildings', b.id, 'properties', [...b.properties, ...structuredClone(missing)], b.name) : null,
   ]);
+}
+
+// The owner faction. Changing it is a transfer: logged for both factions.
+function ownerField(world, b) {
+  const select = h('select', { class: 'wide', 'data-key': `${b.id}.owner` }, h('option', { value: '' }, '(no faction)'), factionOptions(world).map((o) => h('option', { value: o.value }, o.label)));
+  select.value = b.ownerFactionId ?? '';
+  select.addEventListener('change', () => {
+    const to = select.value;
+    if (to === (b.ownerFactionId ?? '')) return;
+    const reason = h('input', { type: 'text', class: 'wide', placeholder: 'e.g. Sold, captured, given...' });
+    openDialog({
+      title: `Transfer ${b.name} to ${factionName(world, to)}?`,
+      body: [h('p', {}, 'Both factions get a Day Log entry.'), h('label', {}, 'Reason (optional)'), reason],
+      buttons: [
+        { label: 'Transfer', primary: true, onClick: () => dispatch(transferBuilding(world, b.id, to, reason.value)) },
+        { label: 'Cancel', onClick: () => (select.value = b.ownerFactionId ?? '') },
+      ],
+    });
+  });
+  return [h('label', {}, 'Owner'), select];
 }

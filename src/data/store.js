@@ -65,6 +65,7 @@ export async function closeWorld() {
 
 // ---- Commands, undo, redo ----
 
+// A command with dayBoundary: true (Advance Day) is a wall for undo.
 export function dispatch(command) {
   const day = world.meta.currentDay; // the day the action was taken on
   command.do(world);
@@ -74,13 +75,14 @@ export function dispatch(command) {
     payload: command.payload,
     day,
     time: new Date().toISOString(),
+    ...(command.dayBoundary ? { dayBoundary: true } : {}),
   });
   world.log.redo = []; // a new change makes old redo entries invalid
   changed(command.type);
 }
 
-// Undo only walks back within the current day. Advance Day (Stage 6) will mark
-// its log entry with dayBoundary: true, and undo stops there.
+// Undo only walks back within the current day. Advance Day marks its log
+// entry with dayBoundary: true, and undo stops there.
 export function canUndo() {
   const actions = world?.log.actions;
   return !!actions?.length && !actions[actions.length - 1].dayBoundary;
@@ -104,6 +106,14 @@ export function redo() {
   createCommand(entry.type, entry.payload).do(world);
   world.log.actions.push(entry);
   changed('redo');
+}
+
+// Swaps in a whole new version of the open world AS a change (Reverse Day
+// restoring a snapshot, data/snapshots.js): it is saved, and the world file
+// is told with `type` ('reverseDay' saves the file at once).
+export function replaceWorld(newWorld, type) {
+  world = newWorld;
+  changed(type);
 }
 
 // ---- Autosave ----

@@ -23,6 +23,7 @@ import { defaultThresholds, emptyStageStamps } from './stages.js';
 import { drawBuilding } from './drawBuilding.js';
 import { renderBuildingPanel } from './buildingPanel.js';
 import placeables from './placeables.json';
+import { selectedFactionId } from '../../ui/factionSelector.js';
 
 export function createBuilding(type) {
   return {
@@ -33,6 +34,7 @@ export function createBuilding(type) {
     constructionProgress: 0,
     forcedStage: '',
     projectId: '',
+    ownerFactionId: '', // the faction that owns it (data/factions.js); '' = none
     storage: {},
     properties: structuredClone(type?.defaultProperties ?? []),
     stageStamps: emptyStageStamps(),
@@ -86,6 +88,7 @@ export const buildingKind = {
   },
   create(world, object, typeId) {
     const building = createBuilding(world.definitions.buildingTypes[typeId]);
+    building.ownerFactionId = selectedFactionId(world); // the faction the top bar shows
     building.areaId = areaUnder(world, object.containerId, object);
     object.refId = building.id;
     object.label = building.name;

@@ -1,0 +1,5 @@
+[
+  { "id": "faction_apollyon", "name": "Apollyon", "type": "player", "color": "#d9b37a", "fromTeams": ["Ally"], "trackNeeds": true, "usesStamina": true },
+  { "id": "faction_vulture_pack", "name": "Vulture Pack", "type": "npc", "color": "#c24a4a", "fromTeams": ["Enemy"], "trackNeeds": false, "usesStamina": true },
+  { "id": "faction_unaligned", "name": "Unaligned", "type": "unaligned", "color": "#9a8f82", "fromTeams": [], "trackNeeds": false, "usesStamina": true }
+]

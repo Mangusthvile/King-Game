@@ -16,10 +16,9 @@ import placeables from './placeables.json';
 export default {
   id: 'biomeMap',
   name: 'Biome Map',
-  tabs: [
+  places: [
     {
-      id: 'biome',
-      label: 'Biome Map',
+      path: 'world/biomeMap',
       render: (world, { detailPanel }) => {
         const biome = world.containers[getNavigation(world).biomeId];
         if (!biome) {

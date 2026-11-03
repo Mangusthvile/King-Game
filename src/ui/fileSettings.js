@@ -1,5 +1,6 @@
-// Settings tab: the world file (sync), its backups, and this computer's
-// sync settings. Redraws itself when the sync status changes.
+// The world file (sync) screens of System > Worlds (Save File, Backups) and
+// this computer's settings in System > Preferences (Device Name, Autosave).
+// The world file panel redraws itself when the sync status changes.
 import { h, formatDate } from './dom.js';
 import { fileAccessSupported } from '../sync/worldFile.js';
 import { getSyncState, onSyncStatus, setStatus, saveFileNow, checkNow } from '../sync/fileSync.js';
@@ -20,9 +21,6 @@ const STATUS_TEXT = {
 };
 const WARN = ['permission', 'paused', 'missing', 'error', 'unsupported'];
 
-export function renderFileSettings() {
-  return [worldFilePanel(), computerPanel()];
-}
 
 // Runs a sync action; an error shows in the status line.
 const act = (fn) => async () => {
@@ -33,7 +31,7 @@ const act = (fn) => async () => {
   }
 };
 
-function worldFilePanel() {
+export function worldFilePanel() {
   const panel = h('section', { class: 'frame panel' });
   const draw = () => panel.replaceChildren(...worldFileContent());
   const stop = onSyncStatus(() => (panel.isConnected ? draw() : stop()));
@@ -95,7 +93,20 @@ function worldFileContent() {
       ),
   );
 
-  return [head, intro, status, info, buttons, link?.dirHandle && sync.status !== 'permission' ? backupsSection() : null];
+  return [head, intro, status, info, buttons];
+}
+
+// The backups next to the world file, with Restore (System > Worlds > Backups).
+export function backupsPanel() {
+  const panel = h('section', { class: 'frame panel' });
+  const draw = () => {
+    const sync = getSyncState();
+    const ready = sync.link?.dirHandle && sync.status !== 'permission';
+    panel.replaceChildren(...(ready ? [h('h2', {}, 'Backups'), backupsSection()] : [h('h2', {}, 'Backups'), h('p', { class: 'muted small' }, sync.link ? 'Allow access to the world file first (System > Worlds > Save File).' : 'Backups are made next to the world file. Save this world as a file first (System > Worlds > Save File).')]));
+  };
+  const stop = onSyncStatus(() => (panel.isConnected ? draw() : stop()));
+  draw();
+  return panel;
 }
 
 function backupsSection() {
@@ -122,7 +133,6 @@ function backupsSection() {
   return h(
     'div',
     {},
-    h('h3', {}, 'Backups'),
     h('p', { class: 'muted small' }, `Before the file is overwritten, the old version is copied to the backups folder: at most every ${backupMinutes} minutes, plus whenever the day changes. The newest ${backupsKept} are kept.`),
     list,
   );
@@ -145,22 +155,34 @@ function numberSetting(label, key, min) {
   return [h('label', {}, label), input];
 }
 
-function computerPanel() {
-  const settings = getDeviceSettings();
+// Device Name: what other computers see in "open on" warnings and backups.
+export function deviceNamePanel() {
   const nameInput = h('input', {
     type: 'text',
     class: 'wide',
     maxLength: 40,
-    value: settings.deviceName,
+    value: getDeviceSettings().deviceName,
     onchange: () => {
       const name = nameInput.value.trim();
       if (name) setDeviceSetting('deviceName', name);
       nameInput.value = getDeviceSettings().deviceName;
     },
   });
+  return h(
+    'section',
+    { class: 'frame panel' },
+    h('h2', {}, 'Device name'),
+    h('p', { class: 'muted small' }, "This computer's settings belong to the computer, not the world. Give each computer its own name."),
+    h('label', {}, 'Device name'),
+    nameInput,
+  );
+}
+
+// Autosave to the world file, and how often backups are made.
+export function autosavePanel() {
   const autosave = h('input', {
     type: 'checkbox',
-    checked: settings.autosave,
+    checked: getDeviceSettings().autosave,
     onchange: () => {
       setDeviceSetting('autosave', autosave.checked);
       if (autosave.checked && getSyncState().status === 'pending') saveFileNow();
@@ -169,10 +191,8 @@ function computerPanel() {
   return h(
     'section',
     { class: 'frame panel' },
-    h('h2', {}, 'This computer'),
-    h('p', { class: 'muted small' }, 'These settings belong to this computer (they are not part of the world). Give each computer its own name.'),
-    h('label', {}, 'Device name'),
-    nameInput,
+    h('h2', {}, 'Autosave'),
+    h('p', { class: 'muted small' }, 'For this computer. Every change is always saved on this computer at once; these are about the world file.'),
     h('label', { class: 'check-label' }, autosave, ' Autosave to the world file'),
     ...numberSetting('Autosave delay (seconds without changes)', 'autosaveSeconds', 1),
     ...numberSetting('Backups kept (0 = no backups)', 'backupsKept', 0),

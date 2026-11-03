@@ -7,9 +7,11 @@ import biomeTypeList from './defaults/biomeTypes.json';
 import areaTypeList from './defaults/areaTypes.json';
 import buildingCategoryList from './defaults/buildingCategories.json';
 import speciesList from './defaults/species.json';
-import teamList from './defaults/teams.json';
+import { defaultFactions } from './factions.js';
+import { addStartingCrownBearer } from './crownBearers.js';
+import { defaultConnectivity } from '../rules/connectivity.js';
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 17;
 
 // Regions and Biomes: how many cells of their own map one cell of their
 // parent's map becomes (map/mapFrame.js). Editable per container.
@@ -59,21 +61,18 @@ export function defaultSpecies() {
   return byId(speciesList);
 }
 
-// Character teams: { id, name, color }. In stasis until the Combat stage
-// (kept in the data, hidden in the app).
-export function defaultTeams() {
-  return byId(teamList);
-}
-
 // A new species with nothing set yet (typed in the Region panel or a library).
 export function createSpecies(name) {
   return { id: newId('species'), name, baseStamina: null, hungerMax: null, thirstMax: null, notes: '', defaultFields: {}, customFields: {} };
 }
 
 // World settings (Settings tab). markEdited: Resolution Logs add "(edited)"
-// after a value the Arbiter changed by hand.
+// after a value the Arbiter changed by hand. snapshotsKept: how many
+// end-of-day snapshots Reverse Day can go back to (data/snapshots.js).
+export const DEFAULT_SNAPSHOTS_KEPT = 30;
+
 export function defaultSettings() {
-  return { markEdited: false };
+  return { markEdited: false, snapshotsKept: DEFAULT_SNAPSHOTS_KEPT };
 }
 
 function emptyDefinitions() {
@@ -84,11 +83,14 @@ function emptyDefinitions() {
     buildingTypes: {}, // see systems/buildings/buildingKind.js for the shape
     buildingCategories: defaultBuildingCategories(),
     tileTypes: defaultTileTypes(),
+    // { name, description, tags (e.g. ["Food"]), foodValue (Food per unit,
+    // default 1; used by the Advance Day meal), customFields }
     resourceTypes: {},
     // Character libraries (Characters tab > Libraries); shapes in
     // systems/characters/libraries.js.
-    factions: {}, // { name, color, description, notes }, made by the Arbiter
-    teams: defaultTeams(),
+    // Factions own characters, stockpiles, buildings, Projects and tasks;
+    // shape in data/factions.js. They replaced the old Teams.
+    factions: defaultFactions(),
     species: defaultSpecies(),
     bodyTypes: {},
     skills: {},
@@ -97,6 +99,8 @@ function emptyDefinitions() {
     equipment: {},
     theories: {},
     recipes: {},
+    // The Connectivity levels' reminder text, editable (rules/connectivity.js).
+    connectivity: defaultConnectivity(),
   };
 }
 
@@ -111,6 +115,9 @@ export function createContainer({ kind, parentId = null, name }) {
     name,
     typeId: '', // a regionTypes, biomeTypes or areaTypes id ('' = no type)
     description: '',
+    // Regions, Biomes and Areas: the faction that claims it ('' = none).
+    // The map draws a border in its color.
+    claimFactionId: '',
     // Regions, Biomes and Areas: has it been discovered? Resolution Logs
     // show an undiscovered place as [undiscoveredName] (Location Name Not Discovered).
     discovered: true,
@@ -138,7 +145,7 @@ export function createWorld(name) {
   const now = new Date().toISOString();
   const root = createContainer({ kind: 'world', name });
 
-  return {
+  const world = {
     schemaVersion: SCHEMA_VERSION,
     meta: {
       id: newId('world'),
@@ -153,22 +160,33 @@ export function createWorld(name) {
     containers: { [root.id]: root },
     placedObjects: {},
     buildings: {}, // see systems/buildings/buildingKind.js for the shape
+    players: {}, // { name, factionIds, connections, notes, customFields }, see data/factions.js and data/crownBearers.js
+    crownBearers: {}, // see data/crownBearers.js
+    crowns: {}, // relic items attuned to a Crown Bearer, see data/crownBearers.js
     characters: {}, // followers, enemies and NPCs: see systems/characters/characterModel.js
     projects: {}, // see systems/projects/projectModel.js for the shape
-    // The Day Log: each day's Resolution Logs and narration, in order.
-    // { [day]: { id: String(day), day, entries: [{ id, kind, method, refId, text }] } }
+    // Simple tasks (systems/time/taskModel.js, owned by a faction): Stamina spent on anything
+    // that has no Resolution Method yet (searching, teaching, scouting...).
+    tasks: {},
+    // The Day Log: each day's Start of Day records (one per Player faction),
+    // Resolution Logs, tasks, narration and Advance Day summaries, in order,
+    // each entry tagged with its faction.
+    // { [day]: { id: String(day), day, startOfDays: { factionId: record },
+    //            entries: [{ id, kind, method, refId, factionId, text }] } }
     // (see data/dayLog.js)
     dayLogs: {},
-    stockpiles: {
-      kingdom: {}, // { resourceTypeId: count }
-      byLocation: {}, // { buildingOrContainerId: { resourceTypeId: count } }
-    },
+    // Minimal until the Resources stage (systems/resources/stockpileModel.js):
+    // { [id]: { id, name, ownerFactionId, placeId ('' = the faction's main
+    //   stockpile), counts: { resourceTypeId: count }, notes, customFields } }
+    stockpiles: {},
     log: {
       actions: [], // command entries: { id, type, payload, day, time }
       redo: [], // undone entries that can be redone
-      snapshots: [], // start-of-day snapshots (used from Stage 6)
+      snapshots: [], // end-of-day snapshots for Reverse Day (data/snapshots.js)
     },
   };
+  addStartingCrownBearer(world); // the First Sky King of Apollyon
+  return world;
 }
 
 // A short summary stored separately so the world list loads fast.

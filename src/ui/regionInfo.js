@@ -6,12 +6,13 @@ import { dispatch } from '../data/store.js';
 import { createSpecies } from '../data/schema.js';
 import { setField, addRecord, batch } from '../commands/recordCommands.js';
 import { chipList } from './fields.js';
-import { nameAndType, discoveryFields, descriptionField, notesField, childList, mapScaleField } from './containerFields.js';
+import { claimField, nameAndType, discoveryFields, descriptionField, notesField, childList, mapScaleField } from './containerFields.js';
 import { enterContainer } from './navigation.js';
 
 export function renderRegionInfo(world, region) {
   return [
     ...nameAndType(world, region),
+    ...claimField(world, region),
     ...discoveryFields(world, region),
     ...descriptionField(world, region),
     ...speciesField(world, region),

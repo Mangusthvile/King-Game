@@ -26,6 +26,22 @@ There are 100 Levels of Authority with the maximum of allowing them to reach Low
 4. ???
 5. ???. Gain the the Choice of a Second Follower species. Upgrade the Spark of Change to be able to alter Life itself.
 
+Crown Bearers
+Players are Crown Bearers: a spirit attached to a Crown containing a System. The Crown is what allows them to use its powers, form a civilization, and use the Spark of Change. Even if their current vessel dies, as long as the Crown is recovered they can gain another vessel. Crown recovery is played out in the writing; there are no rules for it.
+
+Connectivity (subject to change in the future)
+Connectivity is the link between the Player and the Crown Bearer.
+10: The maximum. Basically you; they'll say what you say word for word. 10 can only be achieved through special circumstances.
+9: Where you're normally at. You're the voice of the character's thoughts, and while your actions may come out slightly different, they'll still always hold the same intentions.
+8: You're still the voice of their thoughts, but they may have thoughts of their own. You may see hesitation in actions or the occasional thought pop up in the text.
+7: The Crown Bearer's personality will begin to shine through a bit. Your choices may be slightly restricted if they don't align with the moral values of the Crown Bearer.
+6: They may fully refuse to do some of the things you want to do. Instead they'll do nothing unless you assign them a task they agree with.
+5: The text no longer refers to the Crown Bearer as you, but by the Crown Bearer's preferred pronouns. All your actions will be converted and fully changed to fit the Crown Bearer's wishes. They cannot use the Spark of Change.
+4: Much the same as 5, but the only thing you can do is give a suggestion on what you believe is a goal you want to meet today.
+3: They can access the Spark of Change. Same as 4 in all other aspects.
+2: You can voice your opinion, but the Crown Bearer is free to ignore it and do what they wish, including killing themselves if they so wish.
+1: They have full reign to do whatever they wish; you have no control. Their actions may influence other days with high Connectivity, forcing you to continue their actions or other things they wanted to do.
+
 Followers
 Followers are the most important resources for a Ruler.
 

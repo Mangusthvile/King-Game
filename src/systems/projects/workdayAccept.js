@@ -86,6 +86,6 @@ export function acceptWorkday(world, draft, resolved, log) {
     buildingSync(world, project, after),
     ...stamina,
     ...conditions,
-    addDayLogEntry(world, record.day, newEntry('resolution', log, { method: 'project', refId: project.id })),
+    addDayLogEntry(world, record.day, newEntry('resolution', log, { method: 'project', refId: project.id, factionId: project.ownerFactionId ?? '' })),
   ]);
 }

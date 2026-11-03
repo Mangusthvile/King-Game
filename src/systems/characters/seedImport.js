@@ -8,8 +8,9 @@ import { newId } from '../../data/ids.js';
 import { addRecord, batch } from '../../commands/recordCommands.js';
 import { library, libraryPath } from './libraries.js';
 import { createCharacter, COMBAT_FIELDS } from './characterModel.js';
+import { factionIdForTeam } from '../../data/factions.js';
 
-const ORDER = ['traits', 'conditions', 'equipment', 'skills', 'species', 'teams', 'bodyTypes'];
+const ORDER = ['traits', 'conditions', 'equipment', 'skills', 'species', 'bodyTypes'];
 const lower = (s) => String(s ?? '').trim().toLowerCase();
 const text = (v) => (v === null || v === undefined ? '' : v);
 
@@ -100,7 +101,7 @@ export function buildImportPlan(world, bodyFile, charFile) {
     const speciesId = ensure('species', raw.species, flags, who);
     const values = {
       name: raw.name,
-      teamId: ensure('teams', raw.team, flags, who),
+      ...factionFor(world, raw.team, flags, who),
       speciesId,
       bodyTypeId: ensure('bodyTypes', raw.bodyType, flags, who),
       bodyTypeLevel: raw.bodyTypeLevel ?? 1,
@@ -133,6 +134,18 @@ export function buildImportPlan(world, bodyFile, charFile) {
     plan.characters.push({ character, flags, include: !duplicate });
   }
   return plan;
+}
+
+// The seed files still say "team": Ally, Enemy... Each becomes its starter
+// faction (data/factions.js: Ally -> Apollyon, Enemy -> Vulture Pack, other
+// -> Unaligned), with the faction history starting today.
+function factionFor(world, team, flags, who) {
+  const id = factionIdForTeam(team);
+  if (!world.definitions.factions?.[id]) {
+    flags.push(`${who}: no faction for the team "${team}" in this world (left without a faction)`);
+    return { factionId: '', factionHistory: [] };
+  }
+  return { factionId: id, factionHistory: [{ factionId: id, fromDay: world.meta.currentDay, toDay: null, reason: 'Seed import' }] };
 }
 
 // Puts a value into the custom field with that name, adding the field if

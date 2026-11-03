@@ -8,6 +8,7 @@ import { buildOccupancy, objectAtCell, fitsBounds, isSpaceFree } from './grid.js
 import { attachPointerEvents } from './mapPointer.js';
 import { boardPanBox } from './mapFrame.js';
 import { drawMap } from './renderer.js';
+import { factionColor } from '../data/factions.js';
 import { onSpriteLoad } from './sprites.js';
 import { TOOLS } from './tools.js';
 import { getCamera, setCamera } from './cameraStore.js';
@@ -218,6 +219,8 @@ export function mountMapView({ world, containerId, placeables, detailPanel, head
         return previews.get(obj.id);
       },
       badgeOf: (obj) => mapBadge(world, obj),
+      // A Region, Biome or Area claimed by a faction gets a border in its color.
+      claimOf: (obj) => factionColor(world, world.containers[obj.refId]?.claimFactionId) || null,
       hoverLabel: hoverObj ? { text: objectName(world, hoverObj), x: view.hoverCell.x, y: view.hoverCell.y } : null,
       bounds: frame?.bounds,
       backdrop: frame?.backdrop,

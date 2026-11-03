@@ -8,6 +8,7 @@
 //      notes, and finally "Accept this workday? Y/N".
 // "Edit details" (the full controls) can change any value at any time.
 import { h } from '../../ui/dom.js';
+import { isPlayerView } from '../../ui/factionSelector.js';
 import { dispatch } from '../../data/store.js';
 import { renderTaskCard, infoRow, dangerMeter, memberTile, progressBar, copyText } from '../../ui/taskCard.js';
 import { logPlaceName, dangerAt } from '../../data/places.js';
@@ -189,7 +190,7 @@ export function renderWorkdayCard(world, refresh) {
     controls: setup ? null : editDetails(world, draft, resolved, draft.logText ?? script.lines.join('\n'), refresh),
     position: view.cardPos,
     onMove: (pos) => (view.cardPos = pos),
-    playerView: view.playerView,
+    playerView: view.playerView || isPlayerView(world), // the card's own toggle, or the top bar's
     onTogglePlayerView: () => ((view.playerView = !view.playerView), refresh()),
     onClose: () => ((view.cardOpen = false), refresh()),
   });

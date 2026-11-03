@@ -155,22 +155,34 @@ function spritePicker(obj, onKey) {
 
 function tileTypesPanel(view) {
   const { world, state } = view;
+  return tileTypesEditor(world, {
+    activeId: state.tileTypeId,
+    pickTitle: 'Use this tile',
+    onPick: (id) => {
+      state.tileTypeId = id;
+      if (state.tool !== 'paint') view.setTool('paint');
+      else view.refreshUi();
+    },
+    onAdd: (id) => (state.tileTypeId = id),
+  });
+}
+
+// The tile type list: name, color, delete, add. Shared by the Paint tool's
+// panel and Codex > World Types > Tile Types. onPick(id): a swatch was
+// clicked (optional); onAdd(id): a type was added (optional).
+export function tileTypesEditor(world, { activeId = '', onPick = null, onAdd = null, pickTitle = '' } = {}) {
   const types = world.definitions.tileTypes;
   const path = 'definitions.tileTypes';
 
   const rows = Object.values(types).map((t) =>
     h(
       'div',
-      { class: t.id === state.tileTypeId ? 'tile-row active' : 'tile-row' },
+      { class: t.id === activeId ? 'tile-row active' : 'tile-row' },
       h('button', {
         class: 'swatch',
         style: `background:${t.color}`,
-        title: 'Use this tile',
-        onclick: () => {
-          state.tileTypeId = t.id;
-          if (state.tool !== 'paint') view.setTool('paint');
-          else view.refreshUi();
-        },
+        title: pickTitle,
+        onclick: () => onPick?.(t.id),
       }),
       h('input', {
         type: 'text',
@@ -188,7 +200,7 @@ function tileTypesPanel(view) {
 
   return [
     h('h2', {}, 'Tile Types'),
-    h('p', { class: 'muted small' }, 'Click a swatch to paint with it. Names and colors are editable.'),
+    h('p', { class: 'muted small' }, onPick ? 'Click a swatch to paint with it. Names and colors are editable.' : 'The paint colors of every map. Names and colors are editable; paint with them using the Paint tool on a map.'),
     h('div', { class: 'tile-list' }, rows),
     h(
       'button',
@@ -196,7 +208,7 @@ function tileTypesPanel(view) {
         class: 'btn small',
         onclick: () => {
           const tile = { id: newId('tile'), name: 'New Tile', color: '#777777', spriteKey: '' };
-          state.tileTypeId = tile.id;
+          onAdd?.(tile.id);
           dispatch(addRecord(path, tile));
         },
       },

@@ -15,6 +15,7 @@ import { renderAbilities } from './abilitiesSection.js';
 import { renderGear } from './gearSection.js';
 import { deathForm, deathDetails } from './death.js';
 import { staminaInput, staminaNote } from './staminaSection.js';
+import { renderFactionSection } from './factionSection.js';
 import { charactersView as view } from './state.js';
 
 // refresh(): redraws the panel after a view-only change (opening a helper).
@@ -27,10 +28,7 @@ export function renderCharacterPanel(world, c, refresh) {
   return [
     h('h2', {}, c.alive ? 'Character' : 'Character (dead)', faction ? h('span', { class: 'team-chip', style: swatchStyle(faction.color) }, faction.name) : null),
     ...textField('Name', c.name, (v) => v.trim() && set('name')(v.trim()), { key: key('name') }),
-    ...selectField('Faction', c.factionId ?? '', [{ value: '', label: '(none)' }, ...refOptions(world, 'factions')], set('factionId'), {
-      key: key('faction'),
-      missingLabel: () => '(deleted faction)',
-    }),
+    ...renderFactionSection(world, c),
     ...selectField('Species', c.speciesId, [{ value: '', label: '(none)' }, ...refOptions(world, 'species')], (id) => id !== c.speciesId && dispatch(changeSpecies(world, c, id)), {
       key: key('species'),
       missingLabel: () => '(deleted species)',

@@ -33,6 +33,7 @@ const COLORS = {
 //              mini preview of a child map drawn inside an outlined object
 //   hoverLabel: optional { text, x, y } name shown beside the hovered cell
 //   badgeOf:   optional (obj) => { text } or null, a tag on the object's corner
+//   claimOf:   optional (obj) => a faction color or null: the claiming faction's border
 //   displayOf: 'block' (filled square) or 'outline' (border and name only)
 //   customDraw: optional (obj) => draw(ctx, rect, { name, zoom }) or null, for
 //              kinds that draw their own placeholder (buildings). A sprite still wins.
@@ -71,6 +72,8 @@ export function drawMap(ctx, width, height, world, container, view) {
       const draw = outline ? drawOutlineObject : drawObject;
       draw(ctx, obj, view.objectName(obj), cam, selected);
     }
+    const claim = view.claimOf?.(obj);
+    if (claim) drawClaim(ctx, obj, claim, cam);
     const badge = view.badgeOf?.(obj);
     if (badge) drawBadge(ctx, obj, badge.text, cam);
   }
@@ -236,6 +239,23 @@ function drawCustom(ctx, obj, name, cam, selected, draw) {
     ctx.lineWidth = 3;
     ctx.strokeRect(rect.x - 2, rect.y - 2, rect.w + 4, rect.h + 4);
   }
+}
+
+// A claimed section: a dashed border in the claiming faction's color, just
+// inside its own outline.
+function drawClaim(ctx, obj, color, cam) {
+  const a = cellToScreen(cam, obj.x, obj.y);
+  const b = cellToScreen(cam, obj.x + obj.w, obj.y + obj.h);
+  const inset = Math.max(5, Math.min(9, Math.floor(cam.zoom / 4)));
+  const width = Math.max(2, Math.min(4, Math.floor(cam.zoom / 8)));
+  ctx.lineWidth = width + 2;
+  ctx.strokeStyle = '#000';
+  ctx.setLineDash([8, 4]);
+  ctx.strokeRect(a.x + inset, a.y + inset, b.x - a.x - inset * 2, b.y - a.y - inset * 2);
+  ctx.lineWidth = width;
+  ctx.strokeStyle = color;
+  ctx.strokeRect(a.x + inset, a.y + inset, b.x - a.x - inset * 2, b.y - a.y - inset * 2);
+  ctx.setLineDash([]);
 }
 
 // Outline style (Regions on the World Map): only a border and the name, so

@@ -1,0 +1,21 @@
+==============================
+Day {{day}} - Start of Day: {{factionName}}
+==============================
+{{#connectivity}}
+Connectivity: {{item}}
+{{/connectivity}}
+{{#sparkOfChange}}
+Spark of Change: {{sparkOfChange}}
+{{/sparkOfChange}}
+{{#sparkOfBalance}}
+Spark of Balance: {{sparkOfBalance}}
+{{/sparkOfBalance}}
+{{#followersOffered}}
+Followers Offered: {{followersOffered}}{{decisionText}}
+{{/followersOffered}}
+{{#dayEvent}}
+Day Event: {{dayEvent}}
+{{/dayEvent}}
+{{#notes}}
+Notes: {{notes}}
+{{/notes}}

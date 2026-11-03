@@ -1,0 +1,15 @@
+Day {{day}} - Task {{taskNumber}}: {{description}}
+==============================
+Location: {{location}}
+Danger Level: {{danger}}
+Participants ({{partySize}}): {{participantNames}}
+
+Stamina Spent:
+{{#participants}}
+{{name}} has spent {{stamina}} Stamina on this task.
+{{/participants}}
+
+Result: {{result}}
+{{#notes}}
+Notes: {{notes}}
+{{/notes}}

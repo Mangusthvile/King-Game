@@ -37,8 +37,11 @@ export function formatDate(iso) {
 // finishing one field by clicking another (Description, then Notes) would
 // lose that click. Fields with a data-key get the focus back after a redraw.
 let pressedKey = null;
-window.addEventListener('pointerdown', (e) => (pressedKey = e.target.closest?.('[data-key]')?.dataset.key ?? null), true);
-window.addEventListener('pointerup', () => (pressedKey = null), true);
+// (Only in a browser: rules tests load some UI files under Node.)
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', (e) => (pressedKey = e.target.closest?.('[data-key]')?.dataset.key ?? null), true);
+  window.addEventListener('pointerup', () => (pressedKey = null), true);
+}
 
 export function restoreFocus(root) {
   if (!pressedKey) return;

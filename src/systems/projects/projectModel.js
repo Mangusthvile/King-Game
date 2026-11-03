@@ -17,6 +17,8 @@
 //                            (refId: resourceTypes), 'tool' (equipment),
 //                            'skill' (skills) or 'other'. Unmet ones warn only.
 //     workdays,              [workday]  see workdayAccept.js
+//     ownerFactionId,        the faction whose Project it is ('' = none);
+//                            its workday logs go to that faction's Day Log
 //     createdDay, notes, customFields }
 // Characters working on it have assignmentProjectId = its id.
 import { newId } from '../../data/ids.js';
@@ -42,7 +44,7 @@ export function statusName(id) {
   return STATUSES.find((s) => s.id === id)?.name ?? id;
 }
 
-export function createProject(world, { name = 'New Project', sizeLabel = '', workloadRequired = 0 } = {}) {
+export function createProject(world, { name = 'New Project', sizeLabel = '', workloadRequired = 0, ownerFactionId = '' } = {}) {
   return {
     id: newId('project'),
     name,
@@ -55,6 +57,7 @@ export function createProject(world, { name = 'New Project', sizeLabel = '', wor
     locationContainerId: '',
     requirements: [],
     workdays: [],
+    ownerFactionId,
     createdDay: world.meta.currentDay,
     notes: '',
     customFields: {},
@@ -146,7 +149,7 @@ export function linkBuilding(world, project, buildingId) {
 export function createProjectForBuilding(world, buildingId, values) {
   const b = world.buildings[buildingId];
   const obj = Object.values(world.placedObjects).find((o) => o.kind === 'building' && o.refId === buildingId);
-  const project = { ...createProject(world, values), siteBuildingId: buildingId, locationContainerId: b.areaId || obj?.containerId || '' };
+  const project = { ...createProject(world, { ownerFactionId: b.ownerFactionId ?? '', ...values }), siteBuildingId: buildingId, locationContainerId: b.areaId || obj?.containerId || '' };
   return {
     project,
     command: batch(`Created the Project "${project.name}" for ${b.name}`, [

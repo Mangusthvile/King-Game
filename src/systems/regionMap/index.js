@@ -15,10 +15,9 @@ import placeables from './placeables.json';
 export default {
   id: 'regionMap',
   name: 'Region Map',
-  tabs: [
+  places: [
     {
-      id: 'region',
-      label: 'Region Map',
+      path: 'world/regionMap',
       render: (world, { detailPanel }) => {
         const region = world.containers[getNavigation(world).regionId];
         if (!region) {

@@ -15,6 +15,7 @@ import { STATUSES, setWorkload, setSize, setDriveBuilding, linkBuilding, markCom
 import { requirementsEditor } from './requirementsEditor.js';
 import { newDraft } from './workdayDraft.js';
 import { projectsView as view } from './state.js';
+import { factionOptions } from '../../data/factions.js';
 
 function workloadFields(world, p) {
   const box = (field) =>
@@ -181,6 +182,7 @@ export function renderProjectPanel(world, p, refresh) {
     h('h2', {}, 'Project'),
     ...workdayButton(world, p, refresh),
     ...textField('Name', p.name, (v) => v.trim() && set('name')(v.trim()), { key: key('name') }),
+    ...selectField('Owner faction', p.ownerFactionId ?? '', [{ value: '', label: '(no faction)' }, ...factionOptions(world)], set('ownerFactionId'), { key: key('owner'), missingLabel: () => '(deleted faction)' }),
     ...selectField('Status', p.status, STATUSES.map((s) => ({ value: s.id, label: s.name })), set('status'), { key: key('status') }),
     ...workloadFields(world, p),
     ...siteFields(world, p),

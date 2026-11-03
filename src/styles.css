@@ -2008,3 +2008,470 @@ input.setup-tool {
   width: auto;
   max-width: none;
 }
+
+/* ---- Stage 6: Resources stockpile ---- */
+.stock-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) 150px minmax(140px, 1.4fr) 120px 36px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.stock-row.add {
+  grid-template-columns: minmax(140px, 1.4fr) 70px auto;
+  justify-content: start;
+  margin-top: 8px;
+}
+
+.stock-row.add datalist {
+  display: none;
+}
+
+.stock-food input {
+  width: 60px;
+}
+
+/* ---- Stage 6: Today tab ---- */
+input.tiny-input {
+  width: 52px;
+}
+
+.today-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.2fr) 70px minmax(140px, 1.6fr) 80px 80px minmax(80px, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 3px;
+  font-size: 13px;
+  background: #1a1511;
+  border: 2px solid var(--panel-inner);
+}
+
+.today-row.today-header {
+  background: none;
+  border-color: transparent;
+}
+
+.link-button {
+  padding: 0;
+  font-family: var(--font);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--tag-border);
+  text-decoration: underline;
+}
+
+.meter.speed.spent {
+  opacity: 0.6;
+}
+
+.meter.thirst {
+  background: #1c3f4a;
+}
+
+.meter.hunger.warn {
+  background: var(--danger);
+}
+
+.ready-row {
+  flex-wrap: wrap;
+}
+
+.ready-chip {
+  padding: 3px 8px;
+  font-size: 13px;
+  border: 2px solid var(--accent-light);
+  color: #7fd36a;
+}
+
+.ready-chip.warn {
+  border-color: #e0b050;
+  color: #e0b050;
+}
+
+.activity-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  background: var(--panel-inner);
+}
+
+.activity-row > .ellipsis {
+  flex: 1;
+}
+
+/* ---- Stage 6: Advance Day wizard ---- */
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.btn.skipped {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.wizard-body {
+  margin: 10px 0;
+}
+
+.wizard-body.skipped {
+  opacity: 0.45;
+}
+
+.wizard-body h3 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  font-weight: normal;
+  color: var(--tag-border);
+}
+
+.wizard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 3px;
+  background: var(--panel-inner);
+  border: 2px solid transparent;
+}
+
+.wizard-row.warn {
+  border-color: #e0b050;
+}
+
+.wizard-name {
+  min-width: 140px;
+}
+
+.wizard-name.wide-name {
+  min-width: 250px;
+}
+
+.wizard-cell {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 160px;
+}
+
+.wizard-list {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.wizard-list li {
+  margin-bottom: 3px;
+}
+
+.wizard-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.wizard-nav {
+  margin-top: 12px;
+}
+
+.day-log-entry.start-of-day {
+  border-color: var(--tag-border);
+}
+
+/* ---- Stage 6.5: Factions ---- */
+.faction-select {
+  max-width: 200px;
+}
+
+.faction-row,
+.review-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 110px minmax(200px, 2fr) 110px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 5px 8px;
+  margin-bottom: 3px;
+  font-family: var(--font);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: #1a1511;
+  border: 2px solid var(--panel-inner);
+  cursor: pointer;
+}
+
+.faction-row.selected {
+  border-color: var(--tag-border);
+}
+
+.review-row {
+  grid-template-columns: minmax(200px, 1fr) 200px;
+  cursor: default;
+}
+
+.relation-row {
+  margin-bottom: 4px;
+}
+
+.relations-table td,
+.relations-table th {
+  text-align: center;
+}
+
+.stance-select {
+  border-left: 4px solid var(--muted);
+}
+
+.stance-allied {
+  border-left-color: #3f8f3a;
+}
+
+.stance-friendly {
+  border-left-color: #6aa84f;
+}
+
+.stance-wary {
+  border-left-color: #d9a74a;
+}
+
+.stance-hostile {
+  border-left-color: #c26a3a;
+}
+
+.stance-atWar {
+  border-left-color: #c24a4a;
+}
+
+.player-row {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: var(--panel-inner);
+}
+
+.faction-heading {
+  margin: 14px 0 6px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid var(--frame);
+  color: var(--tag-border);
+}
+
+.wizard-faction {
+  margin-bottom: 14px;
+}
+
+.wizard-body h4 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--frame-light);
+}
+
+.today-row .link-button {
+  padding-left: 6px;
+  border-left: 4px solid var(--swatch, transparent);
+}
+
+.faction-history {
+  margin: 4px 0 8px;
+}
+
+/* ---- Stage 6.6: Crown Bearers ---- */
+.bearer-row {
+  display: grid;
+  grid-template-columns: 40px minmax(150px, 1.3fr) 120px minmax(110px, 1fr) 90px minmax(120px, 1.2fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 5px 8px;
+  margin-bottom: 3px;
+  font-family: var(--font);
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: #1a1511;
+  border: 2px solid var(--panel-inner);
+  cursor: pointer;
+}
+
+.bearer-row.selected {
+  border-color: var(--tag-border);
+}
+
+.vessel-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: var(--panel-inner);
+}
+
+.portrait.large {
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+}
+
+.connectivity-box {
+  padding: 6px 8px;
+  margin: 4px 0 8px;
+  background: var(--panel-inner);
+  border-left: 3px solid var(--tag-border);
+}
+
+.connectivity-text {
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.connectivity-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.connectivity-row textarea {
+  width: 100%;
+}
+
+.vessel-line {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) 52px 52px minmax(90px, 1.4fr) 28px;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+/* ---- Stage 6.7: navigation (main tabs, sub-tabs, sub-sub-tabs, quick bar) ----
+   Shared component classes: Stage 8.5 reskins these, not each screen. */
+.top-bar {
+  flex-wrap: wrap;
+}
+
+.tab-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #161210;
+  border-bottom: 3px solid var(--frame);
+}
+
+.main-tab-row,
+.sub-tab-row,
+.subsub-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.main-tab,
+.sub-tab,
+.subsub-tab {
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--panel-inner);
+  border: 2px solid var(--frame);
+  box-shadow: 0 2px 0 #000;
+  cursor: pointer;
+}
+
+.main-tab:hover,
+.sub-tab:hover,
+.subsub-tab:hover {
+  background: #3a302a;
+}
+
+/* Main tabs: large icon-and-label buttons. */
+.main-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 96px;
+  padding: 6px 14px;
+  font-size: 15px;
+  border-width: 3px;
+}
+
+.main-tab .tab-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Sub-tabs: a row of smaller buttons. */
+.sub-tab {
+  min-width: 120px;
+  padding: 5px 14px;
+  font-size: 14px;
+}
+
+/* Sub-sub-tabs: a smaller row again. */
+.subsub-tab {
+  padding: 3px 12px;
+  font-size: 12px;
+}
+
+.main-tab.active,
+.sub-tab.active {
+  color: #fff;
+  border-color: var(--tag-border);
+  background: #3a2a20;
+}
+
+.subsub-tab.active {
+  color: #fff;
+  border-color: var(--danger-light);
+  background: var(--danger);
+}
+
+.quick-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #161210;
+  border-top: 3px solid var(--frame);
+}
+
+.quick-title {
+  margin-right: 4px;
+}
+
+.quick-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.selected-row td {
+  background: var(--panel-inner);
+}
+
+.rule-file {
+  margin-bottom: 4px;
+}
+
+.rule-file > summary {
+  cursor: pointer;
+}

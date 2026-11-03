@@ -1,6 +1,7 @@
-// The Projects tab: a form to create a Project, the list of all Projects
-// (status, Workload bar, site, assigned characters), and the workday Task
-// Card when one is open. The selected Project fills the right-hand panel.
+// Realm > Projects (Active, Planned, Completed): a form to create a
+// Project, the list of the faction's Projects with that status (status,
+// Workload bar, site, assigned characters), and the workday Task Card when
+// one is open. The selected Project fills the right-hand panel.
 import { h, restoreFocus } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { addRecord } from '../../commands/recordCommands.js';
@@ -10,8 +11,14 @@ import { createProject, STATUSES, statusName, siteBuilding, assignedCharacters }
 import { renderProjectPanel } from './projectPanel.js';
 import { renderWorkdayCard } from './workdayCard.js';
 import { projectsView as view, selectProject } from './state.js';
+import { selectedFactionId } from '../../ui/factionSelector.js';
+import { ownedBy } from '../../data/factions.js';
 
-export function renderProjectsTab(world, { detailPanel }) {
+// Which statuses each screen lists. Paused Projects are with the Active ones.
+const SCREEN_STATUSES = { active: ['active', 'paused'], planned: ['planned'], completed: ['complete'] };
+
+export function renderProjectsTab(world, { detailPanel, path }) {
+  const statuses = SCREEN_STATUSES[path.split('/')[2]] ?? null;
   // The Task Card window is positioned inside the whole center area (.content),
   // so it can be dragged right up to the side panel.
   const root = h('div', { class: 'tab-page wide-page projects-page' });
@@ -21,7 +28,7 @@ export function renderProjectsTab(world, { detailPanel }) {
     if (view.workday && !world.projects[view.workday.projectId]) view.workday = null; // its Project was deleted or undone
     const showCard = view.workday && view.cardOpen;
     // The Task Card floats over the list as a window.
-    root.replaceChildren(newProjectForm(world), projectList(world, refresh), showCard ? renderWorkdayCard(world, refresh) : '');
+    root.replaceChildren(newProjectForm(world), projectList(world, refresh, statuses), showCard ? renderWorkdayCard(world, refresh) : '');
     // flat: panel sections may return nested lists; filter drops empty parts
     // (replaceChildren would print them as text).
     detailPanel.replaceChildren(...detail(world, refresh).flat(Infinity).filter(Boolean));
@@ -32,7 +39,8 @@ export function renderProjectsTab(world, { detailPanel }) {
 }
 
 function detail(world, refresh) {
-  const p = world.projects[view.selectedId];
+  // Only a Project of the faction the selector shows.
+  const p = [world.projects[view.selectedId]].find((x) => x && ownedBy(x, selectedFactionId(world)));
   if (!p) {
     return [h('h2', {}, 'Projects'), h('p', { class: 'muted small' }, 'Create a Project, or click one in the list to edit it and start a workday.')];
   }
@@ -54,7 +62,7 @@ function newProjectForm(world) {
       onsubmit: (e) => {
         e.preventDefault();
         const chosen = PROJECT_SIZES.find((s) => s.id === size.value);
-        const p = createProject(world, { name: name.value.trim() || 'New Project', sizeLabel: chosen.name, workloadRequired: chosen.workload });
+        const p = createProject(world, { name: name.value.trim() || 'New Project', sizeLabel: chosen.name, workloadRequired: chosen.workload, ownerFactionId: selectedFactionId(world) });
         selectProject(p.id);
         dispatch(addRecord('projects', p));
       },
@@ -70,23 +78,18 @@ function newProjectForm(world) {
 
 const STATUS_ORDER = Object.fromEntries(STATUSES.map((s, i) => [s.id, i]));
 
-function projectList(world, refresh) {
-  const all = Object.values(world.projects);
+// statuses: the ones this screen lists (null = all).
+function projectList(world, refresh, statuses) {
+  // Only the Projects of the faction the top bar shows.
+  const all = Object.values(world.projects).filter((p) => ownedBy(p, selectedFactionId(world)));
   const list = all
-    .filter((p) => !view.statusFilter || p.status === view.statusFilter)
+    .filter((p) => !statuses || statuses.includes(p.status))
     .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.name.localeCompare(b.name));
-  const filter = h(
-    'select',
-    { title: 'Status', onchange: (e) => ((view.statusFilter = e.target.value), refresh()) },
-    h('option', { value: '' }, 'All statuses'),
-    STATUSES.map((s) => h('option', { value: s.id }, s.name)),
-  );
-  filter.value = view.statusFilter;
 
   return h(
     'section',
     { class: 'frame panel' },
-    h('div', { class: 'row' }, h('h2', {}, `Projects (${list.length} of ${all.length})`), h('div', { class: 'spacer' }), filter),
+    h('div', { class: 'row' }, h('h2', {}, `Projects: ${statuses ? statuses.map(statusName).join(' and ') : 'all'} (${list.length} of ${all.length})`)),
     list.length
       ? [
           h('div', { class: 'project-row project-header small muted' }, ['Name', 'Status', 'Workload', 'Site', 'Assigned'].map((t) => h('span', {}, t))),

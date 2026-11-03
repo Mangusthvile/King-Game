@@ -7,7 +7,9 @@ import './systems/registry.js'; // every game system and its commands
 import { getWorld, openWorld, closeWorld, subscribe, undo, redo } from './data/store.js';
 import { renderWorldList } from './ui/worldListScreen.js';
 import { renderWorldScreen, updateSaveStatus } from './ui/worldScreen.js';
-import { setNavigationListener } from './ui/navigation.js';
+import { setNavigationListener, navigate } from './ui/navigation.js';
+import { MAIN_TABS } from './ui/tabLayout.js';
+import { isPlayerView } from './ui/factionSelector.js';
 import { attachFileSync, closeFileSync, setSyncCloseHandler } from './sync/fileSync.js';
 
 const root = document.getElementById('app');
@@ -50,6 +52,18 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     redo();
   }
+});
+
+// Keys 1 to 6 open the main tabs (not while typing, not with Ctrl/Alt, and
+// not Codex in Player View).
+window.addEventListener('keydown', (e) => {
+  const world = getWorld();
+  if (!world || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.dialog-overlay')) return;
+  if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+  const main = MAIN_TABS[Number(e.key) - 1];
+  if (!/^[1-6]$/.test(e.key) || !main || (main.arbiterOnly && isPlayerView(world))) return;
+  e.preventDefault();
+  navigate({ main: main.id });
 });
 
 render();

@@ -22,7 +22,7 @@ function characterList(world, characters, hostId) {
           style: `border-color:${world.definitions.factions?.[c.factionId]?.color ?? ''}`,
           onclick: () => {
             selectCharacter(c.id);
-            navigate({ tab: 'characters' });
+            navigate({ main: 'people', sub: 'roster', subsub: 'living' });
           },
         },
         c.name,

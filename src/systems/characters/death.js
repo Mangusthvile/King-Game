@@ -5,14 +5,26 @@ import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField, batch } from '../../commands/recordCommands.js';
 
+// Other systems react to a death without this file knowing them (the Crown
+// Bearers system: a vessel died). hook: { commands(world, character, cause,
+// day) -> [commands] added to the same undo step, after(world, character)
+// -> run once it is done, e.g. to ask a question }.
+const deathHooks = [];
+
+export function registerDeathHook(hook) {
+  deathHooks.push(hook);
+}
+
 export function markDead(world, character, cause, day) {
   const areas = Object.values(world.containers).filter((c) => c.assignedFollowerIds?.includes(character.id));
+  const extra = deathHooks.flatMap((hook) => hook.commands?.(world, character, cause, day) ?? []);
   return batch(`${character.name} died (${cause || 'unknown cause'}, Day ${day})`, [
     setField(world, 'characters', character.id, 'alive', false, character.name),
     setField(world, 'characters', character.id, 'death', { cause, day }, character.name),
     character.currentAssignment ? setField(world, 'characters', character.id, 'currentAssignment', '', character.name) : null,
     character.assignmentProjectId ? setField(world, 'characters', character.id, 'assignmentProjectId', '', character.name) : null,
     ...areas.map((a) => setField(world, 'containers', a.id, 'assignedFollowerIds', a.assignedFollowerIds.filter((id) => id !== character.id), a.name)),
+    ...extra,
   ]);
 }
 
@@ -38,6 +50,7 @@ export function deathForm(world, character, onClose) {
         if (!Number.isInteger(n)) return (message.textContent = 'The day must be a whole number.');
         onClose();
         dispatch(markDead(world, character, cause.value.trim(), n));
+        for (const hook of deathHooks) hook.after?.(world, character);
       },
     },
     h('h3', {}, `Mark ${character.name} dead`),

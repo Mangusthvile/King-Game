@@ -2,11 +2,11 @@
 // helpers about characters.
 //
 // world.characters[id]:
-//   identity:  name, factionId, speciesId, locationContainerId (Region, Biome
+//   identity:  name, factionId (data/factions.js), factionHistory: [{ factionId,
+//              fromDay, toDay (null = still in it), reason }], speciesId, locationContainerId (Region, Biome
 //              or Area), currentAssignment (free text), assignmentProjectId
 //              (the Project they work on, '' = none; set from the Projects
 //              system's section on the sheet), bio, notes
-//   teamId:    Ally / Enemy / Neutral, in stasis until the Combat stage
 //   body:      bodyTypeId, bodyTypeLevel, bodyLevel, STR, SPD, TOU,
 //              health: { current, max }   max proposed by rules/health.js
 //   daily:     staminaMax, staminaRemaining   the daily activity budget, spent on
@@ -48,7 +48,7 @@ export function createCharacter(world, values = {}) {
     id: newId('character'),
     name: 'New Character',
     factionId: '',
-    teamId: '',
+    factionHistory: [],
     speciesId: species?.id ?? '',
     locationContainerId: '',
     currentAssignment: '',

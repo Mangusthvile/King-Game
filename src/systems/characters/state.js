@@ -1,11 +1,10 @@
 // View state for the Characters tab: what is selected, open, searched and
 // filtered. Not world data, so it is not saved and not undone.
 export const charactersView = {
-  mode: 'roster', // 'roster' | 'libraries' | 'import'
   selectedId: null,
   search: '',
   sort: 'name', // see SORTS in rosterTab.js
-  filters: { factionId: '', speciesId: '', bodyTypeId: '', locationId: '', status: 'alive' },
+  filters: { speciesId: '', bodyTypeId: '', locationId: '', status: 'alive' },
   libraryKey: 'species',
   librarySearch: '',
   helper: null, // open helper in the panel: { kind: 'convert' | 'tierUp' | 'levelUp' | 'death', index }
@@ -14,7 +13,6 @@ export const charactersView = {
 
 // Opens a character in the Characters tab (used from the Biome and Area panels).
 export function selectCharacter(id) {
-  charactersView.mode = 'roster';
   charactersView.selectedId = id;
   charactersView.helper = null;
 }

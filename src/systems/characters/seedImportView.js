@@ -6,6 +6,7 @@ import { dispatch } from '../../data/store.js';
 import { buildImportPlan, importCommand, IMPORT_ORDER } from './seedImport.js';
 import { library } from './libraries.js';
 import { charactersView as view } from './state.js';
+import { navigate } from '../../ui/navigation.js';
 
 // Vite finds the seed files at build time; if they are missing the button
 // says so and the file pickers are used instead.
@@ -116,8 +117,8 @@ function preview(world, plan, refresh) {
           onclick: () => {
             const command = importCommand(plan);
             view.importPlan = null;
-            view.mode = 'roster';
             dispatch(command);
+            navigate({ main: 'people', sub: 'roster', subsub: 'living' }); // see who came in
           },
         },
         `Import (${newCount} library entries, ${included} characters)`,

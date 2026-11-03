@@ -8,9 +8,9 @@ import { addRecord } from '../../commands/recordCommands.js';
 import { createCharacter, libName, locationName, locationOptions, staminaFor } from './characterModel.js';
 import { refOptions } from './libraryEditor.js';
 import { renderCharacterPanel } from './characterPanel.js';
-import { renderLibraries } from './libraryEditor.js';
-import { renderSeedImport } from './seedImportView.js';
 import { charactersView as view, selectCharacter } from './state.js';
+import { selectedFactionId, setSelectedFaction, isPlayerView } from '../../ui/factionSelector.js';
+import { factionOptions } from '../../data/factions.js';
 
 const SORTS = {
   name: { label: 'Name', key: (w, c) => c.name.toLowerCase() },
@@ -25,35 +25,38 @@ const SORTS = {
   location: { label: 'Location', key: (w, c) => locationName(w, c).toLowerCase() },
 };
 
-export function renderCharactersTab(world, { detailPanel }) {
+// People > Roster > Living (the roster) or Death Log. The libraries are in
+// Codex > Library and the seed import in System > Worlds > Import/Export.
+export function renderCharactersTab(world, { detailPanel, path }) {
+  const screen = path.split('/')[2];
   const root = h('div', { class: 'characters-page' });
   // Redraws only this tab (for view changes like typing a search), so the
   // search box keeps its focus. World changes redraw the whole screen anyway.
   const refresh = () => {
     // filter(Boolean) drops empty parts (replaceChildren would print "null").
-    root.replaceChildren(...page(world, refresh).filter(Boolean));
+    root.replaceChildren(...page(world, refresh, screen).filter(Boolean));
     detailPanel.replaceChildren(...detail(world, refresh).filter(Boolean));
   };
   refresh();
   return root;
 }
 
-function page(world, refresh) {
-  const modeButton = (mode, label) => h('button', { class: view.mode === mode ? 'btn small active' : 'btn small', onclick: () => ((view.mode = mode), refresh()) }, label);
+function page(world, refresh, screen) {
+  if (screen === 'deathLog') return [deathLog(world, refresh) ?? h('section', { class: 'frame panel' }, h('h2', {}, 'Death Log'), h('p', { class: 'muted small' }, 'Nobody has died.'))];
   const toolbar = h(
     'div',
     { class: 'row characters-toolbar' },
-    modeButton('roster', 'Roster'),
-    modeButton('libraries', 'Libraries'),
-    modeButton('import', 'Import seed data'),
     h('div', { class: 'spacer' }),
     h(
       'button',
       {
-        class: 'btn small primary',
+        class: 'btn small primary arbiter-only',
         onclick: () => {
           const baseliner = Object.values(world.definitions.species).find((s) => s.name === 'Baseliner');
-          const c = createCharacter(world, { speciesId: baseliner?.id ?? '' });
+          // A new character joins the faction the selector shows.
+          const factionId = selectedFactionId(world);
+          const factionHistory = factionId ? [{ factionId, fromDay: world.meta.currentDay, toDay: null, reason: 'New character' }] : [];
+          const c = createCharacter(world, { speciesId: baseliner?.id ?? '', factionId, factionHistory });
           selectCharacter(c.id);
           dispatch(addRecord('characters', c));
         },
@@ -61,15 +64,16 @@ function page(world, refresh) {
       '+ New character',
     ),
   );
-  if (view.mode === 'libraries') return [toolbar, renderLibraries(world, refresh)];
-  if (view.mode === 'import') return [toolbar, renderSeedImport(world, refresh)];
-  return [toolbar, filtersBar(world, refresh), rosterList(world, refresh), deathLog(world, refresh)];
+  return [toolbar, filtersBar(world, refresh), rosterList(world, refresh)];
 }
 
 function detail(world, refresh) {
-  const c = world.characters[view.selectedId];
+  // Only a character of the faction the selector shows (Player View must
+  // not show another faction's sheet).
+  const selected = selectedFactionId(world);
+  const c = [world.characters[view.selectedId]].find((x) => x && (!selected || x.factionId === selected));
   if (!c) {
-    const alive = Object.values(world.characters).filter((x) => x.alive).length;
+    const alive = Object.values(world.characters).filter((x) => x.alive && (!selected || x.factionId === selected)).length;
     return [h('h2', {}, 'Characters'), h('p', { class: 'muted small' }, `${alive} living character(s). Click one in the roster to open their stat sheet.`)];
   }
   return renderCharacterPanel(world, c, refresh);
@@ -94,7 +98,8 @@ function filtersBar(world, refresh) {
     { class: 'row roster-filters' },
     search,
     select(view.sort, Object.entries(SORTS).map(([value, s]) => ({ value, label: `Sort: ${s.label}` })), (v) => (view.sort = v), 'Sort'),
-    select(fl.factionId, [...any('All factions'), ...refOptions(world, 'factions')], (v) => (fl.factionId = v), 'Faction'),
+    // The faction filter is the top bar's faction selector.
+    select(selectedFactionId(world), [...(isPlayerView(world) ? [] : any('All factions')), ...factionOptions(world)], (v) => setSelectedFaction(world, v), 'Faction (same as the top bar)'),
     select(fl.speciesId, [...any('All species'), ...refOptions(world, 'species')], (v) => (fl.speciesId = v), 'Species'),
     select(fl.bodyTypeId, [...any('All Body Types'), ...refOptions(world, 'bodyTypes')], (v) => (fl.bodyTypeId = v), 'Body Type'),
     select(fl.locationId, [...any('Any location'), { value: '-', label: '(no location)' }, ...locationOptions(world)], (v) => (fl.locationId = v), 'Location'),
@@ -109,7 +114,7 @@ function visibleCharacters(world) {
   return Object.values(world.characters)
     .filter((c) => (fl.status === 'all' ? true : fl.status === 'dead' ? !c.alive : c.alive))
     .filter((c) => !text || c.name.toLowerCase().includes(text))
-    .filter((c) => !fl.factionId || c.factionId === fl.factionId)
+    .filter((c) => !selectedFactionId(world) || c.factionId === selectedFactionId(world))
     .filter((c) => !fl.speciesId || c.speciesId === fl.speciesId)
     .filter((c) => !fl.bodyTypeId || c.bodyTypeId === fl.bodyTypeId)
     .filter((c) => !fl.locationId || (fl.locationId === '-' ? !c.locationContainerId : c.locationContainerId === fl.locationId))
@@ -174,7 +179,7 @@ function staminaMeter(world, c) {
 // Dead characters stay in the world, listed here with cause and day.
 function deathLog(world, refresh) {
   const dead = Object.values(world.characters)
-    .filter((c) => !c.alive)
+    .filter((c) => !c.alive && (!selectedFactionId(world) || c.factionId === selectedFactionId(world)))
     .sort((a, b) => (a.death?.day ?? 0) - (b.death?.day ?? 0));
   if (!dead.length) return null;
   return h(

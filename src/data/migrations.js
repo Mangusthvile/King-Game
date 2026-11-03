@@ -1,7 +1,11 @@
 // Upgrades saves made with an older schema to the current one.
 // To change the schema: bump SCHEMA_VERSION and add migrations[oldVersion].
-import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTeams, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
+import { SCHEMA_VERSION, DEFAULT_MAP_SCALE, DEFAULT_SNAPSHOTS_KEPT, defaultSettings, DEFAULT_UNDISCOVERED_NAME, defaultSpecies, defaultTileTypes, defaultRegionTypes, defaultAreaTypes, defaultBuildingCategories } from './schema.js';
 import biomeTypeList from './defaults/biomeTypes.json';
+import teamList from './defaults/teams.json'; // the old Teams, for migration 8 -> 9
+import { defaultFactions, factionIdForTeam, createFaction } from './factions.js';
+import { addStartingCrownBearer } from './crownBearers.js';
+import { defaultConnectivity } from '../rules/connectivity.js';
 import { staminaFormula } from '../rules/stamina.js';
 
 // migrations[n] turns a version n world into a version n + 1 world.
@@ -133,7 +137,7 @@ const migrations = {
     world.characters = { ...(world.followers ?? {}), ...(world.characters ?? {}) };
     delete world.followers;
     const defs = world.definitions;
-    if (Object.keys(defs.teams ?? {}).length === 0) defs.teams = defaultTeams();
+    if (Object.keys(defs.teams ?? {}).length === 0) defs.teams = Object.fromEntries(teamList.map((t) => [t.id, { ...t }]));
     for (const key of ['bodyTypes', 'skills', 'traits', 'conditions', 'equipment', 'species']) defs[key] ??= {};
     for (const sp of Object.values(defs.species)) {
       sp.hungerMax ??= null;
@@ -242,7 +246,110 @@ const migrations = {
     world.schemaVersion = 14;
     return world;
   },
+
+  // 14 -> 15 (Stage 6, Time): simple task records, a Food value on resource
+  // types (default 1), how many end-of-day snapshots to keep, and the
+  // stockpiles and snapshot list for worlds that lack them.
+  14: (world) => {
+    world.tasks ??= {};
+    for (const t of Object.values(world.definitions.resourceTypes ?? {})) {
+      t.tags ??= [];
+      t.foodValue ??= 1;
+    }
+    world.meta.settings ??= defaultSettings();
+    world.meta.settings.snapshotsKept ??= DEFAULT_SNAPSHOTS_KEPT;
+    world.stockpiles ??= {};
+    world.stockpiles.kingdom ??= {};
+    world.stockpiles.byLocation ??= {};
+    world.log ??= {};
+    world.log.snapshots ??= [];
+    world.schemaVersion = 15;
+    return world;
+  },
+
+  // 15 -> 16 (Stage 6.5, Factions): see factionsMigration below.
+  15: (world) => factionsMigration(world),
+
+  // 16 -> 17 (Stage 6.6, Crown Bearers): Crown Bearers, Crowns, the
+  // editable Connectivity table, and links from players to Crown Bearers.
+  // Adds the First Sky King for Apollyon (Connectivity 9, Authority Level
+  // copied from the faction) with the Crown of Authority, no vessel yet.
+  16: (world) => {
+    world.definitions.connectivity ??= defaultConnectivity();
+    world.players ??= {};
+    for (const p of Object.values(world.players)) p.connections ??= [];
+    addStartingCrownBearer(world);
+    world.schemaVersion = 17;
+    return world;
+  },
 };
+
+// 15 -> 16: factions replace Teams, and everything gets an owner.
+//   - The starter factions (Apollyon, Player; Vulture Pack, NPC; Unaligned)
+//     are added, Hostile to each other both ways, unless a faction with the
+//     same name exists (then that one is used). Older factions get the new
+//     fields.
+//   - A character with no faction gets one from their team: Ally ->
+//     Apollyon, Enemy -> Vulture Pack, anything else -> Unaligned. Their
+//     faction history starts with it. teamId and the Teams library go.
+//   - Stockpiles become records owned by a faction: the kingdom stockpile
+//     is Apollyon's main stockpile, stockpiles at places are Apollyon's.
+//   - Buildings, Projects, tasks, Day Log entries and the Start of Day record
+//     go to Apollyon. Regions, Biomes and Areas are unclaimed.
+//   - meta.settings.factionReview asks the Arbiter to review the owners once.
+//   - The action log gets an undo wall: older commands used the old shapes.
+function factionsMigration(world) {
+  const defs = world.definitions;
+  defs.factions ??= {};
+  const byName = (name) => Object.values(defs.factions).find((f) => f.name?.toLowerCase() === name.toLowerCase());
+  const idFor = {}; // starter faction id -> the id used in this world
+  for (const starter of Object.values(defaultFactions())) {
+    const existing = byName(starter.name);
+    idFor[starter.id] = existing?.id ?? starter.id;
+    if (!existing) defs.factions[starter.id] = starter;
+  }
+  for (const [id, f] of Object.entries(defs.factions)) {
+    defs.factions[id] = { ...createFaction(f.name, f.type ?? 'npc'), ...f, id };
+    // Starter relations point at starter ids; follow them to this world's ids.
+    defs.factions[id].relations = Object.fromEntries(Object.entries(defs.factions[id].relations).map(([to, stance]) => [idFor[to] ?? to, stance]));
+  }
+  const apollyon = idFor.faction_apollyon;
+
+  for (const c of Object.values(world.characters ?? {})) {
+    if (!c.factionId || !defs.factions[c.factionId]) c.factionId = idFor[factionIdForTeam(defs.teams?.[c.teamId]?.name)];
+    c.factionHistory ??= [{ factionId: c.factionId, fromDay: null, toDay: null, reason: 'Set when factions were added' }];
+    delete c.teamId;
+  }
+  delete defs.teams;
+  world.players ??= {};
+
+  const old = world.stockpiles ?? {};
+  if ('kingdom' in old || 'byLocation' in old) {
+    const stockpiles = {};
+    const add = (id, placeId, counts) => (stockpiles[id] = { id, name: '', ownerFactionId: apollyon, placeId, counts: { ...(counts ?? {}) }, notes: '', customFields: {} });
+    add(`stockpile_${apollyon}`, '', old.kingdom);
+    for (const [placeId, counts] of Object.entries(old.byLocation ?? {})) add(`stockpile_at_${placeId}`, placeId, counts);
+    world.stockpiles = stockpiles;
+  }
+
+  for (const collection of ['buildings', 'projects', 'tasks']) {
+    for (const r of Object.values(world[collection] ?? {})) r.ownerFactionId ??= apollyon;
+  }
+  for (const c of Object.values(world.containers ?? {})) c.claimFactionId ??= '';
+  for (const d of Object.values(world.dayLogs ?? {})) {
+    for (const e of d.entries ?? []) e.factionId ??= apollyon;
+    d.startOfDays ??= d.startOfDay ? { [apollyon]: d.startOfDay } : {};
+    delete d.startOfDay;
+  }
+
+  const hasData = ['characters', 'buildings', 'projects', 'tasks', 'dayLogs'].some((k) => Object.keys(world[k] ?? {}).length);
+  if (hasData) world.meta.settings = { ...(world.meta.settings ?? {}), factionReview: true };
+  const actions = world.log?.actions ?? [];
+  if (actions.length) actions[actions.length - 1].dayBoundary = true;
+  if (world.log) world.log.redo = [];
+  world.schemaVersion = 16;
+  return world;
+}
 
 // For migration 12 -> 13: a setField of a species' staminaDefault (at any
 // depth inside a batch) now sets baseStamina.

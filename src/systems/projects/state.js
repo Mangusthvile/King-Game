@@ -3,7 +3,6 @@
 // saved and not undone. Nothing in a workday reaches the world until Accept.
 export const projectsView = {
   selectedId: null,
-  statusFilter: '', // '' = all statuses
   workday: null, // the workday draft in progress, see workdayDraft.js
   cardOpen: false, // the Task Card is shown (closing it keeps the draft)
   cardPos: { x: 16, y: 16 }, // where the Task Card window was dragged to

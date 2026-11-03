@@ -1,0 +1,57 @@
+{
+  "description": "Connectivity: the link between the Player and the Crown Bearer, from RULES.md (Crown Bearers > Connectivity, subject to change). Reminders only: nothing is enforced. Each world keeps an editable copy (definitions.connectivity); this file is the default and the \"Reset to RULES.md\" text.",
+  "min": 1,
+  "max": 10,
+  "levels": [
+    {
+      "level": 10,
+      "description": "The maximum. Basically you; they'll say what you say word for word. 10 can only be achieved through special circumstances.",
+      "notes": ""
+    },
+    {
+      "level": 9,
+      "description": "Where you're normally at. You're the voice of the character's thoughts, and while your actions may come out slightly different, they'll still always hold the same intentions.",
+      "notes": ""
+    },
+    {
+      "level": 8,
+      "description": "You're still the voice of their thoughts, but they may have thoughts of their own. You may see hesitation in actions or the occasional thought pop up in the text.",
+      "notes": ""
+    },
+    {
+      "level": 7,
+      "description": "The Crown Bearer's personality will begin to shine through a bit. Your choices may be slightly restricted if they don't align with the moral values of the Crown Bearer.",
+      "notes": ""
+    },
+    {
+      "level": 6,
+      "description": "They may fully refuse to do some of the things you want to do. Instead they'll do nothing unless you assign them a task they agree with.",
+      "notes": ""
+    },
+    {
+      "level": 5,
+      "description": "The text no longer refers to the Crown Bearer as you, but by the Crown Bearer's preferred pronouns. All your actions will be converted and fully changed to fit the Crown Bearer's wishes. They cannot use the Spark of Change.",
+      "notes": ""
+    },
+    {
+      "level": 4,
+      "description": "Much the same as 5, but the only thing you can do is give a suggestion on what you believe is a goal you want to meet today.",
+      "notes": ""
+    },
+    {
+      "level": 3,
+      "description": "They can access the Spark of Change. Same as 4 in all other aspects.",
+      "notes": ""
+    },
+    {
+      "level": 2,
+      "description": "You can voice your opinion, but the Crown Bearer is free to ignore it and do what they wish, including killing themselves if they so wish.",
+      "notes": ""
+    },
+    {
+      "level": 1,
+      "description": "They have full reign to do whatever they wish; you have no control. Their actions may influence other days with high Connectivity, forcing you to continue their actions or other things they wanted to do.",
+      "notes": ""
+    }
+  ]
+}

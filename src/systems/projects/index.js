@@ -7,6 +7,23 @@
 import { renderProjectsTab } from './projectsTab.js';
 import { registerProjectLinks } from './links.js';
 import { registerBuildingPrompt } from './buildingPrompt.js';
+import { registerPinKind } from '../../ui/quickBar.js';
+import { navigate } from '../../ui/navigation.js';
+import { selectProject } from './state.js';
+
+// Where a Project of each status is listed (Realm > Projects).
+const SCREEN_OF_STATUS = { active: 'active', paused: 'active', planned: 'planned', complete: 'completed' };
+
+registerPinKind('project', {
+  label: 'A Project',
+  icon: '⚒',
+  options: (world) => Object.values(world.projects).map((p) => ({ value: p.id, label: p.name })),
+  name: (world, id) => world.projects[id]?.name ?? null,
+  open: (world, id) => {
+    selectProject(id);
+    navigate({ main: 'realm', sub: 'projects', subsub: SCREEN_OF_STATUS[world.projects[id]?.status] ?? 'active' });
+  },
+});
 
 registerProjectLinks();
 registerBuildingPrompt(); // placing a building offers to create its Project
@@ -14,5 +31,5 @@ registerBuildingPrompt(); // placing a building offers to create its Project
 export default {
   id: 'projects',
   name: 'Projects',
-  tabs: [{ id: 'projects', label: 'Projects', render: renderProjectsTab }],
+  places: ['active', 'planned', 'completed'].map((id) => ({ path: `realm/projects/${id}`, render: renderProjectsTab })),
 };

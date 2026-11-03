@@ -1,6 +1,6 @@
-// The Libraries view: one editor per library (Species, Body Types, Skills,
-// Traits & Pacts, Conditions, Equipment, Teams), driven by the field lists
-// in libraries.js. Every edit is a command.
+// The library editor (Codex > Library): one screen per library (Species,
+// Body Types, Skills, Traits & Pacts, Conditions, Equipment, Resource
+// Types), driven by the field lists in libraries.js. Every edit is a command.
 import { h } from '../../ui/dom.js';
 import { dispatch } from '../../data/store.js';
 import { setField, addRecord, removeRecord } from '../../commands/recordCommands.js';
@@ -12,31 +12,21 @@ import { charactersView as view } from './state.js';
 // Which entries are open, so a redraw keeps them open.
 const expanded = new Set();
 
-// Libraries in stasis (Teams, Conditions) are hidden until the Combat stage.
-const SHOWN = LIBRARIES.filter((l) => !inStasis(l.key));
-
-export function renderLibraries(world, refresh) {
-  const lib = SHOWN.find((l) => l.key === view.libraryKey) ?? SHOWN[0];
+// One library's screen. key: the library (Codex > Library > key).
+export function renderLibraries(world, refresh, key) {
+  const lib = LIBRARIES.find((l) => l.key === key) ?? LIBRARIES[0];
   const entries = Object.values(world.definitions[lib.key] ?? {});
   const filter = view.librarySearch.trim().toLowerCase();
   const shown = entries.filter((e) => !filter || e.name.toLowerCase().includes(filter));
+  if (view.libraryKey !== lib.key) ((view.libraryKey = lib.key), (view.librarySearch = ''));
   const search = h('input', { type: 'search', placeholder: `Search ${lib.label}...`, value: view.librarySearch, class: 'roster-search' });
   search.addEventListener('change', () => ((view.librarySearch = search.value), refresh()));
 
   return h(
     'div',
     { class: 'library-page' },
-    h(
-      'div',
-      { class: 'row library-tabs' },
-      SHOWN.map((l) =>
-        h(
-          'button',
-          { class: l.key === lib.key ? 'btn small active' : 'btn small', onclick: () => ((view.libraryKey = l.key), (view.librarySearch = ''), refresh()) },
-          `${l.label} (${Object.keys(world.definitions[l.key] ?? {}).length})`,
-        ),
-      ),
-    ),
+    // Conditions are in stasis on the stat sheet, but the library is kept here.
+    inStasis(lib.key) ? h('p', { class: 'muted small' }, "In stasis: characters' Conditions are not edited on the stat sheet until the Combat stage. The library is kept here.") : null,
     h(
       'section',
       { class: 'frame panel' },

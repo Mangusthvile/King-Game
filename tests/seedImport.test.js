@@ -12,13 +12,12 @@ const byName = (name) => plan.characters.find((p) => p.character.name === name).
 const entry = (key, name) => plan.entries[key].find((p) => p.name === name)?.entry;
 
 describe('libraries', () => {
-  it('adds every seed entry and reuses Baseliner, Vulture, Ally and Enemy', () => {
+  it('adds every seed entry and reuses Baseliner and Vulture', () => {
     expect(plan.entries.bodyTypes.filter((p) => p.status === 'new')).toHaveLength(16);
     expect(plan.entries.skills.filter((p) => p.status === 'new')).toHaveLength(9);
     expect(plan.entries.traits.filter((p) => p.status === 'new')).toHaveLength(6);
     expect(plan.entries.equipment.filter((p) => p.status === 'new')).toHaveLength(13);
     expect(plan.entries.species.filter((p) => p.status !== 'existing')).toHaveLength(0);
-    expect(plan.entries.teams).toHaveLength(0);
   });
 
   it('flags nothing: every name the characters use is in the seed lists', () => {

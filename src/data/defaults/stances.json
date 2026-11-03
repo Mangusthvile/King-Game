@@ -1,0 +1,16 @@
+{
+  "description": "How one faction stands toward another. Each direction is set on its own. A stance that has not been set counts as defaultStance.",
+  "defaultStance": "neutral",
+  "stances": [
+    { "id": "allied", "name": "Allied", "color": "#3f8f3a" },
+    { "id": "friendly", "name": "Friendly", "color": "#6aa84f" },
+    { "id": "neutral", "name": "Neutral", "color": "#9a8f82" },
+    { "id": "wary", "name": "Wary", "color": "#d9a74a" },
+    { "id": "hostile", "name": "Hostile", "color": "#c26a3a" },
+    { "id": "atWar", "name": "At War", "color": "#c24a4a" }
+  ],
+  "initialRelations": [
+    { "from": "faction_apollyon", "to": "faction_vulture_pack", "stance": "hostile" },
+    { "from": "faction_vulture_pack", "to": "faction_apollyon", "stance": "hostile" }
+  ]
+}

@@ -79,7 +79,7 @@ export function resourcesEditor(world, record) {
     const availability = newAvailability.value;
     const existing = Object.values(types).find((t) => t.name.toLowerCase() === name.toLowerCase());
     if (existing && list.some((r) => r.resourceTypeId === existing.id)) return; // already listed
-    const type = existing ?? { id: newId('resource'), name, description: '', tags: [], customFields: {} };
+    const type = existing ?? { id: newId('resource'), name, description: '', tags: [], foodValue: 1, customFields: {} };
     dispatch(
       batch(`Added resource "${name}" to "${record.name}"`, [
         existing ? null : addRecord('definitions.resourceTypes', type),

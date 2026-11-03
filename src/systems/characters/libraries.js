@@ -10,39 +10,28 @@
 //                 theories: [names], canBoost (true / false / null), description,
 //                 skillFeature, limitation, notes }
 //   traits:     { name, tags (a Pact is tagged "Pact"), description, narrativeFeature, mechanicalFeature }
-//   factions:   { name, color, description, notes }
 //   conditions: { name, description, mechanicalFeature }      (in stasis)
 //   equipment:  { name, grade, ex, max, type, range, attackPower, damage, defense,
 //                 protection, special, description, notes }
-//   teams:      { name, color }                               (in stasis)
 //
-// In stasis: Teams (Ally, Enemy, Neutral) and Conditions belong to the
-// combat system, which is still being tested. Their library entries and
-// the characters' teamId and conditions stay in the data (the seed import
-// still fills them), but they are hidden everywhere until the Combat stage.
-// To bring one back, remove it from IN_STASIS.
+// Factions have their own tab (systems/factions; model in data/factions.js).
+// They replaced Teams (Ally, Enemy, Neutral) in Stage 6.5.
+//
+// In stasis: Conditions belong to the combat system, which is still being
+// tested. The library and the characters' conditions stay in the data (the
+// seed import still fills them), but the editors are hidden until the
+// Combat stage. To bring it back, remove it from IN_STASIS.
 import { newId } from '../../data/ids.js';
 import { createSpecies } from '../../data/schema.js';
 
 export const GRADES = ['F', 'D', 'C', 'B', 'A', 'S'];
 export const SKILL_TIERS = ['T1', 'T2', 'T3', 'T4', 'T5', 'Inner Monster'];
-export const IN_STASIS = ['teams', 'conditions'];
+export const IN_STASIS = ['conditions'];
 export const inStasis = (key) => IN_STASIS.includes(key);
 
 const entry = (prefix, name, fields) => ({ id: newId(prefix), name, ...fields, customFields: {} });
 
 export const LIBRARIES = [
-  {
-    key: 'factions',
-    label: 'Factions',
-    create: (name = 'New Faction') => ({ id: newId('faction'), name, color: '#888888', description: '', notes: '', customFields: {} }),
-    fields: [
-      { key: 'color', label: 'Color', type: 'color' },
-      { key: 'description', label: 'Description', type: 'textarea' },
-      { key: 'notes', label: 'Notes', type: 'textarea' },
-    ],
-    summary: () => '',
-  },
   {
     key: 'species',
     label: 'Species',
@@ -146,14 +135,22 @@ export const LIBRARIES = [
     ],
     summary: (world, e) => `${e.grade}${e.ex ? ' EX' : ''}${e.max ? ' Max' : ''} ${e.type}`,
   },
-  {
-    key: 'teams',
-    label: 'Teams',
-    create: (name = 'New Team') => ({ id: newId('team'), name, color: '#888888', customFields: {} }),
-    fields: [{ key: 'color', label: 'Color', type: 'color' }],
-    summary: () => '',
-  },
 ];
+
+// Resource types (Codex > Library > Resource Types): shared by Biome and
+// Area resources and the stockpiles. Not a character library, but edited
+// with the same editor.
+LIBRARIES.push({
+  key: 'resourceTypes',
+  label: 'Resource Types',
+  create: (name = 'New Resource') => entry('resource', name, { description: '', tags: [], foodValue: 1 }),
+  fields: [
+    { key: 'tags', label: 'Tags (a resource tagged "Food" is eaten at Advance Day)', type: 'stringList' },
+    { key: 'foodValue', label: 'Food value (Food per unit)', type: 'number' },
+    { key: 'description', label: 'Description', type: 'textarea' },
+  ],
+  summary: (world, e) => (e.tags?.length ? e.tags.join(', ') : 'Resource'),
+});
 
 export const libraryPath = (key) => `definitions.${key}`;
 
@@ -170,8 +167,6 @@ export function countUsers(world, key, id) {
     traits: (c) => c.traits?.some((t) => t.traitId === id),
     conditions: (c) => c.conditions?.some((x) => x.conditionId === id),
     equipment: (c) => c.armorId === id || c.weapons?.some((w) => w.equipmentId === id),
-    teams: (c) => c.teamId === id,
-    factions: (c) => c.factionId === id,
   }[key];
   return uses ? Object.values(world.characters).filter(uses).length : 0;
 }

@@ -1,0 +1,11 @@
+{
+  "description": "Food and Hunger at the end of the day, from the Arbiter's Stage 6 brief (not yet written in RULES.md): each living character needs foodPerCharacterPerDay Food a day; a resource tagged foodTag gives foodValue Food per unit (defaultFoodValue if not set; e.g. a Metal Dragon Fruit is worth 3). A fed character's Hunger returns to max. An unfed character loses unfedHungerLoss Hunger and gets the Hungry condition; at 0 Hunger they are flagged at risk of death for the Arbiter to decide (never automatic). Thirst is manual (RULE NEEDED).",
+  "foodPerCharacterPerDay": 1,
+  "foodTag": "Food",
+  "defaultFoodValue": 1,
+  "unfedHungerLoss": 1,
+  "hungryCondition": {
+    "name": "Hungry",
+    "modifier": "-1 to all rolls per day without food"
+  }
+}
